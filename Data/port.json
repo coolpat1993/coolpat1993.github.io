@@ -5,10 +5,13 @@
     "title": "Profile",
     "dates": "",
     "duties": [
-      "I am a graduate of NorthCoders Bootcamp with a demonstrated history of Full Stack Development seeking to enter and excel in the coding industry. I excel in analytical thinking, creative excellence, and effective time management. I have a broad range of experience in different fields and am able to quickly upskill, as demonstrated by my software and programming competencies. I have a proven history of facilitating innovative solutions, collaboration, and project management across the hospitality industry while also developing my coding skills."
+      "Graduate of NorthCoders Bootcamp with a demonstrated history of Full Stack Development seeking to enter and excel in the Coding Industry.",
+      "Excel in analytical thinking, creative excellence, and demonstrating effective allocation of time resources.",
+      "Broad experience in several fields with the ability to rapidly upskill as shown by my Software and Programming competence.",
+      "Proven history of facilitating innovative solutions, collaboration, and Project Management across the Hospitality Industry whilst honing Coding skill set."
     ],
-    "company": "PatrickShepherd218@Gmail.com",
-    "email": ""
+    "company": "",
+    "email": "PatrickShepherd218@Gmail.com"
   },
   {
     "id": "rec2",
@@ -16,10 +19,22 @@
     "title": "Skills",
     "dates": "",
     "duties": [
-      "Proficient in Javascript, PostgreSQL, React.js, React Native, Firebase, HTML/CSS, Axios, Express, Jest, TDD, and the use of VS Code. Skilled in agile methodology and data visualization."
+      "Javascript",
+      "PostgreSQL",
+      "React.js",
+      "React Native",
+      "Firebase",
+      "HTML/CSS",
+      "Axios",
+      "Express",
+      "Jest",
+      "TDD",
+      "VS Code proficiency",
+      "Agile Methodology",
+      "Data Visualizations"
     ],
-    "company": "PatrickShepherd218@Gmail.com",
-    "email": ""
+    "company": "",
+    "email": "PatrickShepherd218@Gmail.com"
   },
   {
     "id": "rec3",
@@ -27,10 +42,13 @@
     "title": "Junior Full Stack Developer",
     "dates": "Aug 2022 - Present",
     "duties": [
-      "As a junior full stack developer at Northcoders, I optimize user experience by ensuring well-developed, standards-compliant front and back-end code. I use static code analysis to analyze code for consistency and test coverage, and build site-specific interfaces for navigation and data management. I demonstrate expert coding knowledge of JavaScript, SQL, and HTML, and perform thorough testing and analysis to eliminate errors and risks."
+      "Optimized user experience by ensuring well-developed, standards-compliant front and back-end code.",
+      "Used static code analysis to analyze code for consistency and test coverage.",
+      "Built site-specific interfaces for navigation and data management.",
+      "Demonstrated expert coding knowledge of JavaScript, SQL and HTML.",
+      "Performed thorough testing and analysis to eliminate error and risk."
     ],
-    "company": "Northcoders",
-    "email": ""
+    "company": "Northcoders"
   },
   {
     "id": "rec4",
@@ -38,10 +56,14 @@
     "title": "Restaurant Supervisor",
     "dates": "Sept 2018 - Present",
     "duties": [
-      "As a restaurant supervisor, I have developed and implemented business plans to promote profitable food and beverage sales. I manage stock purchasing and inventory to align with the Profit/Loss budget, and exceed Key Performance Indicators such as Spend Per Head, Cover Targets, and Average Transaction Values and Speed of Service. I have the ability to resolve conflict in a fast-paced environment, gather feedback from multiple review platforms, and make operational changes and improvements based on that feedback. I have also recruited and developed a team of 20 dedicated staff to provide excellent customer service."
+      "Developed, implemented and managed business plans to promote profitable food and beverage sales.",
+      "Managed stock purchasing and inventory to stay in line with the Profit/Loss Budget.",
+      "Exceeded Key Performance Indicators such as Spend Per Head, Cover Targets, and Average Transaction Values and Speed of Service.",
+      "Resolved conflict in a time-pressured environment.",
+      "Collated feedback from multiple review platforms and implemented operational changes and procedures as a result.",
+      "Recruited and developed a dedicated team of twenty staff to provide excellent customer service."
     ],
-    "company": "Thirteen Thirty One",
-    "email": ""
+    "company": "Thirteen Thirty One"
   },
   {
     "id": "rec5",
@@ -49,9 +71,12 @@
     "title": "Bar Supervisor",
     "dates": "Feb 2018 - Sept 2018",
     "duties": [
-      "As a bar supervisor, I was responsible for completing bar opening and closing procedures, managing bar inventory and restocking supplies, explaining daily specials and beverage promotions to increase sales, training new employees on bar procedures and policies, and handling cash and credit card transactions accurately and efficiently."
+      "Completed bar opening and closing procedures.",
+      "Managed bar inventory, restocked supplies, and placed orders for spirits, beer, wines, and mixers.",
+      "Explained daily specials and beverage promotions to exceed daily sales goals.",
+      "Trained new employees on bar procedures and policies.",
+      "Handled cash and credit card transactions accurately and efficiently."
     ],
-    "company": "Fossgate Tap",
-    "email": ""
+    "company": "Fossgate Tap"
   }
 ]
