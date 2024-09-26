@@ -431,6 +431,118 @@ const additionalItems = [
     effect:
       "On use: Absorb 15% of incoming fire damage for 6 seconds. Afterward, unleash the stored damage as a fiery explosion, dealing AoE damage to enemies around you.",
   },
+  {
+    name: "Draconic Wildshape Pendant",
+    itemSlot: "Neck",
+    class: "Druid",
+    rarity: "Legendary",
+    effect:
+      "On use: Transform into a dragon for 10 seconds, gaining 50% increased attack power and the ability to breathe fire, dealing AoE damage to nearby enemies.",
+  },
+  {
+    name: "Verdant Dragonheart Boots",
+    itemSlot: "Boots",
+    class: "Druid",
+    rarity: "Epic",
+    effect:
+      "Increases movement speed by 20% and grants the ability to leave a trail of healing flowers, restoring 5% health to allies who walk through them.",
+  },
+  {
+    name: "Claw of the Emerald Wyrm",
+    itemSlot: "Weapon",
+    class: "Druid",
+    rarity: "Epic",
+    effect:
+      "Attacks have a chance to deal additional nature damage and heal the user for 10% of the damage dealt.",
+  },
+  {
+    name: "Wyrmcaller’s Barkskin",
+    itemSlot: "Chest",
+    class: "Druid",
+    rarity: "Rare",
+    effect:
+      "Activate to gain a shield absorbing 30% of your health for 8 seconds. During this time, all healing received is increased by 20%.",
+  },
+  {
+    name: "Dragon's Breath Ring",
+    itemSlot: "Ring",
+    class: "Druid",
+    rarity: "Rare",
+    effect:
+      "On use: Channel the breath of dragons, dealing fire damage to enemies in a cone and reducing their movement speed by 30% for 5 seconds.",
+  },
+  {
+    name: "Ravenous Dragonfruit",
+    itemSlot: "Trinket",
+    class: "Druid",
+    rarity: "Legendary",
+    effect:
+      "When activated, instantly restore 20% health and grant 10% increased attack speed for 8 seconds. Cooldown: 2 minutes.",
+  },
+  {
+    name: "Dragonfly Wings Cloak",
+    itemSlot: "Cloak",
+    class: "Druid",
+    rarity: "Epic",
+    effect:
+      "Gain a 50% chance to evade the next incoming attack. If an attack is evaded, your next spell has double the effect.",
+  },
+  {
+    name: "Nature's Guardian Bracers",
+    itemSlot: "Bracers",
+    class: "Druid",
+    rarity: "Rare",
+    effect:
+      "On critical heal, summon a guardian spirit that follows you for 10 seconds, absorbing up to 15% of damage taken.",
+  },
+  {
+    name: "Celestial Scale Shoulders",
+    itemSlot: "Shoulders",
+    class: "Druid",
+    rarity: "Epic",
+    effect:
+      "Grants a chance to unleash a wave of celestial energy on spell cast, dealing AoE damage and healing allies for 10% of the damage dealt.",
+  },
+  {
+    name: "Fangs of the Serpent Dragon",
+    itemSlot: "Gloves",
+    class: "Druid",
+    rarity: "Legendary",
+    effect:
+      "Basic attacks apply a venom effect, dealing additional damage over time and healing for a percentage of damage dealt.",
+  },
+  {
+    name: "Dragonblood Charm",
+    itemSlot: "Trinket",
+    class: "Druid",
+    rarity: "Rare",
+    effect:
+      "When activated, your next healing spell will also apply a damage reduction buff to the target, absorbing 15% of incoming damage for 6 seconds.",
+  },
+  {
+    name: "Ancient Wyrmroot Staff",
+    itemSlot: "Weapon",
+    class: "Druid",
+    rarity: "Epic",
+    effect:
+      "Increases spell power by 30%. On spell cast, there’s a chance to root the target for 2 seconds, preventing movement.",
+  },
+  {
+    name: "Dragonkin Scale Helm",
+    itemSlot: "Helm",
+    class: "Druid",
+    rarity: "Rare",
+    effect:
+      "Reduces the cooldown of all shapeshifting forms by 1 second. When shapeshifting, gain a temporary boost to your highest primary stat.",
+  },
+  {
+    name: "Breath of the Wild",
+    itemSlot: "Cloak",
+    class: "Druid",
+    rarity: "Epic",
+    effect:
+      "On use: Create a temporary forest area that heals allies for 2% of their health every second for 8 seconds.",
+  },
 ]
 
 const cardContainer = document.getElementById("cardContainer")
