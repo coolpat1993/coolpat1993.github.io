@@ -1,1 +1,59 @@
-Hello world
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hearthstone Style Cards</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="controls">
+        <label for="sortRarity">Rarity:</label>
+        <select id="sortRarity">
+            <option value="all">All</option>
+            <option value="Common">Common</option>
+            <option value="Rare">Rare</option>
+            <option value="Epic">Epic</option>
+            <option value="Legendary">Legendary</option>
+        </select>
+
+        <label for="sortClass">Class:</label>
+        <select id="sortClass">
+            <option value="all">All</option>
+            <option value="Neutral">Neutral</option>
+            <option value="Warrior">Warrior</option>
+            <option value="Rogue">Rogue</option>
+            <option value="Hunter">Hunter</option>
+            <option value="Mage">Mage</option>
+            <option value="Paladin">Paladin</option>
+            <option value="Shaman">Shaman</option>
+            <option value="Warlock">Warlock</option>
+            <option value="Druid">Druid</option>
+            <option value="Priest">Priest</option>
+        </select>
+
+        <label for="sortItemSlot">Item Slot:</label>
+        <select id="sortItemSlot">
+            <option value="all">All</option>
+            <option value="Weapon">Weapon</option>
+            <option value="Trinket">Trinket</option>
+            <option value="Helm">Helm</option>
+            <option value="Chest">Chest</option>
+            <option value="Belt">Belt</option>
+            <option value="Bracers">Bracers</option>
+            <option value="Gloves">Gloves</option>
+            <option value="Boots">Boots</option>
+            <option value="Shoulders">Shoulders</option>
+            <option value="Legs">Legs</option>
+            <option value="Ring">Ring</option>
+            <option value="Neck">Neck</option>
+            <option value="Misc">Misc</option>
+
+        </select>
+    </div>
+
+    <div class="card-container" id="cardContainer"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
