@@ -550,6 +550,35 @@ const sortRarity = document.getElementById("sortRarity")
 const sortClass = document.getElementById("sortClass")
 const sortItemSlot = document.getElementById("sortItemSlot")
 
+/*
+Death Knight	196	30	58	0.77	0.12	0.23	#C41E3A	Red
+Demon Hunter	163	48	201	0.64	0.19	0.79	#A330C9	Dark Magenta
+Druid	255	124	10	1.00	0.49	0.04	#FF7C0A	Orange
+Evoker	51	147	127	0.20	0.58	0.50	#33937F	Dark Emerald
+Hunter	170	211	114	0.67	0.83	0.45	#AAD372	Pistachio
+Mage	63	199	235	0.25	0.78	0.92	#3FC7EB	Light Blue
+Monk	0	255	152	0.00	1.00	0.60	#00FF98	Spring Green
+Paladin	244	140	186	0.96	0.55	0.73	#F48CBA	Pink
+Priest	255	255	255	1.00	1.00	1.00	#FFFFFF	White*
+Rogue	255	244	104	1.00	0.96	0.41	#FFF468	Yellow*
+Shaman	0	112	221	0.00	0.44	0.87	#0070DD	Blue
+Warlock	135	136	238	0.53	0.53	0.93	#8788EE	Purple
+Warrior	198	155	109	0.78	0.61	0.43	#C69B6D	Tan */
+
+
+const classColorDictionary = {
+  Warrior: "#C69B6D",
+  Hunter: "#AAD372",
+  Mage: "#3FC7EB",
+  Rogue: "#FFF468",
+  Paladin: "#F48CBA",
+  Shaman: "#0070DD",
+  Warlock: "#8788EE",
+  Druid: "#FF7C0A",
+  Priest: "#FFFFFF",
+  Neutral: "#33937F",
+}
+
 // Function to create a card
 function createCard(item) {
   const card = document.createElement("div")
@@ -583,6 +612,10 @@ function createCard(item) {
   // Class
   const itemClass = document.createElement("div")
   itemClass.classList.add("class")
+  // classes should have the generic class color and the class name
+  itemClass.style.backgroundColor = classColorDictionary[item.class]
+
+
   itemClass.innerText = item.class
 
   // Effect
