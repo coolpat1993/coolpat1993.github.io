@@ -543,12 +543,175 @@ const additionalItems = [
     effect:
       "On use: Create a temporary forest area that heals allies for 2% of their health every second for 8 seconds.",
   },
+  // Offensive Helm
+  {
+    name: "Mask of the Phantom Dancer",
+    itemSlot: "Helm",
+    class: "Rogue",
+    rarity: "Epic",
+    effect:
+      "Increases your critical strike chance by 15%. On use, become invisible for 5 seconds, allowing you to escape or reposition without being targeted.",
+  },
+  // Offensive Shoulders
+  {
+    name: "Shoulders of Enigmatic Shadows",
+    itemSlot: "Shoulders",
+    class: "Rogue",
+    rarity: "Legendary",
+    effect:
+      "Your Combo spells deal an additional 10% damage. After using a Combo ability, gain a stack of Shadow Energy that increases your next attack speed by 5% (stacks up to 3 times).",
+  },
+  // Defensive Chest
+  {
+    name: "Cloak of the Night Stalker",
+    itemSlot: "Chest",
+    class: "Rogue",
+    rarity: "Epic",
+    effect:
+      "Reduces all incoming damage by 10%. When taking damage, you have a chance to disappear and reappear behind the attacker, gaining 5% damage for your next attack.",
+  },
+  // Miscellaneous Belt
+  {
+    name: "Belt of Trickster's Illusions",
+    itemSlot: "Belt",
+    class: "Rogue",
+    rarity: "Rare",
+    effect:
+      "On use: Create a decoy that distracts enemies for 5 seconds. While the decoy is active, you gain 15% increased damage.",
+  },
+  // Defensive Legs
+  {
+    name: "Leggings of Subterfuge",
+    itemSlot: "Legs",
+    class: "Rogue",
+    rarity: "Epic",
+    effect:
+      "Increases your agility by 10%. When you enter stealth, your next attack deals 25% increased damage.",
+  },
+  // Movement-based Boots
+  {
+    name: "Boots of the Silent Steps",
+    itemSlot: "Boots",
+    class: "Rogue",
+    rarity: "Rare",
+    effect:
+      "Gain a 20% movement speed boost while stealthed. On use: Gain 50% movement speed for 5 seconds and leave behind a trail of smoke that blinds enemies.",
+  },
+  // Offensive Gloves
+  {
+    name: "Gloves of the Daring Duelist",
+    itemSlot: "Gloves",
+    class: "Rogue",
+    rarity: "Legendary",
+    effect:
+      "On use: Increase your attack power by 20% for your next melee attack. If it’s a critical hit, restore 10% of your maximum health.",
+  },
+  // Miscellaneous Bracers
+  {
+    name: "Bracers of Swift Retribution",
+    itemSlot: "Bracers",
+    class: "Rogue",
+    rarity: "Epic",
+    effect:
+      "When you successfully dodge an attack, gain a burst of energy, restoring 5 energy instantly.",
+  },
+  // Class-based Ring
+  {
+    name: "Ring of the Shadowblade",
+    itemSlot: "Ring",
+    class: "Rogue",
+    rarity: "Rare",
+    effect:
+      "Increases your stealth duration by 2 seconds. Each time you use a stealth ability, gain 2% increased damage (stacks up to 10 times).",
+  },
+  // Versatile Trinket
+  {
+    name: "Trinket of the Arcane Trickster",
+    itemSlot: "Trinket",
+    class: "Rogue",
+    rarity: "Legendary",
+    effect:
+      "On use: Summon an illusionary duplicate of yourself that draws aggro for 6 seconds. While active, you gain a 15% increase in attack power.",
+  },
+  // Offensive Helm
+  {
+    name: "Cowl of the Illusive Assassin",
+    itemSlot: "Helm",
+    class: "Rogue",
+    rarity: "Epic",
+    effect:
+      "Increases your critical strike damage by 25%. On use: Your next attack will critically strike and cannot be dodged.",
+  },
+  // Offensive Shoulders
+  {
+    name: "Mantle of Phantom Blades",
+    itemSlot: "Shoulders",
+    class: "Rogue",
+    rarity: "Rare",
+    effect:
+      "Your abilities have a 10% chance to trigger an extra hit that deals 50% of the original damage.",
+  },
+  // Defensive Chest
+  {
+    name: "Vest of the Midnight Stalker",
+    itemSlot: "Chest",
+    class: "Rogue",
+    rarity: "Legendary",
+    effect:
+      "Reduces all incoming damage by 15%. When you drop below 30% health, gain a shield that absorbs 25% of your maximum health for 8 seconds.",
+  },
+  // Miscellaneous Belt
+  {
+    name: "Sash of the Serpent's Shadow",
+    itemSlot: "Belt",
+    class: "Rogue",
+    rarity: "Epic",
+    effect:
+      "On use: Release a cloud of poison that lasts for 5 seconds, dealing damage over time to enemies within. Reduces your health by 5% when activated.",
+  },
+  // Defensive Legs
+  {
+    name: "Trousers of the Silent Assassin",
+    itemSlot: "Legs",
+    class: "Rogue",
+    rarity: "Rare",
+    effect:
+      "Increases your evasion chance by 10%. Each successful evasion grants a stack of Agility, increasing your damage by 2% (up to 10%).",
+  },
+  // Movement-based Boots
+  {
+    name: "Footpads of the Shadowstep",
+    itemSlot: "Boots",
+    class: "Rogue",
+    rarity: "Epic",
+    effect:
+      "On use: Dash forward 10 yards, becoming stealthed for 5 seconds. Each enemy hit during the dash takes 20% weapon damage.",
+  },
+  // Offensive Gloves
+  {
+    name: "Fingers of the Swindler",
+    itemSlot: "Gloves",
+    class: "Rogue",
+    rarity: "Legendary",
+    effect:
+      "On use: Steal 5% of an enemy's current health on hit. If this causes them to fall below 20% health, execute them instantly.",
+  },
+  // Miscellaneous Bracers
+  {
+    name: "Bracers of the Quick Strike",
+    itemSlot: "Bracers",
+    class: "Rogue",
+    rarity: "Rare",
+    effect:
+      "Increases your attack speed by 10%. Whenever you deal damage to an enemy, increase your dodge chance by 2% for 4 seconds.",
+  },
 ]
 
 const cardContainer = document.getElementById("cardContainer")
 const sortRarity = document.getElementById("sortRarity")
 const sortClass = document.getElementById("sortClass")
 const sortItemSlot = document.getElementById("sortItemSlot")
+const sortCriteria = document.getElementById("sortCriteria")
 
 /*
 Death Knight	196	30	58	0.77	0.12	0.23	#C41E3A	Red
@@ -590,7 +753,11 @@ function createCard(item) {
   imageNumber = (item.name.charCodeAt(2) % 5) + 1
   console.log(imageNumber)
   itemImage.src = `assets/${item.itemSlot}/${imageNumber}.png`
+  itemImage.onerror = () => {
+    itemImage.src = 'https://via.placeholder.com/150'
+  }
   // /image test
+
   // itemImage.src = 'https://via.placeholder.com/150'
   itemImage.classList.add("itemImage")
 
@@ -644,6 +811,7 @@ function renderFilteredCards() {
   const selectedRarity = sortRarity.value
   const selectedClass = sortClass.value
   const selectedItemSlot = sortItemSlot.value
+  const selectedSortCriteria = sortCriteria.value
 
   // Filter the items
   const filteredItems = additionalItems.filter((item) => {
@@ -654,8 +822,22 @@ function renderFilteredCards() {
       selectedItemSlot === "all" || item.itemSlot === selectedItemSlot
     return matchRarity && matchClass && matchItemSlot
   })
-
-  filteredItems.sort((a, b) => a.name.localeCompare(b.name))
+  // Sort the filtered items based on selected sort criteria
+  console.log(selectedSortCriteria)
+  filteredItems.sort((a, b) => {
+    if (selectedSortCriteria === "name") {
+      return a.name.localeCompare(b.name)
+    } else if (selectedSortCriteria === "rarity") {
+      const rarityOrder = ["Common", "Rare", "Epic", "Legendary"]
+      return rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity)
+    } else if (selectedSortCriteria === "itemSlot") {
+      return a.itemSlot.localeCompare(b.itemSlot)
+    } else if (selectedSortCriteria === "class") {
+      return a.class.localeCompare(b.class)
+    }
+    return 0
+  })
+  // filteredItems.sort((a, b) => a.name.localeCompare(b.name))
 
   // Render the filtered cards
   filteredItems.forEach((item) => createCard(item))
@@ -665,6 +847,20 @@ function renderFilteredCards() {
 sortRarity.addEventListener("change", renderFilteredCards)
 sortClass.addEventListener("change", renderFilteredCards)
 sortItemSlot.addEventListener("change", renderFilteredCards)
+sortCriteria.addEventListener("change", renderFilteredCards)
+
 
 // Initial render of all cards
 renderFilteredCards()
+
+
+/*
+	•	Helms and Shoulders: Focused on offensive capabilities, enhancing attack power and damage.
+	•	Chest and Legs: Designed for defense, providing damage reduction and shields.
+	•	Belt: Included miscellaneous on-use effects for utility and buffs.
+	•	Boots: Focused on mobility and speed enhancements.
+	•	Gloves: Contained on-use offensive abilities that can execute or deal significant damage.
+	•	Bracers: Miscellaneous effects that provide defense or offensive opportunities.
+	•	Rings: Designed to enhance warrior traits like strength and stamina.
+	•	Trinkets: Versatile effects that amplify damage or provide significant boosts during combat.
+  */
