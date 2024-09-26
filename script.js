@@ -40,8 +40,8 @@ const additionalItems = [
       "Every 10 seconds, fire a random gizmo at a nearby enemy, dealing 10% of your weapon damage.",
   },
   {
-    name: "Shielded Mech Helm",
-    itemSlot: "Helm",
+    name: "Shielded Mech Helmet",
+    itemSlot: "Helmet",
     class: "Paladin",
     rarity: "Rare",
     effect:
@@ -65,7 +65,7 @@ const additionalItems = [
   },
   {
     name: "Shrink Ray Goggles",
-    itemSlot: "Helm",
+    itemSlot: "Helmet",
     class: "Neutral",
     rarity: "Rare",
     effect:
@@ -112,8 +112,8 @@ const additionalItems = [
       "Every 5 attacks, release a chain lightning bolt that strikes 3 nearby enemies, dealing damage and reducing their movement speed by 10%.",
   },
   {
-    name: "Mega Bomb Helm",
-    itemSlot: "Helm",
+    name: "Mega Bomb Helmet",
+    itemSlot: "Helmet",
     class: "Hunter",
     rarity: "Epic",
     effect:
@@ -176,8 +176,8 @@ const additionalItems = [
       "Plant a trap dealing damage to the first person who triggers it and summon a hungry wolf to attack them for 10 seconds.",
   },
   {
-    name: "Blood Sworn Helm",
-    itemSlot: "Helm",
+    name: "Blood Sworn Helmet",
+    itemSlot: "Helmet",
     class: "Paladin",
     rarity: "Common",
     effect:
@@ -241,7 +241,7 @@ const additionalItems = [
   },
   {
     name: "Sylvan Spiritform",
-    itemSlot: "Helm + Chest + Legs",
+    itemSlot: "Helmet + Chest + Legs",
     class: "Druid",
     rarity: "Legendary",
     effect:
@@ -384,8 +384,8 @@ const additionalItems = [
       "On use: Transform into a dragon for 10 seconds, gaining 25% spell power and immunity to crowd control effects. While in dragon form, spells have a chance to ignite enemies, dealing fire damage over time.",
   },
   {
-    name: "Scaled Guardian Helm",
-    itemSlot: "Helm",
+    name: "Scaled Guardian Helmet",
+    itemSlot: "Helmet",
     class: "Paladin",
     rarity: "Epic",
     effect:
@@ -528,8 +528,8 @@ const additionalItems = [
       "Increases spell power by 30%. On spell cast, there’s a chance to root the target for 2 seconds, preventing movement.",
   },
   {
-    name: "Dragonkin Scale Helm",
-    itemSlot: "Helm",
+    name: "Dragonkin Scale Helmet",
+    itemSlot: "Helmet",
     class: "Druid",
     rarity: "Rare",
     effect:
@@ -554,6 +554,16 @@ const sortItemSlot = document.getElementById("sortItemSlot")
 function createCard(item) {
   const card = document.createElement("div")
   card.classList.add("card")
+
+  // Item Slot
+  const itemImage = document.createElement("img")
+  // image number should be based on the item name's first letter converted into a numbre % 5
+  imageNumber = (item.name.charCodeAt(2) % 5) + 1
+  console.log(imageNumber)
+  itemImage.src = `assets/${item.itemSlot}/${imageNumber}.png`
+  // /image test
+  // itemImage.src = 'https://via.placeholder.com/150'
+  itemImage.classList.add("itemImage")
 
   // Item Slot
   const itemSlot = document.createElement("div")
@@ -584,6 +594,7 @@ function createCard(item) {
   card.appendChild(itemSlot)
   card.appendChild(rarity)
   card.appendChild(title)
+  card.appendChild(itemImage)
   card.appendChild(itemClass)
   card.appendChild(effect)
 
