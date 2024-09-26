@@ -72,8 +72,8 @@ const additionalItems = [
       "On use: Shrink an enemy, reducing their damage by 30% and movement speed by 20% for 10 seconds.",
   },
   {
-    name: "Annoy-o-Tron Shoulders",
-    itemSlot: "Shoulders",
+    name: "Annoy-o-Tron Shoulder",
+    itemSlot: "Shoulder",
     class: "Paladin",
     rarity: "Epic",
     effect:
@@ -128,8 +128,8 @@ const additionalItems = [
       "On use: Summon Jeeves, who restores 30% of your health and repairs damaged armor over 10 seconds.",
   },
   {
-    name: "Whirling Blades Shoulders",
-    itemSlot: "Shoulders",
+    name: "Whirling Blades Shoulder",
+    itemSlot: "Shoulder",
     class: "Rogue",
     rarity: "Epic",
     effect:
@@ -281,7 +281,7 @@ const additionalItems = [
   },
   {
     name: "Elemental Overload",
-    itemSlot: "Weapon + Shoulders + Trinket",
+    itemSlot: "Weapon + Shoulder + Trinket",
     class: "Shaman",
     rarity: "Legendary",
     effect:
@@ -336,8 +336,8 @@ const additionalItems = [
       "On use: Freeze time for 5 seconds, preventing all movement and attacks for both enemies and allies. Any cooldowns or damage-over-time effects are paused during this duration.",
   },
   {
-    name: "Wyrmguard Shoulders",
-    itemSlot: "Shoulders",
+    name: "Wyrmguard Shoulder",
+    itemSlot: "Shoulder",
     class: "Paladin",
     rarity: "Epic",
     effect:
@@ -496,8 +496,8 @@ const additionalItems = [
       "On critical heal, summon a guardian spirit that follows you for 10 seconds, absorbing up to 15% of damage taken.",
   },
   {
-    name: "Celestial Scale Shoulders",
-    itemSlot: "Shoulders",
+    name: "Celestial Scale Shoulder",
+    itemSlot: "Shoulder",
     class: "Druid",
     rarity: "Epic",
     effect:
