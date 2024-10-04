@@ -817,7 +817,63 @@ const additionalItems = [
     effect:
       "On use: Summon a minion of flame, casting fire damage at your near by foes whenever you deal direct fire damage",
   },
-  
+  {
+    name: "Flameforged cloak",
+    itemSlot: "Cloak",
+    class: "Neutral",
+    rarity: "Rare",
+    effect: "when you take fire damage while below 50% health, gain a shield that absorbs 10% of your max health for 6 seconds, this effect cannot occur more than once every 30 seconds",
+  },
+  {
+    name: "Icebound Gauntlets",
+    itemSlot: "Gloves",
+    class: "Neutral",
+    rarity: "Epic",
+    effect: "On use: summon a frost nova around you, freezing all nearby enemies for 3 seconds and dealing frost damage",
+  },
+  {
+    name: "Frostbite Boots",
+    itemSlot: "Boots",
+    class: "Neutral",
+    rarity: "Rare",
+    effect: "When you deal frost damage, gain a stack of Frostbite, increasing your frost damage by 3% per stack. Stacks up to 3 times.",
+  },
+  {
+    name: "Frostweaver's Cloak",
+    itemSlot: "Cloak",
+    class: "Neutral",
+    rarity: "common",
+    effect: "When you take frost damage while below 50% health, gain a shield that absorbs 10% of your max health for 6 seconds, this effect cannot occur more than once every 30 seconds",
+  },
+  {
+    name: "Stormcaller's Mantle",
+    itemSlot: "Shoulder",
+    class: "Neutral",
+    rarity: "Epic",
+    effect: "On use: summon a storm cloud above you, dealing nature damage to all nearby enemies and reducing their movement speed by 20% for 4 seconds.",
+  },
+  {
+    name: "Stormweaver's Cloak",
+    itemSlot: "Cloak",
+    class: "Neutral",
+    rarity: "common",
+    effect: "When you take nature damage while below 50% health, gain a shield that absorbs 10% of your max health for 6 seconds, this effect cannot occur more than once every 30 seconds",
+  },
+  {
+    name: "Stormcaller's Pauldrons",
+    itemSlot: "Shoulder",
+    class: "Neutral",
+    rarity: "Epic",
+    effect: "On use: summon a storm cloud above you, dealing nature damage to all nearby enemies and reducing their movement speed by 20% for 4 seconds.",
+  },
+  {
+    name: "Thunderstruck Belt",
+    itemSlot: "Belt",
+    class: "Neutral",
+    rarity: "Rare",
+    effect: "When you deal nature damage, gain a stack of Thunderstruck, increasing your nature damage by 3% per stack, stacks up to 3 times.",
+  }
+
 ]
 
 const cardContainer = document.getElementById("cardContainer")
