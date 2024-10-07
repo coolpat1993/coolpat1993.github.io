@@ -725,7 +725,7 @@ const additionalItems = [
     name: "Grimy Goons Battleplate",
     itemSlot: "Chest",
     class: "Hunter",
-    rarity: "common",
+    rarity: "Common",
     effect:
       "Increases ranged attack power by 15%. When taking damage, gain 5% increased damage reduction for 6 seconds.",
   },
@@ -749,7 +749,7 @@ const additionalItems = [
     name: "Thunder charged Gauntlets",
     itemSlot: "Gloves",
     class: "Shaman",
-    rarity: "common",
+    rarity: "Common",
     effect:
       "When using an ability, there is a 5% chance to call down a bolt of lightning that stuns enemies within 5 yards for 2 seconds.",
   },
@@ -805,7 +805,7 @@ const additionalItems = [
     name: "Hotstep greaves",
     itemSlot: "Boots",
     class: "Neutral",
-    rarity: "common",
+    rarity: "Common",
     effect:
       "When you deal fire damage, gain a stack of Scorch, increasing your movement speed by 5% per stack. Stacks up to 5 times.",
   },
@@ -842,7 +842,7 @@ const additionalItems = [
     name: "Frostweaver's Cloak",
     itemSlot: "Cloak",
     class: "Neutral",
-    rarity: "common",
+    rarity: "Common",
     effect: "When you take frost damage while below 50% health, gain a shield that absorbs 10% of your max health for 6 seconds, this effect cannot occur more than once every 30 seconds",
   },
   {
@@ -856,7 +856,7 @@ const additionalItems = [
     name: "Stormweaver's Cloak",
     itemSlot: "Cloak",
     class: "Neutral",
-    rarity: "common",
+    rarity: "Common",
     effect: "When you take nature damage while below 50% health, gain a shield that absorbs 10% of your max health for 6 seconds, this effect cannot occur more than once every 30 seconds",
   },
   {
@@ -872,7 +872,13 @@ const additionalItems = [
     class: "Neutral",
     rarity: "Rare",
     effect: "When you deal nature damage, gain a stack of Thunderstruck, increasing your nature damage by 3% per stack, stacks up to 3 times.",
-  }
+  },
+   {
+    name: "Rusty Iron Gauntlets",
+    itemSlot: "Gloves",
+    class: "Neutral",
+    rarity: "Common",
+   }
 
 ]
 
