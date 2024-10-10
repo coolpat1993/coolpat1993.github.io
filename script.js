@@ -546,7 +546,7 @@ const additionalItems = [
   // Offensive Helm
   {
     name: "Mask of the Phantom Dancer",
-    itemSlot: "Helm",
+    itemSlot: "Helmet",
     class: "Rogue",
     rarity: "Epic",
     effect:
@@ -636,7 +636,7 @@ const additionalItems = [
   // Offensive Helm
   {
     name: "Cowl of the Illusive Assassin",
-    itemSlot: "Helm",
+    itemSlot: "Helmet",
     class: "Rogue",
     rarity: "Epic",
     effect:
@@ -812,7 +812,7 @@ const additionalItems = [
   {
     name: "Manacles of Burning Servatude",
     itemSlot: "Bracers",
-    class: 'Neutral',
+    class: "Neutral",
     rarity: "Epic",
     effect:
       "On use: Summon a minion of flame, casting fire damage at your near by foes whenever you deal direct fire damage",
@@ -822,64 +822,96 @@ const additionalItems = [
     itemSlot: "Cloak",
     class: "Neutral",
     rarity: "Rare",
-    effect: "when you take fire damage while below 50% health, gain a shield that absorbs 10% of your max health for 6 seconds, this effect cannot occur more than once every 30 seconds",
+    effect:
+      "when you take fire damage while below 50% health, gain a shield that absorbs 10% of your max health for 6 seconds, this effect cannot occur more than once every 30 seconds",
   },
   {
     name: "Icebound Gauntlets",
     itemSlot: "Gloves",
     class: "Neutral",
     rarity: "Epic",
-    effect: "On use: summon a frost nova around you, freezing all nearby enemies for 3 seconds and dealing frost damage",
+    effect:
+      "On use: summon a frost nova around you, freezing all nearby enemies for 3 seconds and dealing frost damage",
   },
   {
     name: "Frostbite Boots",
     itemSlot: "Boots",
     class: "Neutral",
     rarity: "Rare",
-    effect: "When you deal frost damage, gain a stack of Frostbite, increasing your frost damage by 3% per stack. Stacks up to 3 times.",
+    effect:
+      "When you deal frost damage, gain a stack of Frostbite, increasing your frost damage by 3% per stack. Stacks up to 3 times.",
   },
   {
     name: "Frostweaver's Cloak",
     itemSlot: "Cloak",
     class: "Neutral",
     rarity: "Common",
-    effect: "When you take frost damage while below 50% health, gain a shield that absorbs 10% of your max health for 6 seconds, this effect cannot occur more than once every 30 seconds",
+    effect:
+      "When you take frost damage while below 50% health, gain a shield that absorbs 10% of your max health for 6 seconds, this effect cannot occur more than once every 30 seconds",
   },
   {
     name: "Stormcaller's Mantle",
     itemSlot: "Shoulder",
     class: "Neutral",
     rarity: "Epic",
-    effect: "On use: summon a storm cloud above you, dealing nature damage to all nearby enemies and reducing their movement speed by 20% for 4 seconds.",
+    effect:
+      "On use: summon a storm cloud above you, dealing nature damage to all nearby enemies and reducing their movement speed by 20% for 4 seconds.",
   },
   {
     name: "Stormweaver's Cloak",
     itemSlot: "Cloak",
     class: "Neutral",
     rarity: "Common",
-    effect: "When you take nature damage while below 50% health, gain a shield that absorbs 10% of your max health for 6 seconds, this effect cannot occur more than once every 30 seconds",
+    effect:
+      "When you take nature damage while below 50% health, gain a shield that absorbs 10% of your max health for 6 seconds, this effect cannot occur more than once every 30 seconds",
   },
   {
     name: "Stormcaller's Pauldrons",
     itemSlot: "Shoulder",
     class: "Neutral",
     rarity: "Epic",
-    effect: "On use: summon a storm cloud above you, dealing nature damage to all nearby enemies and reducing their movement speed by 20% for 4 seconds.",
+    effect:
+      "On use: summon a storm cloud above you, dealing nature damage to all nearby enemies and reducing their movement speed by 20% for 4 seconds.",
   },
   {
     name: "Thunderstruck Belt",
     itemSlot: "Belt",
     class: "Neutral",
     rarity: "Rare",
-    effect: "When you deal nature damage, gain a stack of Thunderstruck, increasing your nature damage by 3% per stack, stacks up to 3 times.",
+    effect:
+      "When you deal nature damage, gain a stack of Thunderstruck, increasing your nature damage by 3% per stack, stacks up to 3 times.",
   },
-   {
+  {
     name: "Rusty Iron Gauntlets",
     itemSlot: "Gloves",
     class: "Neutral",
     rarity: "Common",
-   }
-
+    effect: "causes your critical hits to deal an additional 10% damage",
+  },
+  {
+    name: "Ironclad Boots",
+    itemSlot: "Boots",
+    class: "Neutral",
+    rarity: "Common",
+    effect:
+      "Reduces slow effectiveness by 30%, grants you a slight chance to resist snares",
+  },
+  {
+    name: "Fletcher's Gloves",
+    itemSlot: "Gloves",
+    class: "Hunter",
+    rarity: "Rare",
+    effect:
+      "Citical hits with ranged weapons have a 10% chance to fire an additional shot",
+  },
+  {
+    name: "Hawk's Eye",
+    itemSlot: "Ring",
+    class: "Hunter",
+    rarity: "Epic",
+    effect:
+      "Increases ranged attack power by 20%, critical hits with ranged weapons have a 10% chance to deal double damage",
+  },
 ]
 
 const cardContainer = document.getElementById("cardContainer")
@@ -923,16 +955,11 @@ function createCard(item) {
 
   // Item Slot
   const itemImage = document.createElement("img")
-  // image number should be based on the item name's first letter converted into a numbre % 5
   imageNumber = (item.name.charCodeAt(2) % 5) + 1
-  console.log(imageNumber)
   itemImage.src = `assets/${item.itemSlot}/${imageNumber}.png`
   itemImage.onerror = () => {
     itemImage.src = "https://via.placeholder.com/150"
   }
-  // /image test
-
-  // itemImage.src = 'https://via.placeholder.com/150'
   itemImage.classList.add("itemImage")
 
   // Item Slot
@@ -953,9 +980,7 @@ function createCard(item) {
   // Class
   const itemClass = document.createElement("div")
   itemClass.classList.add("class")
-  // classes should have the generic class color and the class name
   itemClass.style.backgroundColor = classColorDictionary[item.class]
-
   itemClass.innerText = item.class
 
   // Effect
@@ -971,13 +996,26 @@ function createCard(item) {
   card.appendChild(itemClass)
   card.appendChild(effect)
 
+  // Add event listener for equipping the item on click
+  card.addEventListener("click", () => equipItem(item))
+
   // Append card to container
   cardContainer.appendChild(card)
 }
 
-// Function to render cards based on selected filters
+// Function to handle equipping an item
+function equipItem(item) {
+  const slotId = `${item.itemSlot}Slot`
+  const slotElement = document.getElementById(slotId)
+
+  if (slotElement) {
+    // Update the slot with the equipped item
+    slotElement.innerHTML = `${item.itemSlot}: ${item.name} <br> Effect: ${item.effect}`
+  }
+}
+
+// Function to render cards based on selected filters (unchanged)
 function renderFilteredCards() {
-  // Clear existing cards
   cardContainer.innerHTML = ""
 
   // Get selected values
@@ -986,7 +1024,6 @@ function renderFilteredCards() {
   const selectedItemSlot = sortItemSlot.value
   const selectedSortCriteria = sortCriteria.value
 
-  // Filter the items
   const filteredItems = additionalItems.filter((item) => {
     const matchRarity =
       selectedRarity === "all" || item.rarity === selectedRarity
@@ -995,8 +1032,7 @@ function renderFilteredCards() {
       selectedItemSlot === "all" || item.itemSlot === selectedItemSlot
     return matchRarity && matchClass && matchItemSlot
   })
-  // Sort the filtered items based on selected sort criteria
-  console.log(selectedSortCriteria)
+
   filteredItems.sort((a, b) => {
     if (selectedSortCriteria === "name") {
       return a.name.localeCompare(b.name)
@@ -1010,9 +1046,7 @@ function renderFilteredCards() {
     }
     return 0
   })
-  // filteredItems.sort((a, b) => a.name.localeCompare(b.name))
 
-  // Render the filtered cards
   filteredItems.forEach((item) => createCard(item))
 }
 
