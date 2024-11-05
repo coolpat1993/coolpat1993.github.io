@@ -16,6 +16,7 @@
       </div>
       <button id="reset">Reset</button>
       <p>Selected word: <span id="selected-word"></span></p>
+      <p id="result-message"></p>
     </div>
     <script>
       // script.js
@@ -24,6 +25,7 @@
       const selectedWordDisplay = document.getElementById("selected-word")
       const resetButton = document.getElementById("reset")
       const quizQuestionText = document.getElementById("quiz-question")
+      const resultMessage = document.getElementById("result-message")
 
       let selectedWord = ""
       let selectedCells = []
@@ -52,6 +54,7 @@
       function generateGrid() {
         grid.innerHTML = "" // Clear the grid
         lines.innerHTML = "" // Clear any existing lines
+        resultMessage.textContent = "" // Clear the result message
 
         // Select a random quiz question and answer
         currentQuiz = quizData[Math.floor(Math.random() * quizData.length)]
@@ -164,6 +167,15 @@
         }
 
         highlightAdjacentCells() // Update highlights for the new selection
+
+        // Check if the selected word length matches the answer length
+        if (selectedWord.length === currentQuiz.answer.length) {
+          if (selectedWord === currentQuiz.answer) {
+            resultMessage.textContent = "Correct!"
+          } else {
+            resultMessage.textContent = "Incorrect!"
+          }
+        }
       }
 
       // Draw a line between two cells
