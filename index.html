@@ -1,32 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hearthstone Style Cards</title>
-    <link rel="stylesheet" href="styles.css" />
-    <script src="https://unpkg.com/riot@4/riot.min.js"></script>
-  </head>
-  <body>
-    <div id="app">
-      <controls-panel></controls-panel>
-      <character-slots></character-slots>
-      <card-container></card-container>
-    </div>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Riot.js Example</title>
+  <script src="riot.js"></script>
+  <script src="my-app.tag" type="riot/tag"></script>
+</head>
+<body>
+  
+  <my-app></my-app>
 
-    <!-- Components and Main App -->
-    <script type="module">
-      import ControlsPanel from './components/controls-panel.js'
-      import CharacterSlots from './components/character-slots.js'
-      import CardContainer from './components/card-container.js'
-      
-      // Register components
-      riot.register('controls-panel', ControlsPanel)
-      riot.register('character-slots', CharacterSlots)
-      riot.register('card-container', CardContainer)
-      
-      // Mount all components
-      riot.mount('*')
-    </script>
-  </body>
+  <script>
+    riot.mount('my-app', { title: 'My Riot.js App' })
+  </script>
+</body>
 </html>
