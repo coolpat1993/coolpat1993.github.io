@@ -11,7 +11,7 @@
     </div>
     
     <div if="{ connected }">
-      <p>Game ID: <strong>{ myPeerId }</strong> (Share this with other players)</p>
+      <p>Game ID: <span class="game-id" onclick="{ copyGameId }">{ myPeerId }</span> <span if="{ copied }" class="copied-indicator">Copied!</span> <span class="share-text">(Click to copy)</span></p>
       <button onclick="{ disconnectGame }">Disconnect</button>
     </div>
     
@@ -66,6 +66,7 @@
     self.connectedPeers = {}
     self.connectionError = null
     self.statusMessage = ""
+    self.copied = false
     
     // Game state that will be synced between peers
     self.gameState = {
@@ -92,20 +93,31 @@
     // Initialize PeerJS on mount
     self.on('mount', function() {
       console.log('Scoreboard component mounted!')
-      // Set a default player name
-      if (!self.refs.playerName.value) {
+      
+      // Try to load saved player name from localStorage
+      const savedPlayerName = localStorage.getItem('playerName')
+      if (savedPlayerName) {
+        self.playerName = savedPlayerName
+        self.refs.playerName.value = savedPlayerName
+      } else if (!self.refs.playerName.value) {
+        // Set a default player name if no saved name exists
         self.refs.playerName.value = "Player " + Math.floor(Math.random() * 1000)
       }
     })
     
     // Create a new game as host
     self.createNewGame = function() {
-      self.playerName = self.refs.playerName.value
+      self.playerName = self.refs.playerName.value.trim()
+      
+      // Validate username
       if (!self.playerName) {
         self.connectionError = "Please enter a player name"
         self.update()
         return
       }
+      
+      // Save player name to localStorage
+      localStorage.setItem('playerName', self.playerName)
       
       try {
         // Create peer connection
@@ -143,14 +155,24 @@
     
     // Join an existing game
     self.joinGame = function() {
-      self.playerName = self.refs.playerName.value
-      const gameId = self.refs.gameIdToJoin.value
+      self.playerName = self.refs.playerName.value.trim()
+      const gameId = self.refs.gameIdToJoin.value.trim()
       
-      if (!self.playerName || !gameId) {
-        self.connectionError = "Please enter your name and a game ID"
+      // Validate inputs
+      if (!self.playerName) {
+        self.connectionError = "Please enter a player name"
         self.update()
         return
       }
+      
+      if (!gameId) {
+        self.connectionError = "Please enter a game ID to join"
+        self.update()
+        return
+      }
+      
+      // Save player name to localStorage
+      localStorage.setItem('playerName', self.playerName)
       
       try {
         // Create peer
@@ -407,6 +429,20 @@
       
       self.update()
     }
+
+    // Copy game ID to clipboard
+    self.copyGameId = function() {
+      navigator.clipboard.writeText(self.myPeerId).then(function() {
+        self.copied = true
+        self.update()
+        setTimeout(function() {
+          self.copied = false
+          self.update()
+        }, 2000)
+      }).catch(function(err) {
+        console.error('Could not copy text: ', err)
+      })
+    }
   </script>
   
   <style>
@@ -483,6 +519,23 @@
       height: 1px;
       background-color: #ddd;
       margin: 15px 0;
+    }
+
+    .game-id {
+      cursor: pointer;
+      color: blue;
+      text-decoration: underline;
+    }
+
+    .copied-indicator {
+      color: green;
+      margin-left: 10px;
+    }
+
+    .share-text {
+      font-style: italic;
+      color: #555;
+      margin-left: 5px;
     }
   </style>
 </my-app>
