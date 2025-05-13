@@ -3,17 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Riot.js Example</title>
+  <title>P2P Game Demo</title>
   <script src="https://cdn.jsdelivr.net/npm/riot@3.13.2/riot+compiler.min.js"></script>
+  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
 
   <script src="my-app.tag" type="riot/tag"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .game-area {
+      border: 1px solid #ccc;
+      padding: 20px;
+      margin-top: 20px;
+    }
+    .connection-controls {
+      margin-bottom: 20px;
+    }
+    .player {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 5px;
+    }
+    .player.me {
+      background-color: #e6f7ff;
+    }
+    .player.peer {
+      background-color: #fff1e6;
+    }
+  </style>
 </head>
 <body>
   
   <my-app></my-app>
 
   <script>
-    riot.mount('my-app', { title: 'My Riot.js App' })
+    riot.mount('my-app', { title: 'P2P Game Demo' })
   </script>
 </body>
 </html>
