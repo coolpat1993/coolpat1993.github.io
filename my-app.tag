@@ -3,7 +3,7 @@
   
   <div class="connection-controls">
     <div if="{ !connected }">
-      <input type="text" placeholder="Your Player Name" ref="playerName" value="Player { Math.floor(Math.random() * 1000) }">
+      <input type="text" placeholder="Your Player Name" ref="playerName" value="{ playerName }">
       <button onclick="{ createNewGame }">Create New Game</button>
       <hr>
       <input type="text" placeholder="Game ID to join" ref="gameIdToJoin">
@@ -92,6 +92,10 @@
     // Initialize PeerJS on mount
     self.on('mount', function() {
       console.log('Scoreboard component mounted!')
+      // Set a default player name
+      if (!self.refs.playerName.value) {
+        self.refs.playerName.value = "Player " + Math.floor(Math.random() * 1000)
+      }
     })
     
     // Create a new game as host
