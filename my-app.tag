@@ -5,13 +5,21 @@
     <div if="{ !connected }">
       <input type="text" placeholder="Your Player Name" ref="playerName" value="{ playerName }">
       <button onclick="{ createNewGame }">Create New Game</button>
-      <hr>
-      <input type="text" placeholder="Game ID to join" ref="gameIdToJoin">
-      <button onclick="{ joinGame }">Join Game</button>
+      
+      <div if="{ gameIdFromUrl }" class="join-from-url">
+        <hr>
+        <p>Join game: { gameIdFromUrl }</p>
+        <button onclick="{ joinFromUrl }">Join This Game</button>
+      </div>
     </div>
     
     <div if="{ connected }">
-      <p>Game ID: <span class="game-id" onclick="{ copyGameId }">{ myPeerId }</span> <span if="{ copied }" class="copied-indicator">Copied!</span> <span class="share-text">(Click to copy)</span></p>
+      <p if="{ isHost }">
+        <button onclick="{ copyShareableLink }" class="share-button">
+          { linkCopied ? 'Link Copied!' : 'Copy Game Link' }
+        </button>
+      </p>
+      <p if="{ !isHost && hostInfo }">Connected to: <strong>{ hostInfo.name }</strong></p>
       <button onclick="{ disconnectGame }">Disconnect</button>
     </div>
     
@@ -28,7 +36,7 @@
       
       <!-- Your own player -->
       <div class="player me">
-        <strong>You:</strong> { playerName } 
+        <strong>{ playerName }:</strong> 
         <span class="score">Score: { gameState.players[myPeerId].score }</span>
         <div class="score-controls">
           <button onclick="{ addPointToPlayer }" data-id="{ myPeerId }" class="score-btn add">+</button>
@@ -67,10 +75,37 @@
     self.connectionError = null
     self.statusMessage = ""
     self.copied = false
+    self.linkCopied = false
+    self.gameIdFromUrl = null
+    self.isHost = false
+    self.hostInfo = null
     
     // Game state that will be synced between peers
     self.gameState = {
       players: {}
+    }
+    
+    // Parse URL query parameters
+    self.getQueryParams = function() {
+      const params = {}
+      const queryString = window.location.search
+      
+      if (queryString) {
+        const urlParams = new URLSearchParams(queryString)
+        
+        urlParams.forEach(function(value, key) {
+          params[key] = value
+        })
+      }
+      
+      return params
+    }
+    
+    // Generate a shareable link with the game ID
+    self.generateShareableLink = function(gameId) {
+      const url = new URL(window.location.href)
+      url.search = new URLSearchParams({ gameId: gameId }).toString()
+      return url.toString()
     }
     
     // Computed property for other players
@@ -103,6 +138,17 @@
         // Set a default player name if no saved name exists
         self.refs.playerName.value = "Player " + Math.floor(Math.random() * 1000)
       }
+
+      // Check for game ID in URL query parameters
+      const queryParams = self.getQueryParams()
+      console.log('Query params:', queryParams)
+      
+      if (queryParams.gameId) {
+        self.gameIdFromUrl = queryParams.gameId
+        console.log('Found game ID in URL:', self.gameIdFromUrl)
+      }
+      
+      self.update() // Make sure to update after setting gameIdFromUrl
     })
     
     // Create a new game as host
@@ -127,6 +173,7 @@
           self.myPeerId = id
           self.connected = true
           self.connectionError = null
+          self.isHost = true
           
           // Add yourself to the game state
           self.gameState.players[id] = {
@@ -134,8 +181,11 @@
             score: 0
           }
           
+          // Generate shareable link
+          self.shareableLink = self.generateShareableLink(id)
+          
           self.update()
-          self.statusMessage = "Scoreboard created! Share your Game ID with other players."
+          self.statusMessage = "Scoreboard created! Share your Game ID or link with other players."
           self.update()
         })
         
@@ -154,9 +204,9 @@
     }
     
     // Join an existing game
-    self.joinGame = function() {
+    self.joinFromUrl = function() {
       self.playerName = self.refs.playerName.value.trim()
-      const gameId = self.refs.gameIdToJoin.value.trim()
+      const gameId = self.gameIdFromUrl
       
       // Validate inputs
       if (!self.playerName) {
@@ -166,7 +216,7 @@
       }
       
       if (!gameId) {
-        self.connectionError = "Please enter a game ID to join"
+        self.connectionError = "Invalid game ID"
         self.update()
         return
       }
@@ -191,6 +241,8 @@
           conn.on('open', function() {
             self.connected = true
             self.connectionError = null
+            self.isHost = false
+            self.hostInfo = { id: gameId, name: "Host" }
             
             // Store the connection
             self.connections[gameId] = conn
@@ -302,6 +354,15 @@
         case 'SYNC':
           // Update our game state
           self.gameState = data.gameState
+          
+          // Update host name if we're not the host
+          if (!self.isHost && peerId in self.gameState.players) {
+            self.hostInfo = {
+              id: peerId,
+              name: self.gameState.players[peerId].name
+            }
+          }
+          
           self.update()
           break
           
@@ -443,6 +504,20 @@
         console.error('Could not copy text: ', err)
       })
     }
+
+    // Copy shareable link to clipboard
+    self.copyShareableLink = function() {
+      navigator.clipboard.writeText(self.shareableLink).then(function() {
+        self.linkCopied = true
+        self.update()
+        setTimeout(function() {
+          self.linkCopied = false
+          self.update()
+        }, 2000)
+      }).catch(function(err) {
+        console.error('Could not copy text: ', err)
+      })
+    }
   </script>
   
   <style>
@@ -520,22 +595,26 @@
       background-color: #ddd;
       margin: 15px 0;
     }
-
-    .game-id {
-      cursor: pointer;
-      color: blue;
-      text-decoration: underline;
+    
+    .join-from-url {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #f5f5f5;
+      border-radius: 4px;
     }
-
-    .copied-indicator {
-      color: green;
-      margin-left: 10px;
+    
+    .share-button {
+      display: inline-block;
+      background-color: #2196F3;
+      color: white;
+      padding: 10px 15px;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: bold;
     }
-
-    .share-text {
-      font-style: italic;
-      color: #555;
-      margin-left: 5px;
+    
+    .share-button:hover {
+      background-color: #0b7dda;
     }
   </style>
 </my-app>
