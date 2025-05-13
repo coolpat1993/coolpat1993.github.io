@@ -1060,149 +1060,149 @@ sortCriteria.addEventListener("change", renderFilteredCards)
 renderFilteredCards()
 
 /*
-	•	Helms and Shoulders: Focused on offensive capabilities, enhancing attack power and damage.
-	•	Chest and Legs: Designed for defense, providing damage reduction and shields.
-	•	Belt: Included miscellaneous on-use effects for utility and buffs.
-	•	Boots: Focused on mobility and speed enhancements.
-	•	Gloves: Contained on-use offensive abilities that can execute or deal significant damage.
-	•	Bracers: Miscellaneous effects that provide defense or offensive opportunities.
-	•	Rings: Designed to enhance warrior traits like strength and stamina.
-	•	Trinkets: Versatile effects that amplify damage or provide significant boosts during combat.
+  •	Helms and Shoulders: Focused on offensive capabilities, enhancing attack power and damage.
+  •	Chest and Legs: Designed for defense, providing damage reduction and shields.
+  •	Belt: Included miscellaneous on-use effects for utility and buffs.
+  •	Boots: Focused on mobility and speed enhancements.
+  •	Gloves: Contained on-use offensive abilities that can execute or deal significant damage.
+  •	Bracers: Miscellaneous effects that provide defense or offensive opportunities.
+  •	Rings: Designed to enhance warrior traits like strength and stamina.
+  •	Trinkets: Versatile effects that amplify damage or provide significant boosts during combat.
  
  Warrior
 
 Warriors are typically strong melee fighters with a balance of damage, defense, and crowd control. They focus on mobility, burst, and sustainability in combat.
 
-	1.	Charge: Rush toward an enemy, stunning them briefly and closing the gap.
-	2.	Pummel: Interrupt an enemy’s spellcasting, silencing them for a short duration.
-	3.	Hamstring: Slow the enemy’s movement speed for a period of time.
-	4.	Stun (e.g., Shockwave or Intercept): Stun the target for a short duration.
-	5.	Bleed (e.g., Rend): Apply a damage-over-time bleed effect to the target.
-	6.	Whirlwind: Spin in place, dealing damage to all nearby enemies.
-	7.	Execute: A powerful finishing move that deals high damage when the target is below a certain health threshold.
-	8.	Battle Shout: Increase your attack power and that of nearby allies for a short duration.
-	9.	Defensive Stance: Reduce incoming damage for a limited time, trading damage output for survivability.
-	10.	Berserker Rage: Break free of crowd control and increase damage dealt for a short time.
+  1.	Charge: Rush toward an enemy, stunning them briefly and closing the gap.
+  2.	Pummel: Interrupt an enemy’s spellcasting, silencing them for a short duration.
+  3.	Hamstring: Slow the enemy’s movement speed for a period of time.
+  4.	Stun (e.g., Shockwave or Intercept): Stun the target for a short duration.
+  5.	Bleed (e.g., Rend): Apply a damage-over-time bleed effect to the target.
+  6.	Whirlwind: Spin in place, dealing damage to all nearby enemies.
+  7.	Execute: A powerful finishing move that deals high damage when the target is below a certain health threshold.
+  8.	Battle Shout: Increase your attack power and that of nearby allies for a short duration.
+  9.	Defensive Stance: Reduce incoming damage for a limited time, trading damage output for survivability.
+  10.	Berserker Rage: Break free of crowd control and increase damage dealt for a short time.
 
 Mage
 
 Mages are known for their powerful ranged magic, crowd control, and burst damage abilities. They excel in controlling the battlefield and dealing high damage from afar.
 
-	1.	Frostbolt: Deals damage and slows the target’s movement speed.
-	2.	Fireball: A high-damage single-target spell with a chance to ignite the enemy for additional burning damage.
-	3.	Arcane Blast: Deals increasing arcane damage with each cast in quick succession.
-	4.	Polymorph: Transforms an enemy into a harmless creature, disabling them for a short time.
-	5.	Ice Barrier: Shields the mage, absorbing damage for a few seconds.
-	6.	Blink: Teleport a short distance forward, removing movement-impairing effects.
-	7.	Flamestrike: Deals area-of-effect fire damage to all enemies in a designated area.
-	8.	Counterspell: Interrupts an enemy’s spellcasting and prevents them from casting spells of that school for a few seconds.
-	9.	Cone of Cold: A wide cone of frost damage that also slows enemies.
-	10.	Evocation: Regenerate a large portion of your mana over time, but you’re vulnerable while channeling it.
+  1.	Frostbolt: Deals damage and slows the target’s movement speed.
+  2.	Fireball: A high-damage single-target spell with a chance to ignite the enemy for additional burning damage.
+  3.	Arcane Blast: Deals increasing arcane damage with each cast in quick succession.
+  4.	Polymorph: Transforms an enemy into a harmless creature, disabling them for a short time.
+  5.	Ice Barrier: Shields the mage, absorbing damage for a few seconds.
+  6.	Blink: Teleport a short distance forward, removing movement-impairing effects.
+  7.	Flamestrike: Deals area-of-effect fire damage to all enemies in a designated area.
+  8.	Counterspell: Interrupts an enemy’s spellcasting and prevents them from casting spells of that school for a few seconds.
+  9.	Cone of Cold: A wide cone of frost damage that also slows enemies.
+  10.	Evocation: Regenerate a large portion of your mana over time, but you’re vulnerable while channeling it.
 
 Priest
 
 Priests are versatile casters who can either deal damage with dark magic or provide healing and protection to allies.
 
-	1.	Smite: Deal holy damage to a single target.
-	2.	Shadow Word: Pain: Apply a damage-over-time effect that ticks periodically.
-	3.	Power Word: Shield: Shield an ally, absorbing damage and granting brief immunity to interrupts.
-	4.	Heal: A standard single-target healing spell.
-	5.	Flash Heal: A fast but mana-intensive heal for urgent situations.
-	6.	Mind Control: Temporarily take control of an enemy, forcing them to fight for you.
-	7.	Mass Dispel: Removes harmful debuffs from all allies in the area.
-	8.	Holy Nova: Heals allies and damages enemies in an area around the priest.
-	9.	Psychic Scream: Causes enemies around the priest to flee in fear for a short time.
-	10.	Renew: Heal over time effect placed on an ally.
+  1.	Smite: Deal holy damage to a single target.
+  2.	Shadow Word: Pain: Apply a damage-over-time effect that ticks periodically.
+  3.	Power Word: Shield: Shield an ally, absorbing damage and granting brief immunity to interrupts.
+  4.	Heal: A standard single-target healing spell.
+  5.	Flash Heal: A fast but mana-intensive heal for urgent situations.
+  6.	Mind Control: Temporarily take control of an enemy, forcing them to fight for you.
+  7.	Mass Dispel: Removes harmful debuffs from all allies in the area.
+  8.	Holy Nova: Heals allies and damages enemies in an area around the priest.
+  9.	Psychic Scream: Causes enemies around the priest to flee in fear for a short time.
+  10.	Renew: Heal over time effect placed on an ally.
 
 Rogue
 
 Rogues are stealthy and quick, excelling in burst damage and crowd control. They focus on positioning and surprise attacks.
 
-	1.	Stealth: Enter stealth mode, becoming invisible to enemies until you attack.
-	2.	Backstab: Deals bonus damage when attacking from behind.
-	3.	Cheap Shot: A stealth-based stun to open the fight.
-	4.	Sinister Strike: A fast melee attack that generates combo points for finishers.
-	5.	Eviscerate: A finishing move that deals higher damage based on the number of combo points.
-	6.	Sap: Incapacitates a humanoid target for a short time, only usable in stealth.
-	7.	Poison (e.g., Deadly Poison): Coats your weapon in poison, applying a damage-over-time effect.
-	8.	Vanish: Immediately enter stealth and remove movement-impairing effects.
-	9.	Kick: Interrupt an enemy’s spellcasting and lock them out of that school of magic for a short time.
-	10.	Cloak of Shadows: Remove all harmful magic effects and become immune to spells for a short time.
+  1.	Stealth: Enter stealth mode, becoming invisible to enemies until you attack.
+  2.	Backstab: Deals bonus damage when attacking from behind.
+  3.	Cheap Shot: A stealth-based stun to open the fight.
+  4.	Sinister Strike: A fast melee attack that generates combo points for finishers.
+  5.	Eviscerate: A finishing move that deals higher damage based on the number of combo points.
+  6.	Sap: Incapacitates a humanoid target for a short time, only usable in stealth.
+  7.	Poison (e.g., Deadly Poison): Coats your weapon in poison, applying a damage-over-time effect.
+  8.	Vanish: Immediately enter stealth and remove movement-impairing effects.
+  9.	Kick: Interrupt an enemy’s spellcasting and lock them out of that school of magic for a short time.
+  10.	Cloak of Shadows: Remove all harmful magic effects and become immune to spells for a short time.
 
 Paladin
 
 Paladins are durable fighters with a mixture of melee combat and healing abilities, bolstered by divine power.
 
-	1.	Judgment: Calls down a divine judgment to deal holy damage.
-	2.	Crusader Strike: A melee attack that deals holy damage.
-	3.	Holy Light: A slow but powerful healing spell.
-	4.	Flash of Light: A quick healing spell with a moderate mana cost.
-	5.	Consecration: Sanctifies the ground beneath you, dealing holy damage over time to all enemies in the area.
-	6.	Divine Shield: Make yourself immune to all damage for a short time.
-	7.	Lay on Hands: Instantly heals a target to full health, but with a very long cooldown.
-	8.	Blessing of Protection: Protect an ally from physical damage for a few seconds.
-	9.	Avenging Wrath: Increases your damage and healing output significantly for a short period of time.
-	10.	Hammer of Justice: A stun that interrupts and incapacitates an enemy.
+  1.	Judgment: Calls down a divine judgment to deal holy damage.
+  2.	Crusader Strike: A melee attack that deals holy damage.
+  3.	Holy Light: A slow but powerful healing spell.
+  4.	Flash of Light: A quick healing spell with a moderate mana cost.
+  5.	Consecration: Sanctifies the ground beneath you, dealing holy damage over time to all enemies in the area.
+  6.	Divine Shield: Make yourself immune to all damage for a short time.
+  7.	Lay on Hands: Instantly heals a target to full health, but with a very long cooldown.
+  8.	Blessing of Protection: Protect an ally from physical damage for a few seconds.
+  9.	Avenging Wrath: Increases your damage and healing output significantly for a short period of time.
+  10.	Hammer of Justice: A stun that interrupts and incapacitates an enemy.
 
 Druid
 
 Druids are highly versatile shapeshifters that can fill multiple roles, from damage dealer to healer or tank. They have access to different forms, each granting unique abilities.
 
-	1.	Rejuvenation: Heals an ally over time.
-	2.	Moonfire: A ranged spell that deals arcane damage and applies a damage-over-time effect.
-	3.	Bear Form: Shapeshift into a bear, increasing your health and armor while gaining new defensive abilities.
-	4.	Cat Form: Shapeshift into a cat, increasing your speed and gaining new melee abilities.
-	5.	Regrowth: A healing spell that heals instantly and continues to heal over time.
-	6.	Entangling Roots: Roots an enemy in place, preventing movement for a short period of time.
-	7.	Innervate: Regenerates a large amount of mana for a friendly target.
-	8.	Barkskin: Reduces damage taken by a percentage for a short time.
-	9.	Wild Growth: Heals multiple allies over time in a wide area.
-	10.	Cyclone: Tosses the enemy into the air, preventing them from taking actions for a short time but making them immune to damage.
+  1.	Rejuvenation: Heals an ally over time.
+  2.	Moonfire: A ranged spell that deals arcane damage and applies a damage-over-time effect.
+  3.	Bear Form: Shapeshift into a bear, increasing your health and armor while gaining new defensive abilities.
+  4.	Cat Form: Shapeshift into a cat, increasing your speed and gaining new melee abilities.
+  5.	Regrowth: A healing spell that heals instantly and continues to heal over time.
+  6.	Entangling Roots: Roots an enemy in place, preventing movement for a short period of time.
+  7.	Innervate: Regenerates a large amount of mana for a friendly target.
+  8.	Barkskin: Reduces damage taken by a percentage for a short time.
+  9.	Wild Growth: Heals multiple allies over time in a wide area.
+  10.	Cyclone: Tosses the enemy into the air, preventing them from taking actions for a short time but making them immune to damage.
 
 Hunter
 
 Hunters are ranged physical damage dealers who excel at using bows, traps, and pets to control the battlefield.
 
-	1.	Arcane Shot: A quick shot that deals arcane damage.
-	2.	Multi-Shot: Fires arrows at multiple nearby enemies.
-	3.	Aimed Shot: A powerful, slower shot that deals significant damage.
-	4.	Freezing Trap: Places a trap on the ground that freezes the first enemy to walk into it, incapacitating them.
-	5.	Serpent Sting: Apply a poison to your target that deals damage over time.
-	6.	Disengage: Leap backwards to put distance between you and your enemies.
-	7.	Kill Command: Orders your pet to attack with increased ferocity, dealing extra damage.
-	8.	Feign Death: Pretend to die, causing enemies to ignore you for a brief period.
-	9.	Rapid Fire: Increases your attack speed significantly for a short period.
-	10.	Mend Pet: Heals your pet over time.
+  1.	Arcane Shot: A quick shot that deals arcane damage.
+  2.	Multi-Shot: Fires arrows at multiple nearby enemies.
+  3.	Aimed Shot: A powerful, slower shot that deals significant damage.
+  4.	Freezing Trap: Places a trap on the ground that freezes the first enemy to walk into it, incapacitating them.
+  5.	Serpent Sting: Apply a poison to your target that deals damage over time.
+  6.	Disengage: Leap backwards to put distance between you and your enemies.
+  7.	Kill Command: Orders your pet to attack with increased ferocity, dealing extra damage.
+  8.	Feign Death: Pretend to die, causing enemies to ignore you for a brief period.
+  9.	Rapid Fire: Increases your attack speed significantly for a short period.
+  10.	Mend Pet: Heals your pet over time.
 
 Shaman
 
 Shamans are hybrid casters who can deal elemental damage, summon totems, and heal allies. They combine offense with support utility.
 
-	1.	Lightning Bolt: Deal nature damage to a single target.
-	2.	Chain Heal: Heal an ally and have the spell jump to heal additional nearby allies.
-	3.	Flame Shock: Apply a fire-based damage-over-time effect.
-	4.	Lava Burst: A high-damage spell that deals increased damage if the target is affected by Flame Shock.
-	5.	Earth Shock: Deal nature damage and interrupt the target’s spellcasting.
-	6.	Healing Surge: A fast, moderate-cost heal.
-	7.	Earthbind Totem: Summon a totem that slows enemies in the area.
-	8.	Windfury Weapon: Grants your weapon a chance to strike additional times with each attack.
-	9.	Hex: Transform an enemy into a harmless creature for a short time.
-	10.	Spirit Walk: Remove movement-impairing effects and increase your movement speed briefly.
+  1.	Lightning Bolt: Deal nature damage to a single target.
+  2.	Chain Heal: Heal an ally and have the spell jump to heal additional nearby allies.
+  3.	Flame Shock: Apply a fire-based damage-over-time effect.
+  4.	Lava Burst: A high-damage spell that deals increased damage if the target is affected by Flame Shock.
+  5.	Earth Shock: Deal nature damage and interrupt the target’s spellcasting.
+  6.	Healing Surge: A fast, moderate-cost heal.
+  7.	Earthbind Totem: Summon a totem that slows enemies in the area.
+  8.	Windfury Weapon: Grants your weapon a chance to strike additional times with each attack.
+  9.	Hex: Transform an enemy into a harmless creature for a short time.
+  10.	Spirit Walk: Remove movement-impairing effects and increase your movement speed briefly.
 
 Warlock
 
 Warlocks are dark spellcasters who deal damage over time and summon demons to assist them in combat.
 
-	1.	Shadow Bolt: Fires a bolt of shadow magic at the target.
-	2.	Corruption: Apply a damage-over-time effect that slowly drains the target’s life.
-	3.	Fear: Causes the target to flee in terror for a short duration.
-	4.	Summon Demon: Summon a demon companion to assist in battle.
-	5.	Drain Life: Steal health from a target over time, healing yourself.
-	6.	Chaos Bolt: A powerful spell that deals high damage and cannot be resisted.
-	7.	Siphon Life: Heal yourself while damaging the target over time.
-	8.	Mortal Coil: Causes fear and heals you based on the damage dealt.
-	9.	Howl of Terror: A fear-based ability that causes all nearby enemies to flee.
-	10.	Dark Pact: Sacrifice a portion of your pet’s health to restore your own mana.
+  1.	Shadow Bolt: Fires a bolt of shadow magic at the target.
+  2.	Corruption: Apply a damage-over-time effect that slowly drains the target’s life.
+  3.	Fear: Causes the target to flee in terror for a short duration.
+  4.	Summon Demon: Summon a demon companion to assist in battle.
+  5.	Drain Life: Steal health from a target over time, healing yourself.
+  6.	Chaos Bolt: A powerful spell that deals high damage and cannot be resisted.
+  7.	Siphon Life: Heal yourself while damaging the target over time.
+  8.	Mortal Coil: Causes fear and heals you based on the damage dealt.
+  9.	Howl of Terror: A fear-based ability that causes all nearby enemies to flee.
+  10.	Dark Pact: Sacrifice a portion of your pet’s health to restore your own mana.
 
 
   */
