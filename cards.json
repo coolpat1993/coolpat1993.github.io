@@ -4,8 +4,8 @@
     "name": "Tank",
     "type": "unit",
     "category": "neutral",
-    "description": "Bolster – Damaging abilities deal 1 less damage to you for 1 turn.",
-    "damage": 2,
+    "description": "Bolster – Damaging abilities deal 1 less attack to you for 1 turn.",
+    "attack": 2,
     "health": 5,
     "mana": 3,
     "image": "tank.png"
@@ -15,8 +15,8 @@
     "name": "Ranged",
     "type": "unit",
     "category": "neutral",
-    "description": "Aimed Shot – After 1 turn, deal 3 damage to your target.",
-    "damage": 2,
+    "description": "Aimed Shot – After 1 turn, deal 3 attack to your target.",
+    "attack": 2,
     "health": 2,
     "mana": 2,
     "image": "ranged.png"
@@ -27,7 +27,7 @@
     "type": "unit",
     "category": "neutral",
     "description": "2 healing per turn, Ability – Give a target +1 health.",
-    "damage": 0,
+    "attack": 0,
     "health": 4,
     "mana": 2,
     "image": "healer.png"
@@ -37,8 +37,8 @@
     "name": "Barbarian",
     "type": "unit",
     "category": "neutral",
-    "description": "+1 damage on front line, chance to survive fatal combat at 1 HP.",
-    "damage": 3,
+    "description": "+1 attack on front line, chance to survive fatal combat at 1 HP.",
+    "attack": 3,
     "health": 3,
     "mana": 3,
     "image": "barbarian.png"
@@ -48,8 +48,8 @@
     "name": "Rogue",
     "type": "unit",
     "category": "neutral",
-    "description": "Stealth – Backline only, +2 damage from stealth.",
-    "damage": 3,
+    "description": "Stealth – Backline only, +2 attack from stealth.",
+    "attack": 3,
     "health": 2,
     "mana": 3,
     "image": "rogue.png"
@@ -60,7 +60,7 @@
     "type": "unit",
     "category": "neutral",
     "description": "On play, summons a 2/2 Wolf to closest adjacent tile.",
-    "damage": 2,
+    "attack": 2,
     "health": 4,
     "mana": 3,
     "image": "hunter.png"
@@ -70,8 +70,8 @@
     "name": "Storm Caller",
     "type": "unit",
     "category": "neutral",
-    "description": "Deal 1 damage to 1–3 enemies.",
-    "damage": 1,
+    "description": "Deal 1 attack to 1–3 enemies.",
+    "attack": 1,
     "health": 4,
     "mana": 3,
     "image": "storm_caller.png"
@@ -82,7 +82,7 @@
     "type": "unit",
     "category": "neutral",
     "description": "Wail – Reduce ATK of nearby enemies by 1 for 1 turn.",
-    "damage": 1,
+    "attack": 1,
     "health": 2,
     "mana": 2,
     "image": "banshee.png"
@@ -93,7 +93,7 @@
     "type": "unit",
     "category": "neutral",
     "description": "Craft Armor – Grants +2 temp armor to adjacent minion.",
-    "damage": 2,
+    "attack": 2,
     "health": 3,
     "mana": 3,
     "image": "armorer.png"
@@ -104,7 +104,7 @@
     "type": "unit",
     "category": "neutral",
     "description": "Frontline, no ability. A reliable early-game body.",
-    "damage": 2,
+    "attack": 2,
     "health": 3,
     "mana": 2,
     "image": "village_guard.png"
@@ -115,7 +115,7 @@
     "type": "unit",
     "category": "neutral",
     "description": "Heals adjacent friendly unit for 1 at end of your turn.",
-    "damage": 1,
+    "attack": 1,
     "health": 4,
     "mana": 3,
     "image": "wandering_healer.png"
@@ -125,8 +125,8 @@
     "name": "Grizzled Veteran",
     "type": "unit",
     "category": "neutral",
-    "description": "Takes 1 less damage from abilities.",
-    "damage": 3,
+    "description": "Takes 1 less attack from abilities.",
+    "attack": 3,
     "health": 5,
     "mana": 4,
     "image": "grizzled_veteran.png"
@@ -137,7 +137,7 @@
     "type": "unit",
     "category": "neutral",
     "description": "Gains +1 attack if placed in the backline.",
-    "damage": 2,
+    "attack": 2,
     "health": 1,
     "mana": 2,
     "image": "field_scout.png"
@@ -148,7 +148,7 @@
     "type": "unit",
     "category": "neutral",
     "description": "No faction. Has +2 attack when no friendly units are adjacent.",
-    "damage": 2,
+    "attack": 2,
     "health": 3,
     "mana": 3,
     "image": "mercenary.png"
@@ -159,7 +159,7 @@
     "type": "unit",
     "category": "neutral",
     "description": "On attack, remove stealth from adjacent targets.",
-    "damage": 2,
+    "attack": 2,
     "health": 2,
     "mana": 2,
     "image": "torchbearer.png"
@@ -170,7 +170,6 @@
     "type": "banner",
     "category": "equipable",
     "description": "0/2, adjacent minions get +2 ATK, front line only.",
-    "damage": 0,
     "health": 2,
     "mana": 2,
     "image": "war_banner.png"
@@ -181,7 +180,6 @@
     "type": "banner",
     "category": "equipable",
     "description": "0/2, all friendly frontliners get +1 ATK.",
-    "damage": 0,
     "health": 2,
     "mana": 3,
     "image": "banner_of_command.png"
@@ -192,7 +190,6 @@
     "type": "banner",
     "category": "equipable",
     "description": "0/2, grants +1 permanent ATK to units that move front from back line.",
-    "damage": 0,
     "health": 2,
     "mana": 2,
     "image": "banner_of_the_brave.png"
@@ -202,9 +199,8 @@
     "name": "Staff of Ember",
     "type": "item",
     "category": "item",
-    "description": "Grants fire damage with burn chance, mages get Fiery Wake (2 AOE damage).",
-    "damage": 0,
-    "health": 0,
+    "description": "Grants fire attack with burn chance, mages get Fiery Wake (2 AOE attack).",
+    "attack": 0,
     "mana": 2,
     "image": "staff_of_ember.png"
   },
@@ -214,8 +210,7 @@
     "type": "item",
     "category": "item",
     "description": "Heal 1 HP/turn, healers gain Rejuvenation (4 healing over 2 turns).",
-    "damage": 0,
-    "health": 0,
+    "attack": 0,
     "mana": 3,
     "image": "blooming_wildstaff.png"
   },
@@ -225,8 +220,7 @@
     "type": "item",
     "category": "item",
     "description": "Allows melee units to attack from the back line.",
-    "damage": 0,
-    "health": 0,
+    "attack": 0,
     "mana": 2,
     "image": "polearm.png"
   },
@@ -235,9 +229,8 @@
     "name": "Flaming Sword",
     "type": "item",
     "category": "item",
-    "description": "+2 ATK, applies 1 burn damage for 2 turns.",
-    "damage": 2,
-    "health": 0,
+    "description": "+2 ATK, applies 1 burn attack for 2 turns.",
+    "attack": 2,
     "mana": 3,
     "image": "flaming_sword.png"
   },
@@ -247,8 +240,7 @@
     "type": "item",
     "category": "item",
     "description": "+1 ATK, 50% chance to freeze target for 1 turn.",
-    "damage": 1,
-    "health": 0,
+    "attack": 1,
     "mana": 3,
     "image": "frostbrand_axe.png"
   },
@@ -258,8 +250,7 @@
     "type": "item",
     "category": "item",
     "description": "+1 ATK, allows attacking twice per action.",
-    "damage": 1,
-    "health": 0,
+    "attack": 1,
     "mana": 2,
     "image": "twin_daggers.png"
   },
@@ -269,8 +260,6 @@
     "type": "item",
     "category": "item",
     "description": "Targeted magical abilities hit 1–2 extra targets.",
-    "damage": 0,
-    "health": 0,
     "mana": 4,
     "image": "orb_of_chaos.png"
   },
@@ -280,8 +269,7 @@
     "type": "item",
     "category": "item",
     "description": "On kill, can attack again this turn.",
-    "damage": 2,
-    "health": 0,
+    "attack": 2,
     "mana": 3,
     "image": "executioners_axe.png"
   },
@@ -291,8 +279,7 @@
     "type": "item",
     "category": "item",
     "description": "+1 ATK, grants 'Spell Lock' (cancels next enemy spell, 3-turn cooldown).",
-    "damage": 1,
-    "health": 0,
+    "attack": 1,
     "mana": 2,
     "image": "tome_of_countering.png"
   },
@@ -301,9 +288,8 @@
     "name": "Explosive Arrow Quiver",
     "type": "item",
     "category": "item",
-    "description": "Attacks deal splash damage to adjacent enemies.",
-    "damage": 1,
-    "health": 0,
+    "description": "Attacks deal splash attack to adjacent enemies.",
+    "attack": 1,
     "mana": 4,
     "image": "explosive_arrow_quiver.png"
   },
@@ -312,9 +298,7 @@
     "name": "Sharpened Arrows",
     "type": "item",
     "category": "item",
-    "description": "Every second attack deals +2 damage.",
-    "damage": 0,
-    "health": 0,
+    "description": "Every second attack deals +2 attack.",
     "mana": 1,
     "image": "sharpened_arrows.png"
   },
@@ -324,8 +308,6 @@
     "type": "item",
     "category": "item",
     "description": "Grants 'Hookshot' ability – pull target from back line.",
-    "damage": 0,
-    "health": 0,
     "mana": 3,
     "image": "hookshot.png"
   },
@@ -335,8 +317,6 @@
     "type": "item",
     "category": "item",
     "description": "Each spell cast gives this unit +1 ATK this turn.",
-    "damage": 0,
-    "health": 0,
     "mana": 3,
     "image": "amulet_of_flux.png"
   },
@@ -346,8 +326,7 @@
     "type": "item",
     "category": "item",
     "description": "+1 attack.",
-    "damage": 1,
-    "health": 0,
+    "attack": 1,
     "mana": 1,
     "image": "iron_sword.png"
   },
@@ -357,8 +336,7 @@
     "type": "item",
     "category": "item",
     "description": "+1 armor, +1 health.",
-    "damage": 0,
-    "health": 1,
+    "attack": 0,
     "mana": 2,
     "image": "chainmail.png"
   },
@@ -368,8 +346,6 @@
     "type": "item",
     "category": "item",
     "description": "Once per turn, restore 2 HP to this unit.",
-    "damage": 0,
-    "health": 0,
     "mana": 3,
     "image": "healing_stone.png"
   },
@@ -379,8 +355,7 @@
     "type": "item",
     "category": "item",
     "description": "Grants +1 attack if the target is on the backline.",
-    "damage": 1,
-    "health": 0,
+    "attack": 1,
     "mana": 2,
     "image": "spyglass.png"
   },
@@ -389,9 +364,7 @@
     "name": "Quickblade",
     "type": "item",
     "category": "item",
-    "description": "Allows a second attack at -1 damage.",
-    "damage": 0,
-    "health": 0,
+    "description": "Allows a second attack at -1 attack.",
     "mana": 1,
     "image": "quickblade.png"
   },
@@ -400,8 +373,8 @@
     "name": "Master of Decay",
     "type": "hero",
     "category": "necromancer",
-    "description": "Passive – Gravebound: Gain 1 Soul whenever a friendly unit dies. Hero Power (2 mana): Necrotic Pulse – Spend 1 Soul to deal 2 damage or heal 2 HP.",
-    "damage": 0,
+    "description": "Passive – Gravebound: Gain 1 Soul whenever a friendly unit dies. Hero Power (2 mana): Necrotic Pulse – Spend 1 Soul to deal 2 attack or heal 2 HP.",
+    "attack": 0,
     "health": 30,
     "mana": 0,
     "image": "master_of_decay.png"
@@ -412,7 +385,7 @@
     "type": "unit",
     "category": "necromancer",
     "description": "Frontline only, on death summon a 1/1 Remnant.",
-    "damage": 2,
+    "attack": 2,
     "health": 2,
     "mana": 3,
     "image": "bone_thrall.png"
@@ -422,8 +395,8 @@
     "name": "Rotting Ghoul",
     "type": "unit",
     "category": "necromancer",
-    "description": "Frontline only, on death deal 1 damage to adjacent enemies.",
-    "damage": 3,
+    "description": "Frontline only, on death deal 1 attack to adjacent enemies.",
+    "attack": 3,
     "health": 3,
     "mana": 2,
     "image": "rotting_ghoul.png"
@@ -433,8 +406,8 @@
     "name": "Bone Warden",
     "type": "unit",
     "category": "necromancer",
-    "description": "Units behind this take 1 less damage.",
-    "damage": 1,
+    "description": "Units behind this take 1 less attack.",
+    "attack": 1,
     "health": 6,
     "mana": 3,
     "image": "bone_warden.png"
@@ -444,8 +417,8 @@
     "name": "Ghastly Archer",
     "type": "unit",
     "category": "necromancer",
-    "description": "+1 damage to enemies under 50% HP.",
-    "damage": 2,
+    "description": "+1 attack to enemies under 50% HP.",
+    "attack": 2,
     "health": 2,
     "mana": 2,
     "image": "ghastly_archer.png"
@@ -456,7 +429,7 @@
     "type": "unit",
     "category": "necromancer",
     "description": "Gains 1 HP when friendly minion dies.",
-    "damage": 1,
+    "attack": 1,
     "health": 3,
     "mana": 3,
     "image": "soul_collector.png"
@@ -467,7 +440,7 @@
     "type": "unit",
     "category": "necromancer",
     "description": "On kill, draw 1 card.",
-    "damage": 1,
+    "attack": 1,
     "health": 1,
     "mana": 1,
     "image": "carrion_bat.png"
@@ -478,7 +451,7 @@
     "type": "unit",
     "category": "necromancer",
     "description": "Attacks 2 adjacent enemies.",
-    "damage": 4,
+    "attack": 4,
     "health": 4,
     "mana": 5,
     "image": "crypt_reaver.png"
@@ -489,7 +462,7 @@
     "type": "unit",
     "category": "necromancer",
     "description": "On play, silence all enemies in a column.",
-    "damage": 1,
+    "attack": 1,
     "health": 3,
     "mana": 4,
     "image": "wailing_banshee.png"
@@ -500,7 +473,7 @@
     "type": "unit",
     "category": "necromancer",
     "description": "Can't be healed, on kill summon Bone Thrall.",
-    "damage": 6,
+    "attack": 6,
     "health": 5,
     "mana": 6,
     "image": "dead_knight.png"
@@ -511,7 +484,7 @@
     "type": "unit",
     "category": "necromancer",
     "description": "Deathrattle – return this to your hand.",
-    "damage": 3,
+    "attack": 3,
     "health": 6,
     "mana": 7,
     "image": "undying_horror.png"
@@ -522,8 +495,6 @@
     "type": "spell",
     "category": "necromancer",
     "description": "Resurrect random friendly unit with 1 HP / 1 ATK.",
-    "damage": 0,
-    "health": 0,
     "mana": 2,
     "image": "raise_dead.png"
   },
@@ -532,9 +503,7 @@
     "name": "Soul Burn",
     "type": "spell",
     "category": "necromancer",
-    "description": "Deal 3 damage, heal hero for damage dealt.",
-    "damage": 0,
-    "health": 0,
+    "description": "Deal 3 attack, heal hero for attack dealt.",
     "mana": 3,
     "image": "soul_burn.png"
   },
@@ -544,8 +513,6 @@
     "type": "spell",
     "category": "necromancer",
     "description": "Destroy friendly unit, draw 2 cards.",
-    "damage": 0,
-    "health": 0,
     "mana": 1,
     "image": "dark_pact.png"
   },
@@ -555,8 +522,6 @@
     "type": "spell",
     "category": "necromancer",
     "description": "Resurrect all Bone Thralls / Skeletons where they died.",
-    "damage": 0,
-    "health": 0,
     "mana": 5,
     "image": "mass_grave.png"
   },
@@ -566,8 +531,6 @@
     "type": "spell",
     "category": "necromancer",
     "description": "All undead gain +1 ATK this turn.",
-    "damage": 0,
-    "health": 0,
     "mana": 2,
     "image": "unholy_surge.png"
   },
@@ -577,8 +540,6 @@
     "type": "item",
     "category": "item",
     "description": "Once/turn, when a unit dies, reduce cost of a random spell by 1.",
-    "damage": 0,
-    "health": 0,
     "mana": 2,
     "image": "tome_of_eternal_rot.png"
   },
@@ -588,8 +549,7 @@
     "type": "item",
     "category": "item",
     "description": "+2 ATK, on kill gain +1 temp mana next turn.",
-    "damage": 2,
-    "health": 0,
+    "attack": 2,
     "mana": 4,
     "image": "scythe_of_sorrow.png"
   },
@@ -599,8 +559,6 @@
     "type": "item",
     "category": "item",
     "description": "If a minion returns from graveyard, draw 1 card (once per turn).",
-    "damage": 0,
-    "health": 0,
     "mana": 1,
     "image": "skull_lantern.png"
   }

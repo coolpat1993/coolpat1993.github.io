@@ -23,7 +23,7 @@
                 <div class="card-image" style="background-image: url('images/{ slots['enemy-back-'+i].image }')"></div>
                 <div class="card-header">{ slots['enemy-back-'+i].name }</div>
                 <div class="card-description">{ slots['enemy-back-'+i].description }</div>
-                <div class="damage-indicator">{ slots['enemy-back-'+i].damage }</div>
+                <div class="attack-indicator">{ slots['enemy-back-'+i].attack }</div>
                 <div class="health-indicator">{ slots['enemy-back-'+i].health }</div>
               </div>
             </virtual>
@@ -46,7 +46,7 @@
                 <div class="card-image" style="background-image: url('images/{ slots['enemy-front-'+i].image }')"></div>
                 <div class="card-header">{ slots['enemy-front-'+i].name }</div>
                 <div class="card-description">{ slots['enemy-front-'+i].description }</div>
-                <div class="damage-indicator">{ slots['enemy-front-'+i].damage }</div>
+                <div class="attack-indicator">{ slots['enemy-front-'+i].attack }</div>
                 <div class="health-indicator">{ slots['enemy-front-'+i].health }</div>
               </div>
             </virtual>
@@ -69,7 +69,7 @@
                 <div class="card-image" style="background-image: url('images/{ slots['player-front-'+i].image }')"></div>
                 <div class="card-header">{ slots['player-front-'+i].name }</div>
                 <div class="card-description">{ slots['player-front-'+i].description }</div>
-                <div class="damage-indicator">{ slots['player-front-'+i].damage }</div>
+                <div class="attack-indicator">{ slots['player-front-'+i].attack }</div>
                 <div class="health-indicator">{ slots['player-front-'+i].health }</div>
               </div>
             </virtual>
@@ -92,7 +92,7 @@
                 <div class="card-image" style="background-image: url('images/{ slots['player-back-'+i].image }')"></div>
                 <div class="card-header">{ slots['player-back-'+i].name }</div>
                 <div class="card-description">{ slots['player-back-'+i].description }</div>
-                <div class="damage-indicator">{ slots['player-back-'+i].damage }</div>
+                <div class="attack-indicator">{ slots['player-back-'+i].attack }</div>
                 <div class="health-indicator">{ slots['player-back-'+i].health }</div>
               </div>
             </virtual>
@@ -139,7 +139,7 @@
             <div class="card-image" style="background-image: url('images/{ card.image }')"></div>
             <div class="card-header">{ card.name }</div>
             <div class="card-description">{ card.description }</div>
-            <div class="damage-indicator">{ card.damage }</div>
+            <div class="attack-indicator">{ card.attack }</div>
             <div class="health-indicator">{ card.health }</div>
           </div>
         </div>

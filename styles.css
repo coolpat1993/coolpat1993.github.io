@@ -264,7 +264,7 @@
   text-shadow: 0px 0px 2px #000;
 }
 
-.spell-card .damage-indicator {
+.spell-card .attack-indicator {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -282,13 +282,13 @@
   text-shadow: 0px 0px 2px #000;
 }
 
-/* Green damage indicator for item cards */
-.spell-card .damage-indicator.item-damage {
+/* Green attack indicator for item cards */
+.spell-card .attack-indicator.item-attack {
   background: linear-gradient(135deg, #4cd964 0%, #2ecc71 100%);
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.8), 0 0 10px rgba(46, 204, 113, 0.3) inset;
 }
 
-.damage-indicator {
+.attack-indicator {
   position: absolute;
   bottom: 10px;
   left: 10px;
@@ -303,8 +303,8 @@
   font-weight: bold;
 }
 
-.item-damage {
-  background-color: #55bb55; /* Green background for item damage */
+.item-attack {
+  background-color: #55bb55; /* Green background for item attack */
 }
 
 .spell-card .health-indicator {
@@ -325,8 +325,8 @@
   text-shadow: 0px 0px 2px #000;
 }
 
-/* Hide damage and health indicators for spell cards, and only health indicators for item cards */
-.spell-card.spell .damage-indicator,
+/* Hide attack and health indicators for spell cards, and only health indicators for item cards */
+.spell-card.spell .attack-indicator,
 .spell-card.spell .health-indicator,
 .spell-card.item .health-indicator {
   display: none;

@@ -47,7 +47,7 @@
             <div class="card-stats">
               <p><strong>Type:</strong> { selectedCard.type }</p>
               <p><strong>Category:</strong> { selectedCard.category }</p>
-              <p if={ (selectedCard.damage > 0 || (selectedCard.type === 'item' && selectedCard.description.includes('+') && selectedCard.description.includes('ATK'))) && selectedCard.type !== 'spell' } class={ selectedCard.type === 'item' ? 'item-damage-text' : '' }><strong>Attack:</strong> { selectedCard.damage > 0 ? selectedCard.damage : getItemAttackValue(selectedCard.description) }</p>
+              <p if={ (selectedCard.attack > 0 || (selectedCard.type === 'item' && selectedCard.description.includes('+') && selectedCard.description.includes('ATK'))) && selectedCard.type !== 'spell' } class={ selectedCard.type === 'item' ? 'item-attack-text' : '' }><strong>Attack:</strong> { selectedCard.attack > 0 ? selectedCard.attack : getItemAttackValue(selectedCard.description) }</p>
               <p if={ selectedCard.health > 0 && selectedCard.type !== 'spell' && selectedCard.type !== 'item' }><strong>Health:</strong> { selectedCard.health }</p>
               <p if={ selectedCard.mana !== undefined && selectedCard.mana !== null }><strong>Mana:</strong> { selectedCard.mana }</p>
             </div>
@@ -208,7 +208,7 @@
       border-radius: 5px;
     }
     
-    .item-damage-text {
+    .item-attack-text {
       color: #4cd964; /* Green color to match the item attack indicator */
     }
   </style>
