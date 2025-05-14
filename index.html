@@ -3,45 +3,150 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>P2P Game Demo</title>
+  <title>Card Game</title>
   <script src="externalScripts/riotJs.js"></script>
   <script src="externalScripts/peerJs.js"></script>
 
+  <!-- Include all Riot tag components -->
   <script src="my-app.tag" type="riot/tag"></script>
+  <script src="card.tag" type="riot/tag"></script>
+  <script src="card-list.tag" type="riot/tag"></script>
+  
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 900px;
+      margin: 0;
+      padding: 0;
+      background: #2c1e12 url('https://i.imgur.com/4KmFpFV.jpg') center/cover no-repeat fixed;
+      color: #e6b948;
+    }
+    
+    .container {
+      max-width: 1200px;
       margin: 0 auto;
       padding: 20px;
     }
-    .game-area {
-      border: 1px solid #ccc;
-      padding: 20px;
-      margin-top: 20px;
+    
+    .nav-menu {
+      background: rgba(47, 28, 14, 0.9);
+      padding: 15px 0;
+      border-bottom: 3px solid #8c6d35;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
     }
-    .connection-controls {
-      margin-bottom: 20px;
+    
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
     }
-    .player {
-      padding: 10px;
-      margin: 5px;
+    
+    .logo {
+      color: #e6b948;
+      font-size: 24px;
+      font-weight: bold;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+      font-family: 'Belwe Bold', 'Times New Roman', serif;
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 20px;
+    }
+    
+    .nav-link {
+      color: #e6b948;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 8px 15px;
       border-radius: 5px;
+      transition: background 0.3s;
+      font-family: 'Belwe Bold', 'Times New Roman', serif;
     }
-    .player.me {
-      background-color: #e6f7ff;
+    
+    .nav-link:hover,
+    .nav-link.active {
+      background: rgba(230, 185, 72, 0.3);
     }
-    .player.peer {
-      background-color: #fff1e6;
+    
+    .content {
+      padding: 20px 0;
+    }
+    
+    .page {
+      display: none;
+    }
+    
+    .page.active {
+      display: block;
+    }
+    
+    footer {
+      text-align: center;
+      padding: 20px;
+      background: rgba(47, 28, 14, 0.7);
+      color: #e6b948;
+      border-top: 2px solid #8c6d35;
+      margin-top: 40px;
+      font-family: 'Belwe Bold', 'Times New Roman', serif;
     }
   </style>
 </head>
 <body>
+  <!-- Navigation -->
+  <nav class="nav-menu">
+    <div class="nav-container">
+      <div class="logo">Card Game</div>
+      <div class="nav-links">
+        <a href="#game" class="nav-link active" onclick="showPage('game')">Game</a>
+        <a href="#cards" class="nav-link" onclick="showPage('cards')">Card Catalog</a>
+      </div>
+    </div>
+  </nav>
   
-  <my-app></my-app>
+  <div class="container">
+    <div class="content">
+      <!-- Game Page -->
+      <div id="game-page" class="page active">
+        <my-app></my-app>
+      </div>
+      
+      <!-- Cards Catalog Page -->
+      <div id="cards-page" class="page">
+        <card-list></card-list>
+      </div>
+    </div>
+  </div>
+  
+  <footer>
+    &copy; 2025 Card Game - All rights reserved
+  </footer>
 
   <script>
-    riot.mount('my-app', { title: 'P2P Game Demo' })
+    // Mount all Riot components
+    riot.mount('my-app');
+    riot.mount('card-list');
+    
+    // Page navigation
+    function showPage(pageId) {
+      // Hide all pages
+      document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+      });
+      
+      // Show the selected page
+      document.getElementById(pageId + '-page').classList.add('active');
+      
+      // Update active link
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+      });
+      
+      // Set the clicked link as active
+      event.target.classList.add('active');
+    }
   </script>
 </body>
 </html>

@@ -379,7 +379,7 @@
     "type": "item",
     "category": "item",
     "description": "Grants +1 attack if the target is on the backline.",
-    "damage": 0,
+    "damage": 1,
     "health": 0,
     "mana": 2,
     "image": "spyglass.png"
