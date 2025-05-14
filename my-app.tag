@@ -3,13 +3,12 @@
   
   <div class="connection-controls">
     <div if="{ !connected }">
-      <input type="text" placeholder="Your Player Name" ref="playerName" value="{ playerName }">
-      <button onclick="{ createNewGame }">Create New Game</button>
+      <button onclick="{ createNewGame }">Host Game</button>
       
       <div if="{ gameIdFromUrl }" class="join-from-url">
         <hr>
         <p>Join game: { gameIdFromUrl }</p>
-        <button onclick="{ joinFromUrl }">Join This Game</button>
+        <button onclick="{ joinFromUrl }">Join Game</button>
       </div>
     </div>
     
@@ -19,8 +18,7 @@
           { linkCopied ? 'Link Copied!' : 'Copy Game Link' }
         </button>
       </p>
-      <p if="{ !isHost && hostInfo }">Connected to: <strong>{ hostInfo.name }</strong></p>
-      <button onclick="{ disconnectGame }">Disconnect</button>
+      <button onclick="{ disconnectGame }">{ isHost ? 'Stop Hosting' : 'Disconnect' }</button>
     </div>
     
     <div if="{ connectionError }" class="error">
@@ -28,35 +26,51 @@
     </div>
   </div>
 
+  <div if="{ hostLeft }" class="host-disconnected-alert">
+    <p>⚠️ The host has ended the game session</p>
+    <button onclick="{ resetApp }">Start New Game</button>
+  </div>
+
   <div if="{ connected }" class="game-area">
-    <h2>Scoreboard</h2>
+    <h2>Game Area</h2>
+    
+    <div class="connection-status-bar">
+      <div class="connection-status">
+        <div class="connection-indicator { connected ? 'connected' : '' }"></div>
+        <span>{ connected ? 'Connected' : 'Disconnected' }</span>
+        <span if="{ !isHost && connected }" class="client-badge">Client</span>
+        <span if="{ isHost }" class="host-badge">Host</span>
+      </div>
+    </div>
     
     <div class="players-list">
-      <h3>Players</h3>
-      
-      <!-- Your own player -->
-      <div class="player me">
-        <strong>{ playerName }:</strong> 
-        <span class="score">Score: { gameState.players[myPeerId].score }</span>
+      <!-- Top player position -->
+      <div class="player { isHost ? 'opponent' : 'self' }">
+        <div class="connection-indicator { connected && ((isHost && opponent) || (!isHost)) ? 'connected' : '' }"></div>
+        <strong>{ isHost ? 'Opponent' : 'You (Client)' }:</strong> 
+        <span class="score">Health: { isHost ? (gameState.players.opponent ? gameState.players.opponent.health : 30) : gameState.players.self.health }</span>
         <div class="score-controls">
-          <button onclick="{ addPointToPlayer }" data-id="{ myPeerId }" class="score-btn add">+</button>
-          <button onclick="{ removePointFromPlayer }" data-id="{ myPeerId }" class="score-btn remove">-</button>
+          <button onclick="{ isHost ? increaseOpponentHealth : increaseHealth }" class="score-btn add">+</button>
+          <button onclick="{ isHost ? decreaseOpponentHealth : decreaseHealth }" class="score-btn remove">-</button>
         </div>
       </div>
       
-      <!-- Other players -->
-      <div each="{ player, i in otherPlayers() }" class="player">
-        <strong>{ player.name }:</strong> 
-        <span class="score">Score: { player.score }</span>
+      <div class="vs-badge">VS</div>
+      
+      <!-- Bottom player position -->
+      <div class="player { isHost ? 'self' : 'opponent' }">
+        <div class="connection-indicator { connected ? 'connected' : '' }"></div>
+        <strong>{ isHost ? 'You (Host)' : 'Opponent' }:</strong> 
+        <span class="score">Health: { isHost ? gameState.players.self.health : (gameState.players.opponent ? gameState.players.opponent.health : 30) }</span>
         <div class="score-controls">
-          <button onclick="{ parent.addPointToPlayer }" data-id="{ player.id }" class="score-btn add">+</button>
-          <button onclick="{ parent.removePointFromPlayer }" data-id="{ player.id }" class="score-btn remove">-</button>
+          <button onclick="{ isHost ? increaseHealth : increaseOpponentHealth }" class="score-btn add">+</button>
+          <button onclick="{ isHost ? decreaseHealth : decreaseOpponentHealth }" class="score-btn remove">-</button>
         </div>
       </div>
     </div>
 
     <div class="game-controls">
-      <button onclick="{ resetGame }">Reset Scores</button>
+      <button onclick="{ resetGame }">Reset Health</button>
     </div>
 
     <p class="status-message">{ statusMessage }</p>
@@ -70,19 +84,21 @@
     self.myPeerId = null
     self.playerName = ""
     self.peer = null
-    self.connections = {}
-    self.connectedPeers = {}
+    self.connection = null
     self.connectionError = null
     self.statusMessage = ""
-    self.copied = false
     self.linkCopied = false
     self.gameIdFromUrl = null
     self.isHost = false
-    self.hostInfo = null
-    
-    // Game state that will be synced between peers
+    self.opponent = null
+    self.hostLeft = false
+
+    // Game state that will be synced between peers - simplified for 1v1
     self.gameState = {
-      players: {}
+      players: {
+        self: { health: 30 },
+        opponent: null
+      }
     }
     
     // Parse URL query parameters
@@ -108,35 +124,17 @@
       return url.toString()
     }
     
-    // Computed property for other players
-    self.otherPlayers = function() {
-      if (!self.gameState || !self.gameState.players || !self.myPeerId) return []
-      
-      const others = []
-      Object.keys(self.gameState.players).forEach(function(id) {
-        if (id !== self.myPeerId) {
-          others.push({
-            id: id,
-            name: self.gameState.players[id].name,
-            score: self.gameState.players[id].score
-          })
-        }
-      })
-      return others
-    }
-    
-    // Initialize PeerJS on mount
+    // Initialize on mount
     self.on('mount', function() {
-      console.log('Scoreboard component mounted!')
+      console.log('Card game component mounted!')
       
       // Try to load saved player name from localStorage
       const savedPlayerName = localStorage.getItem('playerName')
       if (savedPlayerName) {
         self.playerName = savedPlayerName
-        self.refs.playerName.value = savedPlayerName
-      } else if (!self.refs.playerName.value) {
+      } else {
         // Set a default player name if no saved name exists
-        self.refs.playerName.value = "Player " + Math.floor(Math.random() * 1000)
+        self.playerName = "Player " + Math.floor(Math.random() * 1000)
       }
 
       // Check for game ID in URL query parameters
@@ -148,12 +146,12 @@
         console.log('Found game ID in URL:', self.gameIdFromUrl)
       }
       
-      self.update() // Make sure to update after setting gameIdFromUrl
+      self.update()
     })
     
     // Create a new game as host
     self.createNewGame = function() {
-      self.playerName = self.refs.playerName.value.trim()
+      self.playerName = self.playerName.trim()
       
       // Validate username
       if (!self.playerName) {
@@ -175,21 +173,33 @@
           self.connectionError = null
           self.isHost = true
           
-          // Add yourself to the game state
-          self.gameState.players[id] = {
+          // Set up your player in game state
+          self.gameState.players.self = {
+            id: id,
             name: self.playerName,
-            score: 0
+            health: 30
           }
           
           // Generate shareable link
           self.shareableLink = self.generateShareableLink(id)
           
-          self.update()
-          self.statusMessage = "Scoreboard created! Share your Game ID or link with other players."
+          self.statusMessage = "Game created! Share your game link with your opponent to begin."
           self.update()
         })
         
         self.peer.on('connection', function(conn) {
+          // Only allow one connection for 1v1 game - Hearthstone style 1v1
+          if (self.connection) {
+            conn.on('open', function() {
+              conn.send({
+                type: 'GAME_FULL',
+                message: "This game already has an opponent"
+              })
+              conn.close()
+            })
+            return
+          }
+          
           self.handleNewConnection(conn)
         })
         
@@ -198,14 +208,14 @@
           self.update()
         })
       } catch (err) {
-        self.connectionError = "Error creating scoreboard: " + err.message
+        self.connectionError = "Error creating game: " + err.message
         self.update()
       }
     }
     
     // Join an existing game
     self.joinFromUrl = function() {
-      self.playerName = self.refs.playerName.value.trim()
+      self.playerName = self.playerName.trim()
       const gameId = self.gameIdFromUrl
       
       // Validate inputs
@@ -242,25 +252,20 @@
             self.connected = true
             self.connectionError = null
             self.isHost = false
-            self.hostInfo = { id: gameId, name: "Host" }
+            self.hostLeft = false
+            self.connection = conn
             
-            // Store the connection
-            self.connections[gameId] = conn
-            self.connectedPeers[gameId] = {
-              name: "Host",
-              conn: conn
-            }
-            
-            // Add yourself to local game state (will be overwritten when host syncs)
-            self.gameState.players[self.myPeerId] = {
+            // Set up your player in game state
+            self.gameState.players.self = {
+              id: id,
               name: self.playerName,
-              score: 0
+              health: 30
             }
             
             // Send join message
             conn.send({
               type: 'JOIN',
-              playerId: self.myPeerId,
+              playerId: id,
               playerName: self.playerName
             })
             
@@ -268,13 +273,16 @@
           })
           
           conn.on('data', function(data) {
-            self.handlePeerMessage(gameId, data)
+            self.handlePeerMessage(data)
           })
           
           conn.on('close', function() {
-            delete self.connections[gameId]
-            delete self.connectedPeers[gameId]
-            self.statusMessage = "Disconnected from host"
+            self.connection = null
+            
+            // Show host disconnection alert
+            self.hostLeft = true
+            self.connected = false
+            self.statusMessage = "Host has ended the game session"
             self.update()
           })
         })
@@ -284,162 +292,191 @@
           self.update()
         })
       } catch (err) {
-        self.connectionError = "Error joining scoreboard: " + err.message
+        self.connectionError = "Error joining game: " + err.message
         self.update()
       }
     }
     
-    // Handle new incoming connections
+    // Handle new incoming connection
     self.handleNewConnection = function(conn) {
       const peerId = conn.peer
-      const peerName = conn.metadata ? conn.metadata.name : "Unknown"
+      const peerName = conn.metadata ? conn.metadata.name : "Opponent"
       
       // Store the connection
-      self.connections[peerId] = conn
-      self.connectedPeers[peerId] = {
-        name: peerName,
-        conn: conn
-      }
+      self.connection = conn
       
       conn.on('open', function() {
         // Update status
         self.statusMessage = peerName + " joined!"
         self.update()
-        
-        // Send the current game state to the new peer
-        conn.send({
-          type: 'SYNC',
-          gameState: self.gameState
-        })
       })
       
       conn.on('data', function(data) {
-        self.handlePeerMessage(peerId, data)
+        self.handlePeerMessage(data)
       })
       
       conn.on('close', function() {
-        // Remove player from game state
-        if (self.gameState.players[peerId]) {
-          delete self.gameState.players[peerId]
-        }
-        
-        // Remove connection
-        delete self.connections[peerId]
-        delete self.connectedPeers[peerId]
+        // Reset opponent
+        self.gameState.players.opponent = null
+        self.opponent = null
+        self.connection = null
         
         self.statusMessage = peerName + " left"
         self.update()
-        self.broadcastGameState()
       })
-      
-      self.update()
     }
     
-    // Handle messages from peers
-    self.handlePeerMessage = function(peerId, data) {
+    // Handle messages from peer
+    self.handlePeerMessage = function(data) {
       console.log('Message from peer:', data)
       
       switch (data.type) {
         case 'JOIN':
-          // Add new player to the game state
-          self.gameState.players[data.playerId] = {
+          // Set up the opponent in game state
+          self.gameState.players.opponent = {
+            id: data.playerId,
             name: data.playerName,
-            score: 0
+            health: 30
+          }
+          
+          // Update opponent info
+          self.opponent = {
+            id: data.playerId,
+            name: data.playerName
+          }
+          
+          // Send the current game state back
+          if (self.isHost && self.connection) {
+            self.connection.send({
+              type: 'SYNC',
+              gameState: self.gameState,
+              hostName: self.playerName
+            })
           }
           
           self.statusMessage = data.playerName + " joined!"
-          self.broadcastGameState()
+          self.update()
           break
           
         case 'SYNC':
           // Update our game state
           self.gameState = data.gameState
           
-          // Update host name if we're not the host
-          if (!self.isHost && peerId in self.gameState.players) {
-            self.hostInfo = {
-              id: peerId,
-              name: self.gameState.players[peerId].name
+          // Update opponent info
+          if (!self.isHost && data.hostName) {
+            self.opponent = {
+              name: data.hostName
             }
           }
           
           self.update()
           break
           
-        case 'UPDATE_STATE':
-          // Update the game state
-          self.gameState = data.gameState
-          self.update()
-          break
-          
-        case 'UPDATE_SCORE':
-          // Update player score
-          if (self.gameState.players[data.playerId]) {
-            self.gameState.players[data.playerId].score = data.score;
-            self.statusMessage = self.gameState.players[data.playerId].name + "'s score updated to " + data.score;
-            self.update()
-            
-            // Only rebroadcast if you're the host
-            if (Object.keys(self.connectedPeers).length > 0 && !self.connections[Object.keys(self.connectedPeers)[0]]) {
-              self.broadcastGameState()
-            }
+        case 'UPDATE_HEALTH':
+          // Update player health
+          if (data.player === 'self') {
+            self.gameState.players.opponent.health = data.health
+          } else {
+            self.gameState.players.self.health = data.health
           }
+          
+          self.update()
           break
           
         case 'RESET':
           // Reset the game state
-          self.resetGameState()
-          self.statusMessage = "Scores have been reset by " + data.playerName
+          self.gameState.players.self.health = 30
+          if (self.gameState.players.opponent) {
+            self.gameState.players.opponent.health = 30
+          }
+          
+          self.statusMessage = "Scores have been reset"
+          self.update()
+          break
+
+        case 'HOST_DISCONNECTING':
+          // Host has notified they are disconnecting
+          self.statusMessage = "Host has ended the game session"
+          self.hostLeft = true
+          self.connected = false
+          self.update()
+          break
+          
+        case 'GAME_FULL':
+          // Game is full
+          self.connectionError = data.message
+          self.peer.destroy()
+          self.peer = null
           self.update()
           break
       }
     }
     
-    // Broadcast game state to all connected peers
-    self.broadcastGameState = function() {
-      Object.keys(self.connections).forEach(function(peerId) {
-        self.connections[peerId].send({
-          type: 'SYNC',
-          gameState: self.gameState
+    // Add a point to self
+    self.increaseHealth = function() {
+      self.gameState.players.self.health += 1
+      
+      // Notify peer
+      if (self.connection) {
+        self.connection.send({
+          type: 'UPDATE_HEALTH',
+          player: 'opponent',
+          health: self.gameState.players.self.health
         })
-      })
+      }
+      
       self.update()
     }
     
-    // Add a point to a player
-    self.addPointToPlayer = function(e) {
-    console.log('gamestate players', self.gameState.players)
-      const playerId = e.target.getAttribute('data-id')
-      if (self.gameState.players[playerId]) {
-        self.gameState.players[playerId].score += 1
+    // Remove a point from self
+    self.decreaseHealth = function() {
+      if (self.gameState.players.self.health > 0) {
+        self.gameState.players.self.health -= 1
         
-        // Broadcast to all peers
-        Object.keys(self.connections).forEach(function(peerId) {
-          self.connections[peerId].send({
-            type: 'UPDATE_SCORE',
-            playerId: playerId,
-            score: self.gameState.players[playerId].score
+        // Notify peer
+        if (self.connection) {
+          self.connection.send({
+            type: 'UPDATE_HEALTH',
+            player: 'opponent',
+            health: self.gameState.players.self.health
           })
-        })
+        }
         
         self.update()
       }
     }
     
-    // Remove a point from a player
-    self.removePointFromPlayer = function(e) {
-      const playerId = e.target.getAttribute('data-id')
-      if (self.gameState.players[playerId] && self.gameState.players[playerId].score > 0) {
-        self.gameState.players[playerId].score -= 1
+    // Add a point to opponent
+    self.increaseOpponentHealth = function() {
+      if (self.gameState.players.opponent) {
+        self.gameState.players.opponent.health += 1
         
-        // Broadcast to all peers
-        Object.keys(self.connections).forEach(function(peerId) {
-          self.connections[peerId].send({
-            type: 'UPDATE_SCORE',
-            playerId: playerId,
-            score: self.gameState.players[playerId].score
+        // Notify peer
+        if (self.connection) {
+          self.connection.send({
+            type: 'UPDATE_HEALTH',
+            player: 'self',
+            health: self.gameState.players.opponent.health
           })
-        })
+        }
+        
+        self.update()
+      }
+    }
+    
+    // Remove a point from opponent
+    self.decreaseOpponentHealth = function() {
+      if (self.gameState.players.opponent && self.gameState.players.opponent.health > 0) {
+        self.gameState.players.opponent.health -= 1
+        
+        // Notify peer
+        if (self.connection) {
+          self.connection.send({
+            type: 'UPDATE_HEALTH',
+            player: 'self',
+            health: self.gameState.players.opponent.health
+          })
+        }
         
         self.update()
       }
@@ -447,62 +484,36 @@
     
     // Reset the game
     self.resetGame = function() {
-      self.resetGameState()
-      
-      // Broadcast reset to all peers
-      Object.keys(self.connections).forEach(function(peerId) {
-        self.connections[peerId].send({
-          type: 'RESET',
-          playerName: self.playerName
-        })
-      })
-      
-      self.statusMessage = "Scores have been reset"
-      self.update()
-    }
-    
-    // Reset game state
-    self.resetGameState = function() {
-      // Reset player scores
-      Object.keys(self.gameState.players).forEach(function(playerId) {
-        self.gameState.players[playerId].score = 0
-      })
-      
-      self.update()
-    }
-    
-    // Disconnect from game
-    self.disconnectGame = function() {
-      if (self.peer) {
-        Object.keys(self.connections).forEach(function(peerId) {
-          self.connections[peerId].close()
-        })
-        self.peer.destroy()
+      // Reset health
+      self.gameState.players.self.health = 30
+      if (self.gameState.players.opponent) {
+        self.gameState.players.opponent.health = 30
       }
       
-      // Reset state
-      self.peer = null
-      self.connections = {}
-      self.connectedPeers = {}
-      self.connected = false
-      self.gameState.players = {}
-      self.statusMessage = ""
+      // Notify peer
+      if (self.connection) {
+        self.connection.send({
+          type: 'RESET'
+        })
+      }
       
+      self.statusMessage = "Health has been reset to 30"
       self.update()
     }
-
-    // Copy game ID to clipboard
-    self.copyGameId = function() {
-      navigator.clipboard.writeText(self.myPeerId).then(function() {
-        self.copied = true
-        self.update()
-        setTimeout(function() {
-          self.copied = false
-          self.update()
-        }, 2000)
-      }).catch(function(err) {
-        console.error('Could not copy text: ', err)
-      })
+    
+    // Reset app after host disconnection
+    self.resetApp = function() {
+      self.hostLeft = false
+      self.connected = false
+      self.peer = null
+      self.connection = null
+      self.opponent = null
+      self.gameState.players = {
+        self: { health: 30 },
+        opponent: null
+      }
+      self.statusMessage = ""
+      self.update()
     }
 
     // Copy shareable link to clipboard
@@ -517,6 +528,55 @@
       }).catch(function(err) {
         console.error('Could not copy text: ', err)
       })
+    }
+
+    // Disconnect from game
+    self.disconnectGame = function() {
+      if(self.isHost) {
+        // Notify client that the host is disconnecting
+        if (self.connection) {
+          self.connection.send({
+            type: 'HOST_DISCONNECTING'
+          })
+          
+          // Short delay to allow message to be sent before closing connection
+          setTimeout(function() {
+            if (self.connection) {
+              self.connection.close()
+            }
+            if (self.peer) {
+              self.peer.destroy()
+            }
+            
+            // Reset state
+            self.peer = null
+            self.connection = null
+            self.connected = false
+            self.opponent = null
+            self.statusMessage = ""
+            
+            self.update()
+          }, 300)
+        }
+      } else {
+        // Client disconnect
+        if (self.connection) {
+          self.connection.close()
+        }
+        if (self.peer) {
+          self.peer.destroy()
+        }
+        
+        // Reset state
+        self.peer = null
+        self.connection = null
+        self.connected = false
+        self.opponent = null
+        self.statusMessage = ""
+        self.hostLeft = false
+        
+        self.update()
+      }
     }
   </script>
   
@@ -535,12 +595,24 @@
     .player {
       display: flex;
       align-items: center;
-      padding: 10px;
-      border-bottom: 1px solid #eee;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .player.me {
+      background-color: #e6f7ff;
+    }
+    
+    .player.peer {
+      background-color: #fff1e6;
     }
     
     .player .score {
       margin: 0 15px;
+      font-size: 18px;
+      font-weight: bold;
     }
     
     .score-controls {
@@ -615,6 +687,106 @@
     
     .share-button:hover {
       background-color: #0b7dda;
+    }
+
+    .host-disconnected-alert {
+      background-color: #f8d7da;
+      color: #721c24;
+      padding: 15px;
+      border-radius: 5px;
+      border: 1px solid #f5c6cb;
+      margin: 20px 0;
+      text-align: center;
+    }
+    
+    .host-disconnected-alert p {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    
+    .host-disconnected-alert button {
+      background-color: #007bff;
+    }
+
+    .connection-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #ccc;
+      margin-right: 10px;
+    }
+
+    .connection-indicator.connected {
+      background-color: #4CAF50;
+    }
+
+    .players-list {
+      display: flex;
+      flex-direction: column;
+      min-height: 300px;
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 20px 0;
+      position: relative;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .vs-badge {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      margin: 15px 0;
+      color: #e74c3c;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
+    
+    .player.opponent {
+      background-color: #fff1e6;
+      border-left: 4px solid #e74c3c;
+      margin-bottom: 20px;
+    }
+    
+    .player.self {
+      background-color: #e6f7ff;
+      border-left: 4px solid #3498db;
+      margin-top: 20px;
+    }
+    
+    .game-area {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .connection-status-bar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .client-badge {
+      background-color: #3498db;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: 10px;
+    }
+
+    .host-badge {
+      background-color: #e74c3c;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: 10px;
     }
   </style>
 </my-app>
