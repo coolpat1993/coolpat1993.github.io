@@ -1,15 +1,22 @@
 /* Additional styles specific to this game */
 .board-area {
-  display: flex;
   flex-direction: column;
-  gap: 20px;
-  margin-bottom: 30px;
-  padding: 10px;
   background: rgba(47, 28, 14, 0.5);
   border-radius: 10px;
   box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
   border: 2px solid #8c6d35;
+  position: relative; /* Added to position decks */
 }
+
+.board-area-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 10px;
+    border-radius: 10px;
+    position: relative; /* Added to position decks */
+  }
+  
 
 .board-row {
   display: flex;
@@ -82,7 +89,7 @@
 
 .slot {
   width: 100px;
-  height: 150px;
+  height: 145px;
   background: rgba(255, 255, 255, 0.1);
   border: 2px dashed #555;
   border-radius: 10px;
@@ -124,7 +131,7 @@
 /* Card styles */
 .spell-card {
   width: 100px;
-  height: 150px;
+  height: 145px;
   border-radius: 8px;
   position: relative;
   /* Common Hearthstone-style base with the requested colors */
@@ -295,6 +302,26 @@
   text-shadow: 0px 0px 2px #000;
 }
 
+/* Hide damage and health indicators for spell and item cards */
+.spell-card.spell .damage-indicator,
+.spell-card.spell .health-indicator,
+.spell-card.item .damage-indicator,
+.spell-card.item .health-indicator {
+  display: none;
+}
+
+/* Special styling for spell cards */
+.spell-card.spell {
+  background: linear-gradient(135deg, #6a5cff 0%, #4a3cd7 100%);
+  border-color: #35318d;
+}
+
+/* Special styling for item cards */
+.spell-card.item {
+  background: linear-gradient(135deg, #c99e39 0%, #9c7b2d 100%);
+  border-color: #765c20;
+}
+
 /* Turn indicator - more Hearthstone-like */
 .turn-indicator {
   text-align: center;
@@ -367,46 +394,13 @@
   position: relative;
 }
 
-.end-turn-container {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.end-turn-button {
-  background: linear-gradient(to bottom, #5eb85e 0%, #3a9e3a 50%, #2a7a2a 100%);
-  color: white;
-  border: 2px solid #286e28;
-  padding: 10px 20px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-weight: bold;
-  text-shadow: 1px 1px 0 #000;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-  transition: all 0.2s;
-  font-family: 'Belwe Bold', 'Times New Roman', serif;
-}
-
-.end-turn-button:hover {
-  background: linear-gradient(to bottom, #6ec96e 0%, #4cb24c 50%, #388a38 100%);
-  box-shadow: 0 6px 10px rgba(0,0,0,0.3);
-  transform: translateY(-2px);
-}
-
-.end-turn-button:disabled {
-  background: linear-gradient(to bottom, #999 0%, #777 50%, #555 100%);
-  border-color: #666;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: 0 2px 3px rgba(0,0,0,0.2);
-}
-
 /* Mana display system - Hearthstone style */
 .mana-display {
   display: flex;
   flex-direction: row;
   align-items: center;
-  margin-top: 15px;
   margin-left: 15px;
+    margin-bottom: 10px;
 }
 
 .mana-display.bottom-left {
@@ -419,11 +413,11 @@
 .mana-container {
   display: flex;
   align-items: center;
-  background: rgba(8, 16, 35, 0.7);
+  background: #747474;
+  border-top: #9f9f9f 2px solid;
+  border-bottom: #606060 2px solid;
   padding: 8px 15px;
   border-radius: 20px;
-  border: 1px solid #1561ad;
-  box-shadow: 0 0 15px rgba(21, 97, 173, 0.3), inset 0 0 20px rgba(0, 10, 30, 0.5);
 }
 
 .mana-crystals {
@@ -462,4 +456,93 @@
   font-size: 16px;
   margin-right: 12px;
   font-family: 'Belwe Bold', 'Times New Roman', serif;
+}
+
+.end-turn-container {
+    display: flex;
+    justify-content: flex-end;
+    position: absolute;
+    right: -50px; /* Position the end turn button to the right of the board */
+    top: 47%;
+  }
+  
+  .end-turn-button {
+    background: linear-gradient(to bottom, #5eb85e 0%, #3a9e3a 50%, #2a7a2a 100%);
+    color: white;
+    border: 2px solid #286e28;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    text-shadow: 1px 1px 0 #000;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    transition: all 0.2s;
+    font-family: 'Belwe Bold', 'Times New Roman', serif;
+  }
+  
+  .end-turn-button:hover {
+    background: linear-gradient(to bottom, #6ec96e 0%, #4cb24c 50%, #388a38 100%);
+    box-shadow: 0 6px 10px rgba(0,0,0,0.3);
+    transform: translateY(-2px);
+  }
+  
+  .end-turn-button:disabled {
+    background: linear-gradient(to bottom, #999 0%, #777 50%, #555 100%);
+    border-color: #666;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 3px rgba(0,0,0,0.2);
+  }
+
+/* Deck visualization styling */
+.deck {
+  position: absolute;
+  right: -50px; /* Position the deck to the right of the board */
+  width: 100px;
+  height: 145px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #5a4c44 0%, #3a332d 100%);
+  border: 2px solid #35312a;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+  transform-style: preserve-3d;
+}
+
+.enemy-deck {
+  top: 15%; /* Position between enemy back and front lines */
+}
+
+.player-deck {
+  bottom: 15%; /* Position between player front and back lines */
+}
+
+/* Card count indicator */
+.card-count {
+  position: absolute;
+  bottom: -15px;
+  right: -8px;
+  width: 32px;
+  height: 32px;
+  background: #f0e6d2;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 18px;
+  color: #000;
+  border: 2px solid #8c6d35;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+/* Deck back design */
+.deck-back {
+  position: absolute;
+  width: 80%;
+  height: 80%;
+  top: 10%;
+  left: 10%;
+  background-size: cover;
+  border-radius: 6px;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7);
 }

@@ -5,6 +5,8 @@
       
       <!-- Board Area Refactored to use state-driven approach -->
       <div class="board-area">
+
+      <div class="board-area-inner">
         <!-- Enemy Back Line -->
         <div class="board-row enemy-zone">
           <div each={ i in [1,2,3,4,5] } class="slot" id="enemy-back-{i}" 
@@ -13,12 +15,12 @@
                ondragleave={ dragLeave } 
                ondrop={ handleDrop }>
             <virtual if={ slots['enemy-back-'+i] }>
-              <div class="spell-card { slots['enemy-back-'+i].type }"
+              <div class="spell-card { slots['enemy-back-'+i].type } { slots['enemy-back-'+i].category === 'item' ? 'item' : '' } { slots['enemy-back-'+i].type === 'spell' ? 'spell' : '' }"
                    draggable="true"
                    data-card-id={ slots['enemy-back-'+i].instanceId }
                    ondragstart={ parent.dragStart }>
                 <div class="mana-indicator">{ slots['enemy-back-'+i].mana }</div>
-                <div class="card-image" style="background-image: url('{ slots['enemy-back-'+i].image }')"></div>
+                <div class="card-image" style="background-image: url('images/{ slots['enemy-back-'+i].image }')"></div>
                 <div class="card-header">{ slots['enemy-back-'+i].name }</div>
                 <div class="card-description">{ slots['enemy-back-'+i].description }</div>
                 <div class="damage-indicator">{ slots['enemy-back-'+i].damage }</div>
@@ -36,12 +38,12 @@
                ondragleave={ dragLeave } 
                ondrop={ handleDrop }>
             <virtual if={ slots['enemy-front-'+i] }>
-              <div class="spell-card { slots['enemy-front-'+i].type }"
+              <div class="spell-card { slots['enemy-front-'+i].type } { slots['enemy-front-'+i].category === 'item' ? 'item' : '' } { slots['enemy-front-'+i].type === 'spell' ? 'spell' : '' }"
                    draggable="true"
                    data-card-id={ slots['enemy-front-'+i].instanceId }
                    ondragstart={ parent.dragStart }>
                 <div class="mana-indicator">{ slots['enemy-front-'+i].mana }</div>
-                <div class="card-image" style="background-image: url('{ slots['enemy-front-'+i].image }')"></div>
+                <div class="card-image" style="background-image: url('images/{ slots['enemy-front-'+i].image }')"></div>
                 <div class="card-header">{ slots['enemy-front-'+i].name }</div>
                 <div class="card-description">{ slots['enemy-front-'+i].description }</div>
                 <div class="damage-indicator">{ slots['enemy-front-'+i].damage }</div>
@@ -59,12 +61,12 @@
                ondragleave={ dragLeave } 
                ondrop={ handleDrop }>
             <virtual if={ slots['player-front-'+i] }>
-              <div class="spell-card { slots['player-front-'+i].type }"
+              <div class="spell-card { slots['player-front-'+i].type } { slots['player-front-'+i].category === 'item' ? 'item' : '' } { slots['player-front-'+i].type === 'spell' ? 'spell' : '' }"
                    draggable="true"
                    data-card-id={ slots['player-front-'+i].instanceId }
                    ondragstart={ parent.dragStart }>
                 <div class="mana-indicator">{ slots['player-front-'+i].mana }</div>
-                <div class="card-image" style="background-image: url('{ slots['player-front-'+i].image }')"></div>
+                <div class="card-image" style="background-image: url('images/{ slots['player-front-'+i].image }')"></div>
                 <div class="card-header">{ slots['player-front-'+i].name }</div>
                 <div class="card-description">{ slots['player-front-'+i].description }</div>
                 <div class="damage-indicator">{ slots['player-front-'+i].damage }</div>
@@ -82,12 +84,12 @@
                ondragleave={ dragLeave } 
                ondrop={ handleDrop }>
             <virtual if={ slots['player-back-'+i] }>
-              <div class="spell-card { slots['player-back-'+i].type }"
+              <div class="spell-card { slots['player-back-'+i].type } { slots['player-back-'+i].category === 'item' ? 'item' : '' } { slots['player-back-'+i].type === 'spell' ? 'spell' : '' }"
                    draggable="true"
                    data-card-id={ slots['player-back-'+i].instanceId }
                    ondragstart={ parent.dragStart }>
                 <div class="mana-indicator">{ slots['player-back-'+i].mana }</div>
-                <div class="card-image" style="background-image: url('{ slots['player-back-'+i].image }')"></div>
+                <div class="card-image" style="background-image: url('images/{ slots['player-back-'+i].image }')"></div>
                 <div class="card-header">{ slots['player-back-'+i].name }</div>
                 <div class="card-description">{ slots['player-back-'+i].description }</div>
                 <div class="damage-indicator">{ slots['player-back-'+i].damage }</div>
@@ -96,6 +98,26 @@
             </virtual>
           </div>
         </div>
+
+        
+        <!-- Enemy Deck -->
+        <div class="deck enemy-deck">
+          <div class="deck-back"></div>
+          <div class="card-count">30</div>
+        </div>
+
+        <div class="end-turn-container">
+          <button class="end-turn-button" onclick={ endTurn } disabled={ isOpponentTurn }>End Turn</button>
+        </div>
+        
+        <!-- Player Deck -->
+        <div class="deck player-deck">
+          <div class="deck-back"></div>
+          <div class="card-count">{ playerDeck.length }</div>
+        </div>
+
+        </div>
+
         
       <!-- Player Hand -->
         <!-- Mana Display - Hearthstone style with fixed container width -->
@@ -109,12 +131,12 @@
         </div>
       
         <div class="hand" id="player-hand">
-          <div each={ card in playerHand } class="spell-card { card.type } { card.mana <= currentMana ? 'playable' : '' }" 
+          <div each={ card in playerHand } class="spell-card { card.type } { card.category === 'item' ? 'item' : '' } { card.type === 'spell' ? 'spell' : '' } { card.mana <= currentMana ? 'playable' : '' }" 
                draggable="true" 
                data-card-id={ card.instanceId } 
                ondragstart={ parent.dragStart }>
             <div class="mana-indicator">{ card.mana }</div>
-            <div class="card-image" style="background-image: url('{ card.image }')"></div>
+            <div class="card-image" style="background-image: url('images/{ card.image }')"></div>
             <div class="card-header">{ card.name }</div>
             <div class="card-description">{ card.description }</div>
             <div class="damage-indicator">{ card.damage }</div>
@@ -126,9 +148,7 @@
       <!-- Action Buttons -->
       <div class="action-area">
         <button class="cast-button" onclick={ drawCard }>Draw Card</button>
-        <div class="end-turn-container">
-          <button class="end-turn-button" onclick={ endTurn } disabled={ isOpponentTurn }>End Turn</button>
-        </div>
+        
       </div>
       
       <!-- Game Log -->
@@ -151,7 +171,21 @@
     self.currentMana = 1;  // Start with 1 mana
     self.maxMana = 1;      // Max mana starts at 1, increases each turn
     self.cardLibrary = []; // All available cards from JSON
-    self.playerCardCollection = [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10]; // Player's card collection (IDs)
+    // New balanced deck with a mix of units, banners, and items
+    self.playerCardCollection = [
+      // Neutral Units - frontline fighters
+      1, 4, 9, 10, 12,
+      // Neutral Units - backline specialists
+      2, 3, 5, 6, 7,
+      // Support units
+      8, 11, 13, 14, 15,
+      // Banners
+      16, 17, 
+      // Weapons for different unit types
+      21, 22, 24, 28, 32,
+      // Utility items
+      27, 33, 34
+    ];
     
     // Initialize the game
     self.on('mount', function() {
