@@ -131,7 +131,7 @@
         </div>
       
         <div class="hand" id="player-hand">
-          <div each={ card in playerHand } class="spell-card { card.type } { card.category === 'item' ? 'item' : '' } { card.type === 'spell' ? 'spell' : '' } { card.mana <= currentMana ? 'playable' : '' }" 
+          <div each={ card in playerHand } class="spell-card { card.type } { card.category === 'item' ? 'item' : '' } { card.type === 'spell' ? 'spell' : '' } { card.mana <= currentMana && card.category !== 'item' ? 'playable' : '' } { card.mana <= currentMana && card.category === 'item' && hasUnitOnBoard() ? 'playable-item' : '' }" 
                draggable="true" 
                data-card-id={ card.instanceId } 
                ondragstart={ parent.dragStart }>
@@ -386,6 +386,20 @@
           self.update();
         }
       }
+    };
+    
+    // Check if there are any units on the player's board
+    self.hasUnitOnBoard = function() {
+      // Check both front and back lines
+      for (let i = 1; i <= 5; i++) {
+        if (self.slots[`player-front-${i}`] && self.slots[`player-front-${i}`].type === 'unit') {
+          return true;
+        }
+        if (self.slots[`player-back-${i}`] && self.slots[`player-back-${i}`].type === 'unit') {
+          return true;
+        }
+      }
+      return false;
     };
     
     // Check if a card can be dropped in a particular slot

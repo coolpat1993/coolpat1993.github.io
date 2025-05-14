@@ -157,6 +157,15 @@
     animation: playable-pulse 1.5s infinite alternate;
 }
 
+/* Yellow glow effect for playable item cards when a unit is on the board */
+.hand .spell-card.playable-item {
+    border-color: #FFD700;
+    box-shadow: 
+                 0 0 6px #FFD700 inset, 
+                 0 0 8px #FFD700;
+    animation: playable-item-pulse 1.5s infinite alternate;
+}
+
 @keyframes playable-pulse {
     from {
         box-shadow:
@@ -167,6 +176,19 @@
         box-shadow:
                  0 0 8px #6BFD3F inset, 
                  0 0 12px #6BFD3F;
+    }
+}
+
+@keyframes playable-item-pulse {
+    from {
+        box-shadow:
+                 0 0 6px #FFD700 inset, 
+                 0 0 9px #FFD700;
+    }
+    to {
+        box-shadow:
+                 0 0 8px #FFD700 inset, 
+                 0 0 12px #FFD700;
     }
 }
 
@@ -187,38 +209,49 @@
 
 /* Card image container */
 .card-image {
-  height: 50%;
+  height: 65%; /* Increased from 50% to 65% to make the image taller */
   width: 100%;
   margin: 0 auto;
   background-size: cover;
   background-position: center;
   border-radius: 5px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.3), inset 0 0 5px rgba(255,255,255,0.2);
+  position: relative; /* Added to position the overlaid card name */
 }
 
 .spell-card .card-header {
+  position: absolute; /* Position absolutely to overlay on the image */
+  bottom: 0; /* Place at the bottom of the image */
+  left: 0;
+  right: 0;
   font-weight: bold;
   font-size: 11px;
   text-align: center;
-  margin: 3px 0;
+  padding: 5px 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-shadow: 1px 1px 2px #000;
+  text-shadow: 1px 1px 2px #000, 0 0 5px rgba(0,0,0,0.8); /* Enhanced text shadow for better readability */
+  background: linear-gradient(to top, rgba(0,0,0,0.7), rgba(0,0,0,0)); /* Gradient background for better text visibility */
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  color: #ffffff; /* White text for better contrast against the dark gradient */
 }
+
 .spell-card .card-description {
-    font-size: 10px;
-    text-align: center;
-    color: #000000;
-    padding: 0 5px;
-    height: 45%;
-    overflow: hidden;
-    background: #A89783;
-    border-radius: 4px;
-    font-family: 'Franklin Gothic Condensed', 'Arial Narrow', sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  font-size: 10px;
+  text-align: center;
+  color: #000000;
+  padding: 0 5px;
+  height: 35%; /* Reduced from 45% to accommodate the taller image */
+  overflow: hidden;
+  background: #A89783;
+  border-radius: 4px;
+  font-family: 'Franklin Gothic Condensed', 'Arial Narrow', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 5px; /* Add a little spacing after the image */
 }
 
 /* Removing the color gems/accents and the type-specific styling */

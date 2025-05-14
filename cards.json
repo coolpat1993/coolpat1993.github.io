@@ -200,7 +200,7 @@
     "type": "item",
     "category": "item",
     "description": "Grants fire attack with burn chance, mages get Fiery Wake (2 AOE attack).",
-    "attack": 0,
+    "attack": 1,
     "mana": 2,
     "image": "staff_of_ember.png"
   },
@@ -210,7 +210,7 @@
     "type": "item",
     "category": "item",
     "description": "Heal 1 HP/turn, healers gain Rejuvenation (4 healing over 2 turns).",
-    "attack": 0,
+    "attack": 1,
     "mana": 3,
     "image": "blooming_wildstaff.png"
   },
@@ -220,7 +220,7 @@
     "type": "item",
     "category": "item",
     "description": "Allows melee units to attack from the back line.",
-    "attack": 0,
+    "attack": 1,
     "mana": 2,
     "image": "polearm.png"
   },
@@ -299,6 +299,7 @@
     "type": "item",
     "category": "item",
     "description": "Every second attack deals +2 attack.",
+    "attack": 1,
     "mana": 1,
     "image": "sharpened_arrows.png"
   },
@@ -336,7 +337,6 @@
     "type": "item",
     "category": "item",
     "description": "+1 armor, +1 health.",
-    "attack": 0,
     "mana": 2,
     "image": "chainmail.png"
   },
@@ -365,6 +365,7 @@
     "type": "item",
     "category": "item",
     "description": "Allows a second attack at -1 attack.",
+    "attack": -1,
     "mana": 1,
     "image": "quickblade.png"
   },
