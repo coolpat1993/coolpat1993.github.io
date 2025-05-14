@@ -1,0 +1,102 @@
+[
+  {
+    "id": 1,
+    "name": "Warrior",
+    "type": "tank",
+    "description": "A mighty warrior who protects allies on the battlefield",
+    "damage": 3,
+    "health": 4,
+    "mana": 4,
+    "image": "warrior.jpg"
+  },
+  {
+    "id": 2,
+    "name": "Mage",
+    "type": "caster",
+    "description": "Wields arcane powers to devastate enemies from afar",
+    "damage": 5,
+    "health": 2,
+    "mana": 5,
+    "image": "mage.jpg"
+  },
+  {
+    "id": 3,
+    "name": "Archer",
+    "type": "ranged",
+    "description": "Skilled marksman with deadly accuracy",
+    "damage": 4,
+    "health": 3,
+    "mana": 4,
+    "image": "archer.jpg"
+  },
+  {
+    "id": 4,
+    "name": "Cleric",
+    "type": "healer",
+    "description": "Devout healer who mends allies' wounds",
+    "damage": 2,
+    "health": 5,
+    "mana": 3,
+    "image": "cleric.jpg"
+  },
+  {
+    "id": 5,
+    "name": "Shadow Rogue",
+    "type": "stealth",
+    "description": "Strikes from the shadows with lethal precision",
+    "damage": 5,
+    "health": 2,
+    "mana": 4,
+    "image": "rogue.jpg"
+  },
+  {
+    "id": 6,
+    "name": "Berserker",
+    "type": "tank",
+    "description": "Fierce warrior who gets stronger as they take damage",
+    "damage": 3,
+    "health": 6,
+    "mana": 5,
+    "image": "berserker.jpg"
+  },
+  {
+    "id": 7,
+    "name": "Scout",
+    "type": "ranged",
+    "description": "Swift scout who can attack immediately",
+    "damage": 1,
+    "health": 1,
+    "mana": 1,
+    "image": "scout.jpg"
+  },
+  {
+    "id": 8,
+    "name": "Pyromancer",
+    "type": "caster",
+    "description": "Master of fire who deals damage to all enemies",
+    "damage": 2,
+    "health": 3,
+    "mana": 3,
+    "image": "pyromancer.jpg"
+  },
+  {
+    "id": 9,
+    "name": "Guardian",
+    "type": "tank",
+    "description": "Stalwart protector with massive health",
+    "damage": 2,
+    "health": 8,
+    "mana": 6,
+    "image": "guardian.jpg"
+  },
+  {
+    "id": 10,
+    "name": "Assassin",
+    "type": "stealth",
+    "description": "Deadly assassin who excels at eliminating key targets",
+    "damage": 6,
+    "health": 1,
+    "mana": 4,
+    "image": "assassin.jpg"
+  }
+]

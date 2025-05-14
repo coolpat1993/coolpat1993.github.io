@@ -13,18 +13,16 @@
                ondragleave={ dragLeave } 
                ondrop={ handleDrop }>
             <virtual if={ slots['enemy-back-'+i] }>
-              <div class="spell-card { slots['enemy-back-'+i].element }"
+              <div class="spell-card { slots['enemy-back-'+i].type }"
                    draggable="true"
                    data-card-id={ slots['enemy-back-'+i].instanceId }
                    ondragstart={ parent.dragStart }>
                 <div class="mana-indicator">{ slots['enemy-back-'+i].mana }</div>
+                <div class="card-image" style="background-image: url('{ slots['enemy-back-'+i].image }')"></div>
                 <div class="card-header">{ slots['enemy-back-'+i].name }</div>
-                <div class="card-body">{ slots['enemy-back-'+i].type === 'unit' ? 'Unit' : 'Spell' } Card</div>
-                <div class="card-footer">
-                  <span class="type-indicator">{ slots['enemy-back-'+i].element }</span>
-                </div>
+                <div class="card-description">{ slots['enemy-back-'+i].description }</div>
                 <div class="damage-indicator">{ slots['enemy-back-'+i].damage }</div>
-                <div if={ slots['enemy-back-'+i].type === 'unit' } class="health-indicator">{ slots['enemy-back-'+i].health }</div>
+                <div class="health-indicator">{ slots['enemy-back-'+i].health }</div>
               </div>
             </virtual>
           </div>
@@ -38,18 +36,16 @@
                ondragleave={ dragLeave } 
                ondrop={ handleDrop }>
             <virtual if={ slots['enemy-front-'+i] }>
-              <div class="spell-card { slots['enemy-front-'+i].element }"
+              <div class="spell-card { slots['enemy-front-'+i].type }"
                    draggable="true"
                    data-card-id={ slots['enemy-front-'+i].instanceId }
                    ondragstart={ parent.dragStart }>
                 <div class="mana-indicator">{ slots['enemy-front-'+i].mana }</div>
+                <div class="card-image" style="background-image: url('{ slots['enemy-front-'+i].image }')"></div>
                 <div class="card-header">{ slots['enemy-front-'+i].name }</div>
-                <div class="card-body">{ slots['enemy-front-'+i].type === 'unit' ? 'Unit' : 'Spell' } Card</div>
-                <div class="card-footer">
-                  <span class="type-indicator">{ slots['enemy-front-'+i].element }</span>
-                </div>
+                <div class="card-description">{ slots['enemy-front-'+i].description }</div>
                 <div class="damage-indicator">{ slots['enemy-front-'+i].damage }</div>
-                <div if={ slots['enemy-front-'+i].type === 'unit' } class="health-indicator">{ slots['enemy-front-'+i].health }</div>
+                <div class="health-indicator">{ slots['enemy-front-'+i].health }</div>
               </div>
             </virtual>
           </div>
@@ -63,18 +59,16 @@
                ondragleave={ dragLeave } 
                ondrop={ handleDrop }>
             <virtual if={ slots['player-front-'+i] }>
-              <div class="spell-card { slots['player-front-'+i].element }"
+              <div class="spell-card { slots['player-front-'+i].type }"
                    draggable="true"
                    data-card-id={ slots['player-front-'+i].instanceId }
                    ondragstart={ parent.dragStart }>
                 <div class="mana-indicator">{ slots['player-front-'+i].mana }</div>
+                <div class="card-image" style="background-image: url('{ slots['player-front-'+i].image }')"></div>
                 <div class="card-header">{ slots['player-front-'+i].name }</div>
-                <div class="card-body">{ slots['player-front-'+i].type === 'unit' ? 'Unit' : 'Spell' } Card</div>
-                <div class="card-footer">
-                  <span class="type-indicator">{ slots['player-front-'+i].element }</span>
-                </div>
+                <div class="card-description">{ slots['player-front-'+i].description }</div>
                 <div class="damage-indicator">{ slots['player-front-'+i].damage }</div>
-                <div if={ slots['player-front-'+i].type === 'unit' } class="health-indicator">{ slots['player-front-'+i].health }</div>
+                <div class="health-indicator">{ slots['player-front-'+i].health }</div>
               </div>
             </virtual>
           </div>
@@ -88,18 +82,16 @@
                ondragleave={ dragLeave } 
                ondrop={ handleDrop }>
             <virtual if={ slots['player-back-'+i] }>
-              <div class="spell-card { slots['player-back-'+i].element }"
+              <div class="spell-card { slots['player-back-'+i].type }"
                    draggable="true"
                    data-card-id={ slots['player-back-'+i].instanceId }
                    ondragstart={ parent.dragStart }>
                 <div class="mana-indicator">{ slots['player-back-'+i].mana }</div>
+                <div class="card-image" style="background-image: url('{ slots['player-back-'+i].image }')"></div>
                 <div class="card-header">{ slots['player-back-'+i].name }</div>
-                <div class="card-body">{ slots['player-back-'+i].type === 'unit' ? 'Unit' : 'Spell' } Card</div>
-                <div class="card-footer">
-                  <span class="type-indicator">{ slots['player-back-'+i].element }</span>
-                </div>
+                <div class="card-description">{ slots['player-back-'+i].description }</div>
                 <div class="damage-indicator">{ slots['player-back-'+i].damage }</div>
-                <div if={ slots['player-back-'+i].type === 'unit' } class="health-indicator">{ slots['player-back-'+i].health }</div>
+                <div class="health-indicator">{ slots['player-back-'+i].health }</div>
               </div>
             </virtual>
           </div>
@@ -117,18 +109,16 @@
         </div>
       
         <div class="hand" id="player-hand">
-          <div each={ card in playerHand } class="spell-card { card.element } { card.mana <= currentMana ? 'playable' : '' }" 
+          <div each={ card in playerHand } class="spell-card { card.type } { card.mana <= currentMana ? 'playable' : '' }" 
                draggable="true" 
                data-card-id={ card.instanceId } 
                ondragstart={ parent.dragStart }>
             <div class="mana-indicator">{ card.mana }</div>
+            <div class="card-image" style="background-image: url('{ card.image }')"></div>
             <div class="card-header">{ card.name }</div>
-            <div class="card-body">{ card.type === 'unit' ? 'Unit' : 'Spell' } Card</div>
-            <div class="card-footer">
-              <span class="type-indicator">{ card.element }</span>
-            </div>
+            <div class="card-description">{ card.description }</div>
             <div class="damage-indicator">{ card.damage }</div>
-            <div if={ card.type === 'unit' } class="health-indicator">{ card.health }</div>
+            <div class="health-indicator">{ card.health }</div>
           </div>
         </div>
   </div>
@@ -160,30 +150,28 @@
     self.logEntries = ["Game started. Your turn!"];
     self.currentMana = 1;  // Start with 1 mana
     self.maxMana = 1;      // Max mana starts at 1, increases each turn
-    
-    // Card templates - these would be loaded from a database in a real game
-    self.cardTemplates = [
-      { id: 1, name: 'Warrior', type: 'unit', element: 'earth', damage: 3, health: 4, mana: 4 },
-      { id: 2, name: 'Mage', type: 'unit', element: 'arcane', damage: 5, health: 2, mana: 5 },
-      { id: 3, name: 'Archer', type: 'unit', element: 'earth', damage: 4, health: 3, mana: 4 },
-      { id: 4, name: 'Cleric', type: 'unit', element: 'water', damage: 2, health: 5, mana: 3 },
-      { id: 5, name: 'Fireball', type: 'spell', element: 'fire', damage: 4, health: 0, mana: 3 },
-      { id: 6, name: 'Ice Blast', type: 'spell', element: 'ice', damage: 3, health: 0, mana: 2 },
-      { id: 7, name: 'Scout', type: 'unit', element: 'earth', damage: 1, health: 1, mana: 1 },
-      { id: 8, name: 'Flame Wisp', type: 'unit', element: 'fire', damage: 2, health: 1, mana: 1 },
-      { id: 9, name: 'Water Elemental', type: 'unit', element: 'water', damage: 3, health: 6, mana: 6 },
-      { id: 10, name: 'Arcane Missile', type: 'spell', element: 'arcane', damage: 1, health: 0, mana: 1 },
-    ];
+    self.cardLibrary = []; // All available cards from JSON
+    self.playerCardCollection = [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10]; // Player's card collection (IDs)
     
     // Initialize the game
     self.on('mount', function() {
-      self.initGame();
+      // First load card data from JSON file
+      fetch('cards.json')
+        .then(response => response.json())
+        .then(data => {
+          self.cardLibrary = data;
+          self.initGame();
+        })
+        .catch(error => {
+          console.error('Error loading cards:', error);
+          self.addLogEntry('Error loading cards. Check console for details.');
+        });
     });
     
     // Initialize game
     self.initGame = function() {
-      // Initialize deck with cards
-      self.playerDeck = [...self.cardTemplates, ...self.cardTemplates]; // Two copies of each
+      // Initialize deck with cards from player's collection
+      self.playerDeck = [...self.playerCardCollection]; // Use the player's card collection (array of IDs)
       
       // Shuffle deck
       self.shuffleDeck();
@@ -218,18 +206,44 @@
     self.drawCard = function() {
       if (self.playerDeck.length === 0) {
         self.addLogEntry('No cards left in deck!');
-        return null;
+        return;
       }
       
-      const cardTemplate = self.playerDeck.pop();
-      const cardId = `card-${Date.now()}-${Math.floor(Math.random() * 1000)}`; // Unique ID
-      const card = { ...cardTemplate, instanceId: cardId };
+      // Check if hand is full (max 10 cards)
+      if (self.playerHand.length >= 10) {
+        self.addLogEntry('Your hand is full! Card burned.');
+        return;
+      }
+      
+      const cardId = self.playerDeck.pop();
+      const cardTemplate = self.cardLibrary.find(c => c.id === cardId);
+      
+      if (!cardTemplate) {
+        self.addLogEntry(`Error: Card ID ${cardId} not found in library!`);
+        return;
+      }
+      
+      const instanceId = `card-${Date.now()}-${Math.floor(Math.random() * 1000)}`; // Unique ID
+      const card = { ...cardTemplate, instanceId: instanceId };
       
       self.playerHand.push(card);
       self.addLogEntry(`You drew ${card.name}.`);
       self.update();
       
       return card;
+    };
+    
+    // Start of a new round
+    self.roundStart = function() {
+      // Increase mana for new turn (up to max of 10)
+      self.maxMana = Math.min(self.maxMana + 1, 10);
+      self.currentMana = self.maxMana;
+      
+      // Draw a card at the start of the round
+      self.drawCard();
+      
+      self.addLogEntry(`Your turn begins. Mana refreshed to ${self.currentMana}.`);
+      self.update();
     };
     
     // End the turn
@@ -242,12 +256,8 @@
       setTimeout(() => {
         self.isOpponentTurn = false;
         
-        // Increase mana for new turn (up to max of 10)
-        self.maxMana = Math.min(self.maxMana + 1, 10);
-        self.currentMana = self.maxMana;
-        
-        self.addLogEntry(`Your turn begins. Mana refreshed to ${self.currentMana}.`);
-        self.update();
+        // Call roundStart to handle new round setup
+        self.roundStart();
       }, 2000);
     };
     

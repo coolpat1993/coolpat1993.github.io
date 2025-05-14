@@ -35,11 +35,49 @@
   border-radius: 10px;
   display: flex;
   justify-content: center;
-  gap: 15px;
-  flex-wrap: wrap;
+  /* Remove flex-wrap to prevent cards from wrapping to next line */
   min-height: 170px;
   box-shadow: inset 0 0 30px rgba(0,0,0,0.7);
   border: 2px solid #8c6d35;
+  /* Add padding to ensure cards at edges are fully visible */
+  padding-left: 35px;
+  padding-right: 35px;
+}
+
+/* Style for cards in hand to create overlap effect */
+.hand .spell-card {
+  margin-right: -25px; /* Less overlap to make cards more spread out */
+  transition: transform 0.3s ease, box-shadow 0.3s ease, margin 0.3s ease;
+  position: relative;
+  transform-origin: center bottom; /* Set transform origin to bottom center */
+  z-index: 5; /* Base z-index */
+}
+
+/* When hovering, delay the z-index change to prevent visual issues during hover */
+.hand .spell-card:hover {
+  transform: translateY(-15px) scale(1.35);
+  z-index: 20; /* Ensure hovered card appears above others */
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.7), 0 0 25px rgba(255, 223, 136, 0.4) inset;
+}
+
+/* When no longer hovering, immediately change the z-index back without delay */
+.hand .spell-card:not(:hover) {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, margin 0.3s ease, z-index 0s;
+}
+
+/* Add spacing for the last card to ensure it's fully visible */
+.hand .spell-card:last-child {
+  margin-right: 0;
+}
+
+/* Move cards before the hovered card to the left */
+.hand .spell-card:hover ~ .spell-card {
+  transform: translateX(36px); /* Move cards that follow to the right */
+}
+
+/* Move cards before the hovered card to the left using the general sibling combinator */
+.hand .spell-card:has(~ .spell-card:hover) {
+  transform: translateX(-36px); /* Move cards that precede to the left */
 }
 
 .slot {
@@ -89,34 +127,39 @@
   height: 150px;
   border-radius: 8px;
   position: relative;
-  background: linear-gradient(135deg, #544a37 0%, #302718 100%);
+  /* Common Hearthstone-style base with the requested colors */
+  background: linear-gradient(135deg, #736258 0%, #5a4c44 100%);
   padding: 5px;
-  border: 2px solid #c0a062;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 223, 136, 0.2) inset;
+  border: 2px solid #35312a;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(51, 50, 48, 0.2) inset;
   color: white;
   box-sizing: border-box;
   font-family: 'Belwe Bold', 'Times New Roman', serif;
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
 }
+
 /* Green glow effect for playable cards in the hand */
 .hand .spell-card.playable {
     border-color: #6BFD3F;
     box-shadow: 
-                 0 0 6px rgba(107, 253, 63, 1) inset, 
-                 0 0 8px rgba(107, 253, 63, 1);
+                 0 0 6px #6BFD3F inset, 
+                 0 0 8px #6BFD3F;
     animation: playable-pulse 1.5s infinite alternate;
 }
 
 @keyframes playable-pulse {
     from {
         box-shadow:
-                 0 0 6px rgba(107, 253, 63, 1) inset, 
-                 0 0 6px rgba(107, 253, 63, 1);
+                 0 0 6px #6BFD3F inset, 
+                 0 0 9px #6BFD3F;
     }
     to {
         box-shadow:
-                 0 0 8px rgba(107, 253, 63, 1) inset, 
-                 0 0 10px rgba(107, 253, 63, 1);
+                 0 0 8px #6BFD3F inset, 
+                 0 0 12px #6BFD3F;
     }
 }
 
@@ -132,47 +175,69 @@
 
 .spell-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 223, 136, 0.3) inset;
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(168, 151, 131, 0.3) inset;
+}
+
+/* Card image container */
+.card-image {
+  height: 45px;
+  width: 100%;
+  margin: 0 auto;
+  margin-top: 8px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3), inset 0 0 5px rgba(255,255,255,0.2);
 }
 
 .spell-card .card-header {
   font-weight: bold;
-  font-size: 12px;
+  font-size: 11px;
   text-align: center;
-  margin: 20px 0 5px 0;
+  margin: 3px 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   text-shadow: 1px 1px 2px #000;
 }
-
-.spell-card .card-body {
-  font-size: 9px;
-  text-align: center;
-  margin-bottom: 5px;
-  color: #ffd48a;
-  font-style: italic;
-  padding: 0 5px;
-  line-height: 1.3;
+.spell-card .card-description {
+    font-size: 10px;
+    text-align: center;
+    margin: 0 auto;
+    color: #000000;
+    padding: 0 5px;
+    height: 45%;
+    overflow: hidden;
+    background: #A89783;
+    border-radius: 4px;
+    font-family: 'Franklin Gothic Condensed', 'Arial Narrow', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.spell-card .card-footer {
-  position: absolute;
-  bottom: 5px;
-  left: 5px;
-  right: 5px;
-  font-size: 10px;
-  text-align: center;
+/* Removing the color gems/accents and the type-specific styling */
+/* Instead we'll add subtle, small indicators for card types */
+
+.tank {
+  /* Just a small indicator at the bottom of the card */
+  border-bottom-color: #8e6b1d;
 }
 
-.spell-card .type-indicator {
-  background: rgba(0, 0, 0, 0.6);
-  padding: 1px 5px;
-  border-radius: 10px;
-  font-size: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #ffd700;
+.caster {
+  border-bottom-color: #a55fda;
+}
+
+.ranged {
+  border-bottom-color: #3ba0db;
+}
+
+.healer {
+  border-bottom-color: #5fda81;
+}
+
+.stealth {
+  border-bottom-color: #6e6e6e;
 }
 
 /* Hearthstone-style indicators */
@@ -180,8 +245,8 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 28px;
-  height: 28px;
+  width: 23px;
+  height: 23px;
   background: linear-gradient(135deg, #4facfe 0%, #1a56e8 100%);
   border-radius: 50%;
   display: flex;
@@ -190,8 +255,7 @@
   font-weight: bold;
   font-size: 16px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.8), 0 0 10px rgba(29, 162, 216, 0.6) inset;
-  z-index: 2;
-  transform: translate(-5px, -5px);
+  transform: translate(-10px, -10px);
   text-shadow: 0px 0px 2px #000;
 }
 
@@ -199,8 +263,8 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 28px;
-  height: 28px;
+  width: 23px;
+  height: 23px;
   background: linear-gradient(135deg, #ffdd00 0%, #e6a700 100%);
   border-radius: 50%;
   display: flex;
@@ -209,8 +273,7 @@
   font-weight: bold;
   font-size: 16px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.8), 0 0 10px rgba(255, 215, 0, 0.3) inset;
-  z-index: 2;
-  transform: translate(-5px, 5px);
+  transform: translate(-10px, 8px);
   text-shadow: 0px 0px 2px #000;
 }
 
@@ -218,8 +281,8 @@
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 28px;
-  height: 28px;
+  width: 23px;
+  height: 23px;
   background: linear-gradient(135deg, #ff3019 0%, #990000 100%);
   border-radius: 50%;
   display: flex;
@@ -228,8 +291,7 @@
   font-weight: bold;
   font-size: 16px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.8), 0 0 10px rgba(255, 0, 0, 0.3) inset;
-  z-index: 2;
-  transform: translate(5px, 5px);
+  transform: translate(10px, 8px);
   text-shadow: 0px 0px 2px #000;
 }
 
@@ -243,32 +305,6 @@
   text-shadow: 0 0 5px rgba(0,0,0,0.7);
   font-family: 'Belwe Bold', 'Times New Roman', serif;
   letter-spacing: 1px;
-}
-
-/* Card element styles - more Hearthstone-inspired */
-.earth {
-  border-color: #9b7d51;
-  background: linear-gradient(135deg, #896a3e 0%, #57431e 100%);
-}
-
-.fire {
-  border-color: #e05c33;
-  background: linear-gradient(135deg, #d44a24 0%, #8c2a12 100%);
-}
-
-.arcane {
-  border-color: #a55fda;
-  background: linear-gradient(135deg, #9240c0 0%, #5c2882 100%);
-}
-
-.water {
-  border-color: #3ba0db;
-  background: linear-gradient(135deg, #2186c0 0%, #14537a 100%);
-}
-
-.ice {
-  border-color: #7be2ff;
-  background: linear-gradient(135deg, #60d4f7 0%, #3986a3 100%);
 }
 
 /* Game log styles - scroll parchment effect */
