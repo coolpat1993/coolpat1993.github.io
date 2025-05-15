@@ -47,8 +47,8 @@
             <div class="card-stats">
               <p><strong>Type:</strong> { selectedCard.type }</p>
               <p><strong>Category:</strong> { selectedCard.category }</p>
-              <p if={ (selectedCard.attack > 0 || (selectedCard.type === 'item' && selectedCard.description.includes('+') && selectedCard.description.includes('ATK'))) && selectedCard.type !== 'spell' } class={ selectedCard.type === 'item' ? 'item-attack-text' : '' }><strong>Attack:</strong> { selectedCard.attack > 0 ? selectedCard.attack : getItemAttackValue(selectedCard.description) }</p>
-              <p if={ selectedCard.health > 0 && selectedCard.type !== 'spell' && selectedCard.type !== 'item' }><strong>Health:</strong> { selectedCard.health }</p>
+              <p if={ selectedCard.attack > 0 }><strong>Attack:</strong> { selectedCard.attack > 0 ? selectedCard.attack : getItemAttackValue(selectedCard.description) }</p>
+              <p if={ selectedCard.health > 0 }><strong>Health:</strong> { selectedCard.health }</p>
               <p if={ selectedCard.mana !== undefined && selectedCard.mana !== null }><strong>Mana:</strong> { selectedCard.mana }</p>
             </div>
             <div class="card-description-full">
@@ -181,8 +181,8 @@
       transform-origin: top left;
       margin: 20px;
       margin-right: 50px;
-      height: 220px; /* Corrected height value */
-      width: 150px;
+      height: 0px; /* Corrected height value */
+      width: 100px;
     }
     
     .card-detail-right {
@@ -207,10 +207,7 @@
       padding: 10px;
       border-radius: 5px;
     }
-    
-    .item-attack-text {
-      color: #4cd964; /* Green color to match the item attack indicator */
-    }
+
   </style>
 
   <script>

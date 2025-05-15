@@ -1,4 +1,23 @@
 /* Additional styles specific to this game */
+
+/* Disable text selection globally */
+html, body, div, span, h1, h2, h3, h4, h5, h6, p, 
+a, img, small, strong, ol, ul, li, label, 
+article, aside, footer, header, nav, section {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Re-enable text selection for inputs and text areas */
+input, textarea, select, [contenteditable="true"] {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
 .board-area {
   flex-direction: column;
   background: rgba(47, 28, 14, 0.5);
@@ -149,7 +168,8 @@
 }
 
 /* Green glow effect for playable cards in the hand */
-.hand .spell-card.playable {
+.hand .spell-card.playable,
+.hand .card-wrapper.playable .spell-card {
     border-color: #6BFD3F;
     box-shadow: 
                  0 0 6px #6BFD3F inset, 
@@ -158,7 +178,8 @@
 }
 
 /* Yellow glow effect for playable item cards when a unit is on the board */
-.hand .spell-card.playable-item {
+.hand .spell-card.playable-item,
+.hand .card-wrapper.playable-item .spell-card {
     border-color: #FFD700;
     box-shadow: 
                  0 0 6px #FFD700 inset, 
