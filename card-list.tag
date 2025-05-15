@@ -16,6 +16,7 @@
           <option value="">All Classes</option>
           <option value="neutral">Neutral</option>
           <option value="necromancer">Necromancer</option>
+          <option value="warrior">Warrior</option>
         </select>
       </div>
       
@@ -78,170 +79,6 @@
       </div>
     </div>
   </div>
-
-  <style>
-    .card-list-container {
-      max-width: 100%;
-      margin: 0 auto;
-      padding: 20px;
-      font-family: 'Belwe Bold', 'Times New Roman', serif;
-    }
-    
-    .filters {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      background: rgba(47, 28, 14, 0.7);
-      padding: 15px;
-      border-radius: 8px;
-      border: 2px solid #8c6d35;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    
-    .filter-group, .sort-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .filter-label {
-      color: #e6b948;
-      font-weight: bold;
-    }
-    
-    select, input {
-      background: #e6b948;
-      border: 2px solid #8c6d35;
-      padding: 8px 12px;
-      border-radius: 5px;
-      color: #2f1c0e;
-      font-weight: bold;
-    }
-    
-    .search-bar input {
-      min-width: 250px;
-    }
-    
-    .category-section {
-      margin-bottom: 30px;
-    }
-    
-    .category-header {
-      color: #e6b948;
-      border-bottom: 2px solid #8c6d35;
-      padding-bottom: 10px;
-      margin-top: 30px;
-      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
-    }
-    
-    .type-section {
-      margin-bottom: 20px;
-    }
-    
-    .type-header {
-      color: #c2a150;
-      margin-top: 15px;
-      margin-bottom: 10px;
-      padding-left: 15px;
-      font-size: 1.3rem;
-      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
-    }
-    
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 20px;
-      margin-top: 20px;
-    }
-    
-    .card-wrapper {
-      display: flex;
-      justify-content: center;
-      cursor: pointer;
-    }
-    
-    /* Modal styles */
-    .card-modal {
-      display: none;
-      position: fixed;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.7);
-      z-index: 100;
-    }
-    
-    .card-modal.open {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    
-    .modal-content {
-      background: linear-gradient(135deg, #5a4c44 0%, #2f1c0e 100%);
-      padding: 30px;
-      border-radius: 10px;
-      border: 3px solid #8c6d35;
-      width: 90%;
-      max-width: 900px;
-      position: relative;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
-      overflow-y: auto;
-      max-height: 90vh;
-    }
-    
-    .close-modal {
-      position: absolute;
-      top: 10px;
-      right: 15px;
-      font-size: 24px;
-      color: #e6b948;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    
-    .card-detail-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 30px;
-    }
-    
-    .card-detail-left {
-      flex: 0 0 auto;
-      transform: scale(1.5);
-      transform-origin: top left;
-      margin: 20px;
-      margin-right: 50px;
-      height: 0px; /* Corrected height value */
-      width: 100px;
-    }
-    
-    .card-detail-right {
-      flex: 1;
-      color: #fff;
-      min-width: 300px;
-      padding-left: 20px;
-    }
-    
-    .card-detail-right h2 {
-      color: #e6b948;
-      margin-top: 0;
-    }
-    
-    .card-stats p {
-      margin: 5px 0;
-    }
-    
-    .card-description-full {
-      margin-top: 20px;
-      background: rgba(255, 255, 255, 0.1);
-      padding: 10px;
-      border-radius: 5px;
-    }
-
-  </style>
 
   <script>
     const self = this;
@@ -413,4 +250,168 @@
       return match ? parseInt(match[1], 10) : 0;
     }
   </script>
+
+    <style>
+    .card-list-container {
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 20px;
+      font-family: 'Belwe Bold', 'Times New Roman', serif;
+    }
+    
+    .filters {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      background: rgba(47, 28, 14, 0.7);
+      padding: 15px;
+      border-radius: 8px;
+      border: 2px solid #8c6d35;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .filter-group, .sort-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .filter-label {
+      color: #e6b948;
+      font-weight: bold;
+    }
+    
+    select, input {
+      background: #e6b948;
+      border: 2px solid #8c6d35;
+      padding: 8px 12px;
+      border-radius: 5px;
+      color: #2f1c0e;
+      font-weight: bold;
+    }
+    
+    .search-bar input {
+      min-width: 250px;
+    }
+    
+    .category-section {
+      margin-bottom: 30px;
+    }
+    
+    .category-header {
+      color: #e6b948;
+      border-bottom: 2px solid #8c6d35;
+      padding-bottom: 10px;
+      margin-top: 30px;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+    }
+    
+    .type-section {
+      margin-bottom: 20px;
+    }
+    
+    .type-header {
+      color: #c2a150;
+      margin-top: 15px;
+      margin-bottom: 10px;
+      padding-left: 15px;
+      font-size: 1.3rem;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+    }
+    
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .card-wrapper {
+      display: flex;
+      justify-content: center;
+      cursor: pointer;
+    }
+    
+    /* Modal styles */
+    .card-modal {
+      display: none;
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 100;
+    }
+    
+    .card-modal.open {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .modal-content {
+      background: linear-gradient(135deg, #5a4c44 0%, #2f1c0e 100%);
+      padding: 30px;
+      border-radius: 10px;
+      border: 3px solid #8c6d35;
+      width: 90%;
+      max-width: 900px;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+      overflow-y: auto;
+      max-height: 90vh;
+    }
+    
+    .close-modal {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 24px;
+      color: #e6b948;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    .card-detail-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+    }
+    
+    .card-detail-left {
+      flex: 0 0 auto;
+      transform: scale(1.5);
+      transform-origin: top left;
+      margin: 20px;
+      margin-right: 50px;
+      height: 0px; /* Corrected height value */
+      width: 100px;
+    }
+    
+    .card-detail-right {
+      flex: 1;
+      color: #fff;
+      min-width: 300px;
+      padding-left: 20px;
+    }
+    
+    .card-detail-right h2 {
+      color: #e6b948;
+      margin-top: 0;
+    }
+    
+    .card-stats p {
+      margin: 5px 0;
+    }
+    
+    .card-description-full {
+      margin-top: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+  </style>
 </card-list>

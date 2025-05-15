@@ -562,5 +562,265 @@
     "description": "If a minion returns from graveyard, draw 1 card (once per turn).",
     "mana": 1,
     "image": "skull_lantern.png"
+  },
+  {
+    "id": 56,
+    "name": "Warrior",
+    "type": "hero",
+    "class": "warrior",
+    "description": "Passive – Loyal command: After your hero takes damage, your next minion gains +1 attack. Hero Power (2 mana): Battle Cry – Give a frontline unit +1 attack and +1 health this turn.",
+    "attack": 0,
+    "health": 30,
+    "mana": 0,
+    "image": "warrior.png"
+  },
+  {
+    "id": 57,
+    "name": "Grunt",
+    "type": "unit",
+    "class": "warrior",
+    "description": "Gains +1 HP if you played a weapon this turn.",
+    "attack": 2,
+    "health": 1,
+    "mana": 1,
+    "image": "grunt.png"
+  },
+  {
+    "id": 58,
+    "name": "Shield Recruit",
+    "type": "unit",
+    "class": "warrior",
+    "description": "Taunt. Takes 1 less damage from the first hit each turn.",
+    "attack": 1,
+    "health": 4,
+    "mana": 2,
+    "image": "shield_recruit.png"
+  },
+  {
+    "id": 59,
+    "name": "Battlefield Berserker",
+    "type": "unit",
+    "class": "warrior",
+    "description": "Gains +1 attack when any unit dies this turn.",
+    "attack": 3,
+    "health": 3,
+    "mana": 3,
+    "image": "battlefield_berserker.png"
+  },
+  {
+    "id": 60,
+    "name": "Spear Sentry",
+    "type": "unit",
+    "class": "warrior",
+    "description": "Frontline, first time it takes damage, deal 2 damage to attacker.",
+    "attack": 2,
+    "health": 3,
+    "mana": 3,
+    "image": "spear_sentry.png"
+  },
+  {
+    "id": 61,
+    "name": "Warhound Rider",
+    "type": "unit",
+    "class": "warrior",
+    "description": "Charge. Gains +1 HP if placed behind another unit.",
+    "attack": 2,
+    "health": 2,
+    "mana": 3,
+    "image": "warhound_rider.png"
+  },
+  {
+    "id": 62,
+    "name": "Ironclad Veteran",
+    "type": "unit",
+    "class": "warrior",
+    "description": "When equipped with a weapon, draw a card.",
+    "attack": 3,
+    "health": 5,
+    "mana": 4,
+    "image": "ironclad veteran.png"
+  },
+  {
+    "id": 63,
+    "name": "Blademaster Adept",
+    "type": "unit",
+    "class": "warrior",
+    "description": "Double strike if it attacks first.",
+    "attack": 4,
+    "health": 2,
+    "mana": 4,
+    "image": "blademaster_adept.png"
+  },
+  {
+    "id": 64,
+    "name": "Siege Commander",
+    "type": "unit",
+    "class": "warrior",
+    "description": "Adjacent frontline allies gain +1 attack.",
+    "attack": 3,
+    "health": 6,
+    "mana": 5,
+    "image": "siege_commander.png"
+  },
+  {
+    "id": 65,
+    "name": "Warlord's Guard",
+    "type": "unit",
+    "class": "warrior",
+    "description": "Frontline only. When healed, gain +1 armor.",
+    "attack": 2,
+    "health": 7,
+    "mana": 5,
+    "image": "warlords_guard.png"
+  },
+  {
+    "id": 66,
+    "name": "Rageborn Crusher",
+    "type": "unit",
+    "class": "warrior",
+    "description": "Cannot be frozen or stunned. When damaged, deal 1 to all enemies.",
+    "attack": 6,
+    "health": 4,
+    "mana": 6,
+    "image": "rageborn_crusher.png"
+  },
+  {
+    "id": 67,
+    "name": "Shield Wall",
+    "type": "spell",
+    "class": "warrior",
+    "description": "Give a random front line minion +2 armor, draw a card.",
+    "mana": 2,
+    "image": "shield_wall.png"
+  },
+  {
+    "id": 68,
+    "name": "Blood Rush",
+    "type": "spell",
+    "class": "warrior",
+    "description": "Your units gain +1 attack this turn.",
+    "mana": 2,
+    "image": "blood_rush.png"
+  },
+  {
+    "id": 69,
+    "name": "Crushing Blow",
+    "type": "spell",
+    "class": "warrior",
+    "description": "Deal 4 damage to a frontline enemy.",
+    "mana": 3,
+    "image": "crushing_blow.png"
+  },
+  {
+    "id": 70,
+    "name": "Warpath",
+    "type": "spell",
+    "class": "warrior",
+    "description": "All enemies take 2 damage.",
+    "mana": 4,
+    "image": "warpath.png"
+  },
+  {
+    "id": 71,
+    "name": "Execute",
+    "type": "spell",
+    "class": "warrior",
+    "description": "Instantly kill a damaged enemy minion.",
+    "mana": 2,
+    "image": "execute.png"
+  },
+  {
+    "id": 72,
+    "name": "Second Wind",
+    "type": "spell",
+    "class": "warrior",
+    "description": "Heal a minion for 5. If the minion is still damaged, draw a card.",
+    "mana": 2,
+    "image": "second_wind.png"
+  },
+  {
+    "id": 73,
+    "name": "Unbreakable Will",
+    "type": "spell",
+    "class": "warrior",
+    "description": "Give a unit \"Cannot die this turn\" and +3 armor.",
+    "mana": 5,
+    "image": "unbreakable_will.png"
+  },
+  {
+    "id": 74,
+    "name": "Brutal Axe",
+    "type": "item",
+    "class": "warrior",
+    "description": "+2 attack. Deal 1 splash damage to adjacent targets.",
+    "attack": 2,
+    "mana": 2,
+    "image": "brutal_axe.png"
+  },
+  {
+    "id": 75,
+    "name": "Spiked Shield",
+    "type": "item",
+    "class": "warrior",
+    "description": "+1 armor. Deal 1 damage to attackers while equipped.",
+    "mana": 3,
+    "image": "spiked_shield.png"
+  },
+  {
+    "id": 76,
+    "name": "Warhammer of Wrath",
+    "type": "item",
+    "class": "warrior",
+    "description": "+3 attack, breaks after 2 attacks.",
+    "attack": 3,
+    "mana": 2,
+    "image": "warhammer_of_wrath.png"
+  },
+  {
+    "id": 77,
+    "name": "Gladiator's Chains",
+    "type": "item",
+    "class": "warrior",
+    "description": "Melee unit can't be moved, gains +1 attack.",
+    "attack": 1,
+    "mana": 2,
+    "image": "gladiators_chains.png"
+  },
+  {
+    "id": 78,
+    "name": "Bloodsteel Gauntlets",
+    "type": "item",
+    "class": "warrior",
+    "description": "After this unit attacks, restore 1 HP.",
+    "mana": 1,
+    "image": "bloodsteel_guantlets.png"
+  },
+  {
+    "id": 79,
+    "name": "Banner of Might",
+    "type": "item",
+    "class": "warrior",
+    "description": "All minions with weapons gain +1 attack.",
+    "mana": 3,
+    "image": "banner_of_mights.png"
+  },
+  {
+    "id": 80,
+    "name": "Juggernaut Helm",
+    "type": "item",
+    "class": "warrior",
+    "description": "Grants \"Unstoppable\" – cannot be rooted, stunned, or pulled.",
+    "mana": 3,
+    "image": "juggernaut_helm.png"
+  },
+  {
+    "id": 81,
+    "name": "Executioner's Flail",
+    "type": "item",
+    "class": "warrior",
+    "description": "+2 attack, if target has less than 50% HP, deal +2 damage.",
+    "attack": 2,
+    "mana": 3,
+    "image": "executioners_flail.png"
   }
 ]

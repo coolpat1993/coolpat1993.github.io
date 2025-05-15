@@ -244,6 +244,25 @@ input, textarea, select, [contenteditable="true"] {
   border-color: #220033;
 }
 
+/* Class-specific styling - Warrior */
+/* Base warrior unit card style */
+.card.warrior {
+  background: linear-gradient(135deg, #5d3a3a 0%, #723d3d 100%);
+  border-color: #522a2a;
+}
+
+/* Warrior spell card style */
+.card.warrior.spell {
+  background: linear-gradient(135deg, #792a2a 0%, #6c2e2e 100%);
+  border-color: #663030;
+}
+
+/* Warrior item card style */
+.card.warrior.item {
+  background: linear-gradient(135deg, #4a2525 0%, #331818 100%);
+  border-color: #271212;
+}
+
 /* Card image container */
 .card-image {
   height: 65%; /* Increased from 50% to 65% to make the image taller */
