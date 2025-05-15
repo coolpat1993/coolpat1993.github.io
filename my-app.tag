@@ -107,7 +107,7 @@
         </div>
       
         <div class="hand" id="player-hand">
-          <div each={ card in playerHand } class="card-wrapper { card.mana <= currentMana && card.category !== 'item' ? 'playable' : '' } { card.mana <= currentMana && card.category === 'item' && hasUnitOnBoard() ? 'playable-item' : '' }">
+          <div each={ card in playerHand } class="card-wrapper { card.mana <= currentMana && card.type !== 'item' ? 'playable' : '' } { card.mana <= currentMana && card.type === 'item' && hasUnitOnBoard() ? 'playable-item' : '' }">
             <card draggable="true" 
                   data={ card } 
                   onDragStart={ parent.handleCardDragStart }

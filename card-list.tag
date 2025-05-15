@@ -12,8 +12,8 @@
           <option value="hero">Heroes</option>
         </select>
         
-        <select ref="categoryFilter" onchange={ updateFilters }>
-          <option value="">All Categories</option>
+        <select ref="classFilter" onchange={ updateFilters }>
+          <option value="">All Classes</option>
           <option value="neutral">Neutral</option>
           <option value="necromancer">Necromancer</option>
           <option value="item">Items</option>
@@ -46,7 +46,7 @@
             <h2>{ selectedCard.name }</h2>
             <div class="card-stats">
               <p><strong>Type:</strong> { selectedCard.type }</p>
-              <p><strong>Category:</strong> { selectedCard.category }</p>
+              <p><strong>Class:</strong> { selectedCard.class }</p>
               <p if={ selectedCard.attack > 0 }><strong>Attack:</strong> { selectedCard.attack > 0 ? selectedCard.attack : getItemAttackValue(selectedCard.description) }</p>
               <p if={ selectedCard.health > 0 }><strong>Health:</strong> { selectedCard.health }</p>
               <p if={ selectedCard.mana !== undefined && selectedCard.mana !== null }><strong>Mana:</strong> { selectedCard.mana }</p>
@@ -239,7 +239,7 @@
     // Apply filters and group cards
     self.applyFilters = function() {
       const typeFilter = self.refs.typeFilter.value;
-      const categoryFilter = self.refs.categoryFilter.value;
+      const classFilter = self.refs.classFilter.value;
       const searchTerm = self.refs.searchInput.value.toLowerCase();
       
       // Apply filters
@@ -247,8 +247,8 @@
         // Type filter
         if (typeFilter && card.type !== typeFilter) return false;
         
-        // Category filter
-        if (categoryFilter && card.category !== categoryFilter) return false;
+        // Class filter
+        if (classFilter && card.class !== classFilter) return false;
         
         // Search term
         if (searchTerm && !card.name.toLowerCase().includes(searchTerm) && 
@@ -257,21 +257,21 @@
         return true;
       });
       
-      // Group cards first by category, then by type
+      // Group cards first by class, then by type
       self.groupedCards = {};
       
       self.filteredCards.forEach(card => {
-        // Group by category
-        const category = card.category || 'uncategorized';
-        if (!self.groupedCards[category]) {
-          self.groupedCards[category] = [];
+        // Group by class
+        const cardClass = card.class || 'uncategorized';
+        if (!self.groupedCards[cardClass]) {
+          self.groupedCards[cardClass] = [];
         }
-        self.groupedCards[category].push(card);
+        self.groupedCards[cardClass].push(card);
       });
       
-      // Sort each category by mana cost, then by name
-      Object.keys(self.groupedCards).forEach(category => {
-        self.groupedCards[category].sort((a, b) => {
+      // Sort each class by mana cost, then by name
+      Object.keys(self.groupedCards).forEach(cardClass => {
+        self.groupedCards[cardClass].sort((a, b) => {
           if (a.mana === b.mana) {
             return a.name.localeCompare(b.name);
           }
@@ -282,13 +282,13 @@
       self.update();
     }
     
-    // Get a formatted title for each category
-    self.getCategoryTitle = function(categoryName) {
-      // Handle empty category name
-      if (!categoryName || categoryName === 'uncategorized') return 'Uncategorized';
+    // Get a formatted title for each class
+    self.getCategoryTitle = function(className) {
+      // Handle empty class name
+      if (!className || className === 'uncategorized') return 'Uncategorized';
       
-      // Format the category name (capitalize first letter)
-      return categoryName.charAt(0).toUpperCase() + categoryName.slice(1);
+      // Format the class name (capitalize first letter)
+      return className.charAt(0).toUpperCase() + className.slice(1);
     }
     
     // Show card details in modal

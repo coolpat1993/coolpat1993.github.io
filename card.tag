@@ -1,5 +1,5 @@
 <card>
-  <div class="spell-card { opts.data.type } { opts.data.category === 'item' ? 'item' : '' } { opts.data.type === 'spell' ? 'spell' : '' }" 
+  <div class="card { opts.data.type } { opts.data.class } { opts.data.type === 'spell' ? 'spell' : '' }" 
        draggable={ opts.draggable || false }
        data-card-id={ opts.data.id }
        onclick={ handleClick }>

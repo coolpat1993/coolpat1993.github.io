@@ -71,7 +71,7 @@ input, textarea, select, [contenteditable="true"] {
 }
 
 /* Style for cards in hand to create overlap effect */
-.hand .spell-card {
+.hand .card {
   margin-right: -25px; /* Less overlap to make cards more spread out */
   transition: transform 0.3s ease, box-shadow 0.3s ease, margin 0.3s ease;
   position: relative;
@@ -80,29 +80,29 @@ input, textarea, select, [contenteditable="true"] {
 }
 
 /* When hovering, delay the z-index change to prevent visual issues during hover */
-.hand .spell-card:hover {
+.hand .card:hover {
   transform: translateY(-15px) scale(1.35);
   z-index: 20; /* Ensure hovered card appears above others */
   box-shadow: 0 12px 20px rgba(0, 0, 0, 0.7), 0 0 25px rgba(255, 223, 136, 0.4) inset;
 }
 
 /* When no longer hovering, immediately change the z-index back without delay */
-.hand .spell-card:not(:hover) {
+.hand .card:not(:hover) {
   transition: transform 0.3s ease, box-shadow 0.3s ease, margin 0.3s ease, z-index 0s;
 }
 
 /* Add spacing for the last card to ensure it's fully visible */
-.hand .spell-card:last-child {
+.hand .card:last-child {
   margin-right: 0;
 }
 
 /* Move cards before the hovered card to the left */
-.hand .spell-card:hover ~ .spell-card {
+.hand .card:hover ~ .card {
   transform: translateX(36px); /* Move cards that follow to the right */
 }
 
 /* Move cards before the hovered card to the left using the general sibling combinator */
-.hand .spell-card:has(~ .spell-card:hover) {
+.hand .card:has(~ .card:hover) {
   transform: translateX(-36px); /* Move cards that precede to the left */
 }
 
@@ -148,7 +148,7 @@ input, textarea, select, [contenteditable="true"] {
 }
 
 /* Card styles */
-.spell-card {
+.card {
   width: 100px;
   height: 145px;
   border-radius: 8px;
@@ -168,8 +168,8 @@ input, textarea, select, [contenteditable="true"] {
 }
 
 /* Green glow effect for playable cards in the hand */
-.hand .spell-card.playable,
-.hand .card-wrapper.playable .spell-card {
+.hand .card.playable,
+.hand .card-wrapper.playable .card {
     border-color: #6BFD3F;
     box-shadow: 
                  0 0 6px #6BFD3F inset, 
@@ -178,8 +178,8 @@ input, textarea, select, [contenteditable="true"] {
 }
 
 /* Yellow glow effect for playable item cards when a unit is on the board */
-.hand .spell-card.playable-item,
-.hand .card-wrapper.playable-item .spell-card {
+.hand .card.playable-item,
+.hand .card-wrapper.playable-item .card {
     border-color: #FFD700;
     box-shadow: 
                  0 0 6px #FFD700 inset, 
@@ -213,19 +213,35 @@ input, textarea, select, [contenteditable="true"] {
     }
 }
 
-.spell-card[draggable="true"] {
-  cursor: grab;
+/* Special styling for spell cards */
+.card.spell {
+  background: linear-gradient(135deg, #6a5cff 0%, #4a3cd7 100%);
+  border-color: #35318d;
 }
 
-.spell-card.dragging {
-  opacity: 0.7;
-  cursor: grabbing;
-  transform: scale(1.05);
+/* Special styling for item cards */
+.card.item {
+  background: linear-gradient(135deg, #c99e39 0%, #9c7b2d 100%);
+  border-color: #765c20;
 }
 
-.spell-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(168, 151, 131, 0.3) inset;
+/* Class-specific styling - Necromancer */
+/* Base necromancer unit card style */
+.card.necromancer {
+  background: linear-gradient(135deg, #9747e5 0%, #7035b0 100%);
+  border-color: #5b2b91;
+}
+
+/* Necromancer spell card style */
+.card.necromancer.spell {
+  background: linear-gradient(135deg, #6a5cff 0%, #4a3cd7 100%);
+  border-color: #35318d;
+}
+
+/* Necromancer item card style */
+.card.necromancer.item {
+  background: linear-gradient(135deg, #4a0072 0%, #2d0045 100%);
+  border-color: #220033;
 }
 
 /* Card image container */
@@ -240,7 +256,7 @@ input, textarea, select, [contenteditable="true"] {
   position: relative; /* Added to position the overlaid card name */
 }
 
-.spell-card .card-header {
+.card .card-header {
   position: absolute; /* Position absolutely to overlay on the image */
   bottom: 0; /* Place at the bottom of the image */
   left: 0;
@@ -259,7 +275,7 @@ input, textarea, select, [contenteditable="true"] {
   color: #ffffff; /* White text for better contrast against the dark gradient */
 }
 
-.spell-card .card-description {
+.card .card-description {
   font-size: 10px;
   text-align: center;
   color: #000000;
@@ -300,7 +316,7 @@ input, textarea, select, [contenteditable="true"] {
 }
 
 /* Hearthstone-style indicators */
-.spell-card .mana-indicator {
+.card .mana-indicator {
   position: absolute;
   top: 0;
   left: 0;
@@ -318,7 +334,7 @@ input, textarea, select, [contenteditable="true"] {
   text-shadow: 0px 0px 2px #000;
 }
 
-.spell-card .attack-indicator {
+.card .attack-indicator {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -337,7 +353,7 @@ input, textarea, select, [contenteditable="true"] {
 }
 
 /* Green attack indicator for item cards */
-.spell-card .attack-indicator.item-attack {
+.card .attack-indicator.item-attack {
   background: linear-gradient(135deg, #4cd964 0%, #2ecc71 100%);
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.8), 0 0 10px rgba(46, 204, 113, 0.3) inset;
 }
@@ -361,7 +377,7 @@ input, textarea, select, [contenteditable="true"] {
   background-color: #55bb55; /* Green background for item attack */
 }
 
-.spell-card .health-indicator {
+.card .health-indicator {
   position: absolute;
   bottom: 0;
   right: 0;
@@ -380,22 +396,10 @@ input, textarea, select, [contenteditable="true"] {
 }
 
 /* Hide attack and health indicators for spell cards, and only health indicators for item cards */
-.spell-card.spell .attack-indicator,
-.spell-card.spell .health-indicator,
-.spell-card.item .health-indicator {
+.card.spell .attack-indicator,
+.card.spell .health-indicator,
+.card.item .health-indicator {
   display: none;
-}
-
-/* Special styling for spell cards */
-.spell-card.spell {
-  background: linear-gradient(135deg, #6a5cff 0%, #4a3cd7 100%);
-  border-color: #35318d;
-}
-
-/* Special styling for item cards */
-.spell-card.item {
-  background: linear-gradient(135deg, #c99e39 0%, #9c7b2d 100%);
-  border-color: #765c20;
 }
 
 /* Turn indicator - more Hearthstone-like */
