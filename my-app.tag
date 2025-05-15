@@ -1,7 +1,29 @@
 <my-app>
   <div class="container">
     <div class="game-area">
-      <div class="turn-indicator"></div>
+      <!-- Enemy Hand Display -->
+      <!--  <div class="hand enemy-hand" id="enemy-hand">
+        <div each={ card, i in enemyHand } class="card-back">
+          <div class="card-cost">{ card.mana }</div>
+        </div>
+      </div>  -->
+
+              <!-- Enemy Hand with visible cards -->
+        <div class="hand enemy-hand-container">
+          <div each={ card in enemyHand } class="enemy-card-wrapper">
+            <card data={ card } class="enemy-card"></card>
+          </div>
+        </div>
+      
+      <!-- Enemy Mana Display -->
+      <div class="mana-display enemy-mana">
+        <div class="mana-container">
+          <div class="mana-text">({ enemyMana }/{ enemyMaxMana })</div>
+          <div class="mana-crystals">
+            <div each={ i, index in new Array(10) } class="mana-crystal { index < enemyMana ? 'active' : '' } { index >= enemyMaxMana ? 'hidden' : '' }"></div>
+          </div>
+        </div>
+      </div>
       
       <!-- Board Area Refactored to use state-driven approach -->
       <div class="board-area">
@@ -79,7 +101,7 @@
         <!-- Enemy Deck -->
         <div class="deck enemy-deck">
           <div class="deck-back"></div>
-          <div class="card-count">30</div>
+          <div class="card-count">{ enemyDeck.length }</div>
         </div>
 
         <div class="end-turn-container">
@@ -115,6 +137,7 @@
             </card>
           </div>
         </div>
+        
   </div>
       
       <!-- Action Buttons -->
@@ -136,14 +159,20 @@
     // Game state
     self.playerHand = [];
     self.playerDeck = [];
+    self.enemyHand = [];
+    self.enemyDeck = [];
     self.slots = {};
     self.draggingCardId = null;
     self.isOpponentTurn = false;
     self.logEntries = ["Game started. Your turn!"];
-    self.currentMana = 1;  // Start with 1 mana
-    self.maxMana = 1;      // Max mana starts at 1, increases each turn
-    self.cardLibrary = []; // All available cards from JSON
-    // New balanced deck with a mix of units, banners, and items
+    self.currentMana = 1;   // Player starting mana
+    self.maxMana = 1;       // Player max mana
+    self.enemyMana = 0;     // Enemy starting mana (changed from 1 to 0)
+    self.enemyMaxMana = 0;  // Enemy max mana (changed from 1 to 0)
+    self.cardLibrary = [];  // All available cards from JSON
+    self.enemyAI = null;    // Will hold the enemy AI instance
+    
+    // Player card collection (IDs)
     self.playerCardCollection = [
       // Neutral Units - frontline fighters
       1, 4, 9, 10, 12,
@@ -157,6 +186,20 @@
       21, 22, 24, 28, 32,
       // Utility items
       27, 33, 34
+    ];
+    
+    // Enemy card collection (IDs) - using neutral and necromancer cards
+    self.enemyCardCollection = [
+      // Frontline units
+      1, 4, 9, 10, 39, 40, 46,
+      // Backline units
+      3, 7, 41, 42, 43, 45, 47,
+      // Banners
+      16, 17,
+      // Spells
+      48, 49, 50, 51, 52,
+      // Items
+      22, 24, 27, 53, 54, 55
     ];
     
     // Initialize the game
@@ -176,15 +219,20 @@
     
     // Initialize game
     self.initGame = function() {
-      // Initialize deck with cards from player's collection
-      self.playerDeck = [...self.playerCardCollection]; // Use the player's card collection (array of IDs)
+      // Initialize player deck with cards from player's collection
+      self.playerDeck = [...self.playerCardCollection];
       
-      // Shuffle deck
-      self.shuffleDeck();
+      // Initialize enemy deck with cards from enemy's collection
+      self.enemyDeck = [...self.enemyCardCollection];
       
-      // Draw initial hand
+      // Shuffle both decks
+      self.shuffleDeck(self.playerDeck);
+      self.shuffleDeck(self.enemyDeck);
+      
+      // Draw initial hands
       for (let i = 0; i < 5; i++) {
-        self.drawCard();
+        self.drawCard('player');
+        self.drawCard('enemy');
       }
       
       // Initialize slots
@@ -193,35 +241,46 @@
         self.slots[slot.id] = null; // No card in slot initially
       });
       
-      self.currentMana = 1; // Start with 1 mana
-      self.maxMana = 1;     // Initial mana cap also 1
+      // Set starting mana
+      self.currentMana = 1;
+      self.maxMana = 1;
+      self.enemyMana = 0;     // Changed from 1 to 0
+      self.enemyMaxMana = 0;  // Changed from 1 to 0
       
-      self.addLogEntry('Game initialized. You drew 5 cards. Starting with 1 mana.');
+      // Initialize enemy AI
+      self.enemyAI = new EnemyAI(self);
+      
+      self.addLogEntry('Game initialized. Both players drew 5 cards. Starting with 1 mana.');
       self.update();
     };
     
-    // Shuffle the deck (Fisher-Yates algorithm)
-    self.shuffleDeck = function() {
-      for (let i = self.playerDeck.length - 1; i > 0; i--) {
+    // Shuffle a deck (Fisher-Yates algorithm)
+    self.shuffleDeck = function(deck) {
+      for (let i = deck.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [self.playerDeck[i], self.playerDeck[j]] = [self.playerDeck[j], self.playerDeck[i]];
+        [deck[i], deck[j]] = [deck[j], deck[i]];
       }
     };
     
     // Draw a card from deck to hand
-    self.drawCard = function() {
-      if (self.playerDeck.length === 0) {
-        self.addLogEntry('No cards left in deck!');
+    self.drawCard = function(player = 'player') {
+      // Determine which deck and hand to use
+      const deck = player === 'player' ? self.playerDeck : self.enemyDeck;
+      const hand = player === 'player' ? self.playerHand : self.enemyHand;
+      
+      if (deck.length === 0) {
+        self.addLogEntry(`${player === 'player' ? 'You have' : 'Enemy has'} no cards left in deck!`);
         return;
       }
       
       // Check if hand is full (max 10 cards)
-      if (self.playerHand.length >= 10) {
-        self.addLogEntry('Your hand is full! Card burned.');
+      if (hand.length >= 10) {
+        self.addLogEntry(`${player === 'player' ? 'Your' : 'Enemy'} hand is full! Card burned.`);
+        deck.pop(); // Remove top card from deck but don't add to hand
         return;
       }
       
-      const cardId = self.playerDeck.pop();
+      const cardId = deck.pop();
       const cardTemplate = self.cardLibrary.find(c => c.id === cardId);
       
       if (!cardTemplate) {
@@ -229,42 +288,67 @@
         return;
       }
       
-      const instanceId = `card-${Date.now()}-${Math.floor(Math.random() * 1000)}`; // Unique ID
+      const instanceId = `${player}-card-${Date.now()}-${Math.floor(Math.random() * 1000)}`; // Unique ID with player prefix
       const card = { ...cardTemplate, instanceId: instanceId };
       
-      self.playerHand.push(card);
-      self.addLogEntry(`You drew ${card.name}.`);
-      self.update();
+      hand.push(card);
       
+      if (player === 'player') {
+        self.addLogEntry(`You drew ${card.name}.`);
+      } else {
+        self.addLogEntry(`Enemy drew a card.`);
+      }
+      
+      self.update();
       return card;
     };
     
-    // Start of a new round
+    // Start of a new player round
     self.roundStart = function() {
       // Increase mana for new turn (up to max of 10)
       self.maxMana = Math.min(self.maxMana + 1, 10);
       self.currentMana = self.maxMana;
       
       // Draw a card at the start of the round
-      self.drawCard();
+      self.drawCard('player');
       
       self.addLogEntry(`Your turn begins. Mana refreshed to ${self.currentMana}.`);
       self.update();
     };
     
-    // End the turn
+    // Start of a new enemy round
+    self.enemyRoundStart = function() {
+      // Increase mana for new turn (up to max of 10)
+      self.enemyMaxMana = Math.min(self.enemyMaxMana + 1, 10);
+      self.enemyMana = self.enemyMaxMana;
+      
+      // Draw a card at the start of the round
+      self.drawCard('enemy');
+      
+      self.addLogEntry(`Enemy's turn begins. Enemy has ${self.enemyMana} mana.`);
+      self.update();
+      
+      // Let the AI take over
+      self.enemyAI.takeTurn();
+    };
+    
+    // End the player's turn and start enemy turn
     self.endTurn = function() {
       self.isOpponentTurn = true;
       self.addLogEntry('Turn ended. Opponent\'s turn now.');
       self.update();
       
-      // Simulate opponent's turn
-      setTimeout(() => {
-        self.isOpponentTurn = false;
-        
-        // Call roundStart to handle new round setup
-        self.roundStart();
-      }, 2000);
+      // Start enemy turn
+      self.enemyRoundStart();
+    };
+    
+    // End the enemy's turn and start player turn
+    self.endEnemyTurn = function() {
+      self.isOpponentTurn = false;
+      self.update();
+      
+      // Start player's turn
+      self.roundStart();
     };
     
     // Add a log entry
@@ -275,10 +359,24 @@
         self.logEntries.shift();
       }
       self.update();
+      
+      // Also scroll the log to the bottom
+      setTimeout(() => {
+        const logArea = document.querySelector('.log-area');
+        if (logArea) {
+          logArea.scrollTop = logArea.scrollHeight;
+        }
+      }, 0);
     };
     
     // New drag start handler for card component
     self.handleCardDragStart = function(e) {
+      // Don't allow dragging during enemy turn
+      if (self.isOpponentTurn) {
+        e.preventDefault();
+        return false;
+      }
+      
       // Get the card ID from the data attribute
       const cardElement = e.currentTarget;
       const cardId = cardElement.getAttribute('data-card-id') || 
@@ -290,6 +388,12 @@
     
     // Drag and drop handlers
     self.dragStart = function(e) {
+      // Don't allow dragging during enemy turn
+      if (self.isOpponentTurn) {
+        e.preventDefault();
+        return false;
+      }
+      
       // This is kept for backward compatibility but we now prefer handleCardDragStart
       const cardElement = e.currentTarget;
       const cardId = cardElement.getAttribute('data-card-id');
@@ -300,11 +404,18 @@
     
     // Allow drop
     self.allowDrop = function(e) {
+      if (self.isOpponentTurn) {
+        e.preventDefault();  // Prevent default to stop the drop
+        return false;
+      }
+      
       e.preventDefault(); // Allow drop
     };
     
     // Drag enter (highlight valid/invalid targets)
     self.dragEnter = function(e) {
+      if (self.isOpponentTurn) return;
+      
       const slot = e.currentTarget;
       if (self.canDropInSlot(slot)) {
         slot.classList.add('valid-target');
@@ -322,6 +433,8 @@
     // Drop handler - refactored to be state-driven
     self.handleDrop = function(e) {
       e.preventDefault();
+      
+      if (self.isOpponentTurn) return;
       
       const slot = e.currentTarget;
       slot.classList.remove('valid-target', 'invalid-target');
@@ -387,6 +500,11 @@
     
     // Check if a card can be dropped in a particular slot
     self.canDropInSlot = function(slot) {
+      // Don't allow drops during enemy turn
+      if (self.isOpponentTurn) {
+        return false;
+      }
+      
       // Only allow drops in player slots
       if (slot.id.startsWith('enemy-')) {
         return false; // Cannot place in enemy zones
@@ -410,12 +528,6 @@
       return true;
     };
   </script>
-  
-  <style>
-    <!--  .card-wrapper {
-      position: relative;
-    }  -->
-  </style>
   
   <link rel="stylesheet" href="styles.css">
 </my-app>
