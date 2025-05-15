@@ -16,7 +16,21 @@
           <option value="">All Classes</option>
           <option value="neutral">Neutral</option>
           <option value="necromancer">Necromancer</option>
-          <option value="item">Items</option>
+        </select>
+      </div>
+      
+      <div class="sort-group">
+        <span class="filter-label">Sort by:</span>
+        <select ref="sortBy" onchange={ updateFilters }>
+          <option value="mana">Mana Cost</option>
+          <option value="name">Name</option>
+          <option value="attack">Attack</option>
+          <option value="health">Health</option>
+        </select>
+        
+        <select ref="sortOrder" onchange={ updateFilters }>
+          <option value="asc">Ascending</option>
+          <option value="desc">Descending</option>
         </select>
       </div>
       
@@ -25,11 +39,15 @@
       </div>
     </div>
     
-    <div class="category-section" each={ category, categoryName in groupedCards }>
-      <h2 class="category-header">{ getCategoryTitle(categoryName) }</h2>
-      <div class="card-grid">
-        <div class="card-wrapper" each={ card in category }>
-          <card data={ card } onClick={ showCardDetails }></card>
+    <div class="category-section" each={ classGroup, className in groupedCards }>
+      <h2 class="category-header">{ getCategoryTitle(className) }</h2>
+      
+      <div class="type-section" each={ typeGroup, typeName in classGroup }>
+        <h3 class="type-header">{ getTypeTitle(typeName) }</h3>
+        <div class="card-grid">
+          <div class="card-wrapper" each={ card in typeGroup }>
+            <card data={ card } onClick={ showCardDetails }></card>
+          </div>
         </div>
       </div>
     </div>
@@ -77,9 +95,11 @@
       padding: 15px;
       border-radius: 8px;
       border: 2px solid #8c6d35;
+      flex-wrap: wrap;
+      gap: 10px;
     }
     
-    .filter-group {
+    .filter-group, .sort-group {
       display: flex;
       align-items: center;
       gap: 10px;
@@ -113,6 +133,19 @@
       padding-bottom: 10px;
       margin-top: 30px;
       text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+    }
+    
+    .type-section {
+      margin-bottom: 20px;
+    }
+    
+    .type-header {
+      color: #c2a150;
+      margin-top: 15px;
+      margin-bottom: 10px;
+      padding-left: 15px;
+      font-size: 1.3rem;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
     }
     
     .card-grid {
@@ -241,6 +274,8 @@
       const typeFilter = self.refs.typeFilter.value;
       const classFilter = self.refs.classFilter.value;
       const searchTerm = self.refs.searchInput.value.toLowerCase();
+      const sortBy = self.refs.sortBy.value;
+      const sortOrder = self.refs.sortOrder.value;
       
       // Apply filters
       self.filteredCards = self.allCards.filter(card => {
@@ -264,22 +299,63 @@
         // Group by class
         const cardClass = card.class || 'uncategorized';
         if (!self.groupedCards[cardClass]) {
-          self.groupedCards[cardClass] = [];
+          self.groupedCards[cardClass] = {};
         }
-        self.groupedCards[cardClass].push(card);
+        
+        // Group by type within class
+        const cardType = card.type || 'uncategorized';
+        if (!self.groupedCards[cardClass][cardType]) {
+          self.groupedCards[cardClass][cardType] = [];
+        }
+        
+        self.groupedCards[cardClass][cardType].push(card);
       });
       
-      // Sort each class by mana cost, then by name
+      // Sort each type by the selected criteria
       Object.keys(self.groupedCards).forEach(cardClass => {
-        self.groupedCards[cardClass].sort((a, b) => {
-          if (a.mana === b.mana) {
-            return a.name.localeCompare(b.name);
-          }
-          return a.mana - b.mana;
+        Object.keys(self.groupedCards[cardClass]).forEach(cardType => {
+          self.groupedCards[cardClass][cardType].sort((a, b) => {
+            let comparison = 0;
+            
+            // Handle null or undefined values
+            const aValue = self.getCardValue(a, sortBy);
+            const bValue = self.getCardValue(b, sortBy);
+            
+            // Compare values based on type
+            if (typeof aValue === 'string' && typeof bValue === 'string') {
+              comparison = aValue.localeCompare(bValue);
+            } else {
+              comparison = aValue - bValue;
+            }
+            
+            // Apply sort order
+            return sortOrder === 'asc' ? comparison : -comparison;
+          });
         });
       });
       
+      // Define type order for display
+      self.typeOrder = ['hero', 'unit', 'spell', 'banner', 'item'];
+      
       self.update();
+    }
+    
+    // Helper function to get card value based on sort criteria
+    self.getCardValue = function(card, sortBy) {
+      if (sortBy === 'name') {
+        return card.name || '';
+      } else if (sortBy === 'attack') {
+        // For items with attack in description
+        if (card.type === 'item' && (!card.attack || card.attack === 0)) {
+          return self.getItemAttackValue(card.description);
+        }
+        return card.attack || 0;
+      } else if (sortBy === 'health') {
+        return card.health || 0;
+      } else {
+        // Default to mana
+        return card.mana || 0;
+      }
     }
     
     // Get a formatted title for each class
@@ -289,6 +365,19 @@
       
       // Format the class name (capitalize first letter)
       return className.charAt(0).toUpperCase() + className.slice(1);
+    }
+    
+    // Get a formatted title for each type
+    self.getTypeTitle = function(typeName) {
+      // Handle empty type name
+      if (!typeName || typeName === 'uncategorized') return 'Other';
+      
+      // Format the type name (capitalize first letter and pluralize)
+      const title = typeName.charAt(0).toUpperCase() + typeName.slice(1);
+      
+      // Add 's' to pluralize, except for special cases
+      if (typeName === 'hero') return title + 'es';
+      return title + 's';
     }
     
     // Show card details in modal
