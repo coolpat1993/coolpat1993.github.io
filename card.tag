@@ -115,6 +115,25 @@
       border-color: #271212;
     }
 
+    /* Class-specific styling - Beastmaster */
+    /* Base beastmaster unit card style - earthy green */
+    .card.beastmaster {
+      background: linear-gradient(135deg, #4a6d40 0%, #3a5933 100%);
+      border-color: #2c4326;
+    }
+
+    /* Beastmaster spell card style - lighter green */
+    .card.beastmaster.spell {
+      background: linear-gradient(135deg, #5e8851 0%, #4e7243 100%);
+      border-color: #3a5633;
+    }
+
+    /* Beastmaster item card style - darker green */
+    .card.beastmaster.item {
+      background: linear-gradient(135deg, #2e4324 0%, #1f2e17 100%);
+      border-color: #192313;
+    }
+
     /* Card image container */
     .card-image {
       height: 65%; /* Increased from 50% to 65% to make the image taller */
