@@ -208,6 +208,9 @@
       });
       
       self.update();
+      
+      // Set card backgrounds after update
+      self.setCardBackgrounds();
     };
     
     // Calculate bar height for mana curve
@@ -262,6 +265,32 @@
       });
       
       return result;
+    };
+    
+    // Set card background image when rendered
+    self.setCardBackgrounds = function() {
+      if (!self.currentDeckCards || self.currentDeckCards.length === 0) return;
+      
+      // Add small delay to ensure DOM elements are rendered
+      setTimeout(() => {
+        const deckCardItems = document.querySelectorAll('.deck-card-item');
+        const groupedCards = self.getGroupedDeckCards();
+        
+        deckCardItems.forEach((item, index) => {
+          if (index < groupedCards.length) {
+            const card = groupedCards[index].card;
+            if (card.image) {
+              const imagePath = `images/${card.image}`;
+              item.style.setProperty('background-image', `url('${imagePath}')`);
+              // Set the same image on the pseudo-element
+              // We need to use this approach because we can't directly style pseudo-elements with JS
+              const style = document.createElement('style');
+              style.textContent = `.deck-card-item:nth-child(${index + 1})::before { background-image: url('${imagePath}'); }`;
+              document.head.appendChild(style);
+            }
+          }
+        });
+      }, 100);
     };
     
     // Create new deck
@@ -622,14 +651,50 @@
       padding-top: 10px;
     }
     
+    .deck-cards::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .deck-cards::-webkit-scrollbar-track {
+      background: rgba(47, 28, 14, 0.3);
+      border-radius: 4px;
+    }
+    
+    .deck-cards::-webkit-scrollbar-thumb {
+      background: #8c6d35;
+      border-radius: 4px;
+      border: 1px solid #e6b948;
+    }
+    
+    .deck-cards::-webkit-scrollbar-thumb:hover {
+      background: #e6b948;
+    }
+    
     .deck-card-item {
       display: flex;
       align-items: center;
-      padding: 8px;
-      border-radius: 4px;
+      padding: 8px 12px;
+      border-radius: 5px;
       background: rgba(255, 255, 255, 0.1);
       margin-bottom: 5px;
       color: white;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #8c6d35;
+      height: 40px;
+    }
+    
+    .deck-card-item::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center 30%;
+      opacity: 0.3;
+      z-index: 0;
     }
     
     .deck-card-cost {
@@ -641,7 +706,11 @@
       align-items: center;
       justify-content: center;
       font-weight: bold;
-      margin-right: 8px;
+      margin-right: 10px;
+      position: relative;
+      z-index: 1;
+      border: 1px solid #1a3a68;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
     }
     
     .deck-card-name {
@@ -649,24 +718,42 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      position: relative;
+      z-index: 1;
+      text-shadow: 
+        -1px -1px 0 #000,
+        1px -1px 0 #000,
+        -1px 1px 0 #000,
+        1px 1px 0 #000,
+        0 0 5px rgba(0, 0, 0, 0.7);
+      font-weight: bold;
     }
     
     .deck-card-remove {
-      width: 20px;
-      height: 20px;
-      background: none;
-      border: none;
-      color: #d9534f;
+      width: 24px;
+      height: 24px;
+      background: rgba(217, 83, 79, 0.8);
+      border: 1px solid #c9302c;
+      border-radius: 50%;
+      color: white;
       font-weight: bold;
+      font-size: 16px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      opacity: 0.7;
+      opacity: 0.9;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+      margin-left: 5px;
+      transition: all 0.2s ease;
     }
     
     .deck-card-remove:hover {
       opacity: 1;
+      transform: scale(1.1);
+      background: rgba(217, 83, 79, 1);
     }
     
     .empty-deck-message {
@@ -796,6 +883,25 @@
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
       overflow-y: auto;
       max-height: 90vh;
+    }
+    
+    .modal-content::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .modal-content::-webkit-scrollbar-track {
+      background: rgba(47, 28, 14, 0.3);
+      border-radius: 4px;
+    }
+    
+    .modal-content::-webkit-scrollbar-thumb {
+      background: #8c6d35;
+      border-radius: 4px;
+      border: 1px solid #e6b948;
+    }
+    
+    .modal-content::-webkit-scrollbar-thumb:hover {
+      background: #e6b948;
     }
     
     .close-modal {
