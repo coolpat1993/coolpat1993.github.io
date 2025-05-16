@@ -101,7 +101,7 @@
         <!-- Enemy Deck -->
         <div class="deck enemy-deck">
           <div class="deck-back"></div>
-          <div class="card-count">{ enemyDeck.length }</div>
+          <div class="ingame-card-count">{ enemyDeck.length }</div>
         </div>
 
         <div class="end-turn-container">
@@ -111,7 +111,7 @@
         <!-- Player Deck -->
         <div class="deck player-deck">
           <div class="deck-back"></div>
-          <div class="card-count">{ playerDeck.length }</div>
+          <div class="ingame-card-count">{ playerDeck.length }</div>
         </div>
 
         </div>

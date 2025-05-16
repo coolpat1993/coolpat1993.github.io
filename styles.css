@@ -412,6 +412,25 @@ input, textarea, select, [contenteditable="true"] {
   z-index: 10;
 }
 
+.ingame-card-count {
+  position: absolute;
+  bottom: -15px;
+  right: -8px;
+  width: 32px;
+  height: 32px;
+  background: #f0e6d2;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 18px;
+  color: #000;
+  border: 2px solid #8c6d35;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
 /* Deck back design */
 .deck-back {
   position: absolute;
