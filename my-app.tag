@@ -168,26 +168,10 @@
     self.logEntries = ["Game started. Your turn!"];
     self.currentMana = 1;   // Player starting mana
     self.maxMana = 1;       // Player max mana
-    self.enemyMana = 0;     // Enemy starting mana (changed from 1 to 0)
-    self.enemyMaxMana = 0;  // Enemy max mana (changed from 1 to 0)
+    self.enemyMana = 0;     // Enemy starting mana
+    self.enemyMaxMana = 0;  // Enemy max mana
     self.cardLibrary = [];  // All available cards from JSON
     self.enemyAI = null;    // Will hold the enemy AI instance
-    
-    // Player card collection (IDs)
-    self.playerCardCollection = [
-      // Neutral Units - frontline fighters
-      1, 4, 9, 10, 12,
-      // Neutral Units - backline specialists
-      2, 3, 5, 6, 7,
-      // Support units
-      8, 11, 13, 14, 15,
-      // Banners
-      16, 17, 
-      // Weapons for different unit types
-      21, 22, 24, 28, 32,
-      // Utility items
-      27, 33, 34
-    ];
     
     // Enemy card collection (IDs) - using neutral and necromancer cards
     self.enemyCardCollection = [
@@ -205,7 +189,24 @@
     
     // Initialize the game
     self.on('mount', function() {
-      // First load card data from JSON file
+      // Load deck manager script first if it doesn't exist
+      if (typeof deckManager === 'undefined') {
+        const deckManagerScript = document.createElement('script');
+        deckManagerScript.src = 'deck-manager.js';
+        deckManagerScript.onload = () => {
+          // Now load card data
+          self.loadCardDataAndInitGame();
+        };
+        document.head.appendChild(deckManagerScript);
+      } else {
+        // Deck manager already loaded, proceed to load card data
+        self.loadCardDataAndInitGame();
+      }
+    });
+    
+    // Load card data and initialize game
+    self.loadCardDataAndInitGame = function() {
+      // Load card data from JSON file
       fetch('cards.json')
         .then(response => response.json())
         .then(data => {
@@ -216,12 +217,19 @@
           console.error('Error loading cards:', error);
           self.addLogEntry('Error loading cards. Check console for details.');
         });
-    });
+    };
     
     // Initialize game
     self.initGame = function() {
-      // Initialize player deck with cards from player's collection
-      self.playerDeck = [...self.playerCardCollection];
+      // Get player deck from the deck manager
+      const currentDeck = deckManager.getCurrentDeck();
+      if (!currentDeck) {
+        self.addLogEntry('Error: No deck available. Please create a deck first.');
+        return;
+      }
+      
+      // Use the current deck from deck manager
+      self.playerDeck = [...currentDeck.cards];
       
       // Initialize enemy deck with cards from enemy's collection
       self.enemyDeck = [...self.enemyCardCollection];
@@ -245,8 +253,8 @@
       // Set starting mana
       self.currentMana = 1;
       self.maxMana = 1;
-      self.enemyMana = 0;     // Changed from 1 to 0
-      self.enemyMaxMana = 0;  // Changed from 1 to 0
+      self.enemyMana = 0;
+      self.enemyMaxMana = 0;
       
       // Initialize enemy AI
       self.enemyAI = new EnemyAI(self);
