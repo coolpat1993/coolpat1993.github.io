@@ -1,29 +1,137 @@
 <card>
-  <div class="card { opts.data.type } { opts.data.class } { opts.data.type === 'spell' ? 'spell' : '' } { opts.playable }" 
+  <div class="card { opts.data && opts.data.type } { opts.data && opts.data.class } { opts.data && opts.data.type === 'spell' ? 'spell' : '' } { opts.playable } { isCombatSelected ? 'selected-for-combat' : '' }"
        draggable={ opts.draggable || false }
-       data-card-id={ opts.data.instanceId }
+       data-card-id={ opts.data && opts.data.instanceId }
        data-slot-id={ opts.dataSlotId }
-       data-unit-type={ opts.data.unitType }
+       data-unit-type={ opts.data && opts.data.unitType }
        ondragstart={ handleDragStart }
        onclick={ handleClick }>
-    <div class="card-image" style="background-image: url('images/{ opts.data.image }')">
-      <div class="card-header">{ opts.data.name }</div>
+    <div class="card-image" style="background-image: url('images/{ opts.data && opts.data.image }')">
+      <div class="card-header">{ opts.data && opts.data.name }</div>
     </div>
     <div class="card-description">
       <!-- Use a show/hide approach with empty span to keep everything in-line -->
-      <span show={ opts.data.type === 'unit' && opts.data.unitType }><b>{ opts.data.unitType ? opts.data.unitType.charAt(0).toUpperCase() + opts.data.unitType.slice(1) : '' }</b> - </span>{ opts.data.description }
+      <span show={ opts.data && opts.data.type === 'unit' && opts.data.unitType }><b>{ opts.data && opts.data.type === 'unit' && opts.data.unitType ? opts.data.unitType.charAt(0).toUpperCase() + opts.data.unitType.slice(1) : '' }</b> - </span>{ opts.data && opts.data.description }
     </div>
-    <div class="mana-indicator">{ opts.data.mana }</div>
-    <div class="attack-indicator { opts.data.type === 'item' ? 'item-attack' : '' }" if={opts.data.attack && opts.data.attack != 0}>{opts.data.attack}</div>
-    <div class="health-indicator" if={ opts.data.health > 0 && opts.data.type !== 'spell' && opts.data.type !== 'item' }>{ opts.data.health }</div>
+    <div class="mana-indicator">{ opts.data && opts.data.mana }</div>
+    <div class="attack-indicator { opts.data && opts.data.type === 'item' ? 'item-attack' : '' }" if={ opts.data && opts.data.attack && opts.data.attack != 0 }>{ opts.data && opts.data.attack }</div>
+    <div class="health-indicator { isDamaged() ? 'damaged-health' : '' }" if={ opts.data && opts.data.health > 0 && opts.data.type !== 'spell' && opts.data.type !== 'item' }>{ opts.data && opts.data.health }</div>
   </div>
 
   <script>
     const self = this;
     
+    // Track if this card is selected for combat
+    self.isCombatSelected = false;
+
+    // Setup combat system when mounted
+    self.on('mount', function() {
+      // Access the global combat system
+      if (window.CombatSystem) {
+        self.combatSystem = window.CombatSystem;
+      }
+    });
+    
+    // Check if card health is damaged (less than max health)
+    self.isDamaged = function() {
+      if (!self.opts.data) return false;
+      
+      // Get the card data
+      const card = self.opts.data;
+      
+      // Check if card has a maxHealth property explicitly set
+      if (card.maxHealth) {
+        console.log('triggered 1:', card.maxHealth, '<', card.health);
+        return card.health < card.maxHealth;
+      }
+      
+      // If no maxHealth is set but the card has a base template,
+      // compare with the base health from the template
+      if (card.baseCard && card.baseCard.health) {
+        console.log('triggered 2:', card.baseCard.health);
+        return card.health < card.baseCard.health;
+      }
+      
+      // If we have an original health property stored after damage was taken
+      if (card.originalHealth) {
+        console.log('triggered 3:', card.originalHealth);
+        return card.health < card.originalHealth;
+      }
+      
+      // Last option - look at card ID in the card library if available
+      if (window.cardLibrary && card.id) {
+        console.log('triggered 4:', card.id);
+        const template = window.cardLibrary.find(c => c.id === card.id);
+        if (template && template.health) {
+          return card.health < template.health;
+        }
+      }
+      
+      return false;
+    }
+    
     // Handle card click events
     self.handleClick = function(e) {
-      // Trigger custom event up to parent components
+      // Check if opts.data is null or undefined
+      if (!self.opts.data) {
+        console.warn('Card clicked but opts.data is null or undefined');
+        return;
+      }
+      
+      // Get the card data and location info
+      const card = self.opts.data;
+      const slotId = self.opts.dataSlotId;
+      
+      // Check if we're in attack mode
+      if (self.combatSystem && self.combatSystem.attackMode) {
+        // If this is an enemy card, try to attack it
+        if (slotId && slotId.startsWith('enemy-')) {
+          // Add player/enemy id to the card for combat logic
+          card.playerId = 'enemy';
+          
+          // Try to attack this card
+          if (self.combatSystem.attack(card)) {
+            // Clear selection state of all cards after successful attack
+            self.isCombatSelected = false;
+            self.update();
+            // We should also update the parent to refresh all cards
+            self.parent.update();
+            return;
+          }
+        }
+        
+        // If click wasn't an attack, clear the combat selection
+        self.combatSystem.clearSelection();
+        self.parent.update();
+        return;
+      }
+      
+      // If this is a player unit on the board, select it for attack
+      if (slotId && slotId.startsWith('player-') && card.type === 'unit') {
+        // Add player/enemy id to the card for combat logic
+        card.playerId = 'player';
+        
+        // Only allow selection if the card can attack
+        if (card.canAttack !== false) {
+          // By default, units can attack when placed
+          if (card.canAttack === undefined) {
+            card.canAttack = true;
+          }
+          
+          // Try to select this card as the attacker
+          if (self.combatSystem && self.combatSystem.selectAttacker(card)) {
+            self.isCombatSelected = true;
+            self.parent.addLogEntry(`${card.name} ready to attack. Click an enemy unit to attack.`);
+            self.update();
+            self.parent.update();
+            return;
+          }
+        } else {
+          self.parent.addLogEntry(`${card.name} has already attacked this turn.`);
+        }
+      }
+
+      // Trigger custom event up to parent components for other handling
       if (self.opts.onClick) {
         self.opts.onClick(self.opts.data);
       }
@@ -31,6 +139,12 @@
     
     // Handle drag start events
     self.handleDragStart = function(e) {
+      // Check if opts.data is null or undefined
+      if (!self.opts.data) {
+        console.warn('Drag started but opts.data is null or undefined');
+        return;
+      }
+      
       // Forward the drag event to the parent component if handler exists
       if (self.opts.onDragStart) {
         self.opts.onDragStart(e);
@@ -42,6 +156,13 @@
         }
       }
     }
+
+    // Clear combat selection if the combat system selection was cleared elsewhere
+    self.on('update', function() {
+      if (self.combatSystem && !self.combatSystem.attackMode && self.isCombatSelected) {
+        self.isCombatSelected = false;
+      }
+    });
   </script>
 
   <style>
@@ -261,6 +382,11 @@
       transform: translate(10px, 8px);
       text-shadow: 0px 0px 2px #000;
     }
+    
+    /* Style for damaged health indicator */
+    .card .health-indicator.damaged-health {
+      color:  #ff0000;
+    }
 
     /* Hide attack and health indicators for spell cards, and only health indicators for item cards */
     .card.spell .attack-indicator,
@@ -310,6 +436,28 @@
           box-shadow:
                    0 0 8px #FFD700 inset, 
                    0 0 12px #FFD700;
+      }
+    }
+
+    /* Combat selection styling */
+    .card.selected-for-combat {
+      border-color: #ff5722;
+      box-shadow: 
+                 0 0 6px #ff5722 inset, 
+                 0 0 8px #ff5722;
+      animation: combat-pulse 1.5s infinite alternate;
+    }
+
+    @keyframes combat-pulse {
+      from {
+          box-shadow:
+                   0 0 6px #ff5722 inset, 
+                   0 0 9px #ff5722;
+      }
+      to {
+          box-shadow:
+                   0 0 8px #ff5722 inset, 
+                   0 0 12px #ff5722;
       }
     }
   </style>

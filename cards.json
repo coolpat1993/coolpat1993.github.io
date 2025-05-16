@@ -1125,5 +1125,23 @@
     "description": "Beasts you summon this turn get +1/+1.",
     "mana": 3,
     "image": "totem_of_the_wild.png"
+  },
+  {
+    "id": 108,
+    "name": "Soul Harvest",
+    "type": "spell",
+    "class": "necromancer",
+    "description": "Next enemy unit that dies this turn summons a 2/2 Spirit under your control.",
+    "mana": 3,
+    "image": "soul_harvest.png"
+  },
+  {
+    "id": 109,
+    "name": "Withering Curse",
+    "type": "spell",
+    "class": "necromancer",
+    "description": "All enemies lose 1 attack. For each unit affected, gain 1 Soul.",
+    "mana": 4,
+    "image": "withering_curse.png"
   }
 ]

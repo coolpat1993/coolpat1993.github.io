@@ -189,6 +189,25 @@
     
     // Initialize the game
     self.on('mount', function() {
+      // Initialize combat system
+      if (window.CombatSystem) {
+        window.CombatSystem.init();
+        
+        // Listen for combat events
+        window.CombatSystem.handleUnitDefeat = function(unit) {
+          self.addLogEntry(`${unit.name} has been defeated and removed from the board.`);
+          
+          // Find and remove the card from the board
+          Object.keys(self.slots).forEach(slotId => {
+            if (self.slots[slotId] && self.slots[slotId].instanceId === unit.instanceId) {
+              self.slots[slotId] = null;
+            }
+          });
+          
+          self.update();
+        };
+      }
+      
       // Load deck manager script first if it doesn't exist
       if (typeof deckManager === 'undefined') {
         const deckManagerScript = document.createElement('script');
@@ -321,8 +340,28 @@
       // Draw a card at the start of the round
       self.drawCard('player');
       
-      self.addLogEntry(`Your turn begins. Mana refreshed to ${self.currentMana}.`);
+      // Reset unit attacks for player units
+      self.resetUnitAttacks('player');
+      
+      self.addLogEntry(`Your turn begins. Mana refreshed to ${self.currentMana}. Units ready to attack.`);
       self.update();
+    };
+    
+    // Reset ability to attack for all units owned by a player
+    self.resetUnitAttacks = function(player) {
+      // Find all slots with units of the specified player
+      const prefix = player === 'player' ? 'player-' : 'enemy-';
+      
+      Object.keys(self.slots).forEach(slotId => {
+        if (slotId.startsWith(prefix) && self.slots[slotId] && self.slots[slotId].type === 'unit') {
+          self.slots[slotId].canAttack = true;
+        }
+      });
+      
+      // If using CombatSystem
+      if (window.CombatSystem) {
+        window.CombatSystem.resetAttacks(player);
+      }
     };
     
     // Start of a new enemy round
