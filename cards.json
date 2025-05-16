@@ -857,5 +857,273 @@
     "attack": 2,
     "mana": 3,
     "image": "executioners_flail.png"
+  },
+  {
+    "id": 82,
+    "name": "Wildcaller",
+    "type": "hero",
+    "class": "beastmaster",
+    "description": "Passive – Pack Instincts: Whenever a Beast enters the battlefield, it gains +1 attack if another Beast is already in play. Hero Power (2 mana): Command Beast – Choose a Beast. It gains +1 movement or +1 attack this turn.",
+    "attack": 0,
+    "health": 30,
+    "mana": 0,
+    "image": "wildcaller.png"
+  },
+  {
+    "id": 83,
+    "name": "Wild Cub",
+    "type": "unit",
+    "unitType": "melee",
+    "class": "beastmaster",
+    "description": "Gains +1/+1 if another Beast is in play.",
+    "attack": 1,
+    "health": 1,
+    "mana": 1,
+    "image": "wild_cub.png"
+  },
+  {
+    "id": 84,
+    "name": "Tusked Boar",
+    "type": "unit",
+    "unitType": "melee",
+    "class": "beastmaster",
+    "description": "Frontline only. On death, deal 1 damage to a random enemy.",
+    "attack": 2,
+    "health": 2,
+    "mana": 2,
+    "image": "tusked_boar.png"
+  },
+  {
+    "id": 85,
+    "name": "Wolf Pack",
+    "type": "unit",
+    "unitType": "melee",
+    "class": "beastmaster",
+    "description": "Summons two wolves with Pack Tactics (+1 attack if beside another wolf).",
+    "attack": 1,
+    "health": 2,
+    "mana": 3,
+    "image": "wolf_pack.png"
+  },
+  {
+    "id": 86,
+    "name": "Falcon Scout",
+    "type": "unit",
+    "unitType": "ranged",
+    "class": "beastmaster",
+    "description": "Backline, reveal a random card in opponent's hand.",
+    "attack": 2,
+    "health": 1,
+    "mana": 2,
+    "image": "falcon_scout.png"
+  },
+  {
+    "id": 87,
+    "name": "Dire Panther",
+    "type": "unit",
+    "unitType": "melee",
+    "class": "beastmaster",
+    "description": "Stealth. If undamaged for a turn, gains +2 attack.",
+    "attack": 3,
+    "health": 3,
+    "mana": 3,
+    "image": "dire_panther.png"
+  },
+  {
+    "id": 88,
+    "name": "Alpha Howler",
+    "type": "unit",
+    "unitType": "melee",
+    "class": "beastmaster",
+    "description": "At the start of your turn, adjacent Beasts gain +1 attack.",
+    "attack": 3,
+    "health": 4,
+    "mana": 4,
+    "image": "alpha_howler.png"
+  },
+  {
+    "id": 89,
+    "name": "Horned Charger",
+    "type": "unit",
+    "unitType": "melee",
+    "class": "beastmaster",
+    "description": "Charge. On attack, pushes the enemy to the back line, or stun for one turn if already there.",
+    "attack": 4,
+    "health": 2,
+    "mana": 4,
+    "image": "horned_charger.png"
+  },
+  {
+    "id": 90,
+    "name": "Grizzly Guardian",
+    "type": "unit",
+    "unitType": "melee",
+    "class": "beastmaster",
+    "description": "Taunt. When damaged, adjacent allies gain +1 armor.",
+    "attack": 2,
+    "health": 6,
+    "mana": 5,
+    "image": "grizzly_guardian.png"
+  },
+  {
+    "id": 91,
+    "name": "Venomfang Serpent",
+    "type": "unit",
+    "unitType": "melee",
+    "class": "beastmaster",
+    "description": "Attacks apply poison: 1 damage per turn for 2 turns.",
+    "attack": 2,
+    "health": 3,
+    "mana": 3,
+    "image": "venomfang_serpent.png"
+  },
+  {
+    "id": 92,
+    "name": "Ancient Stag",
+    "type": "unit",
+    "unitType": "ranged",
+    "class": "beastmaster",
+    "description": "Backline only. Passive: All beasts cost 1 less mana.",
+    "attack": 4,
+    "health": 5,
+    "mana": 6,
+    "image": "ancient_stag.png"
+  },
+  {
+    "id": 93,
+    "name": "Beast Bond",
+    "type": "spell",
+    "class": "beastmaster",
+    "description": "Choose a Beast. It gains \"Cannot be targeted\" this turn.",
+    "mana": 1,
+    "image": "beast_bond.png"
+  },
+  {
+    "id": 94,
+    "name": "Pack Hunt",
+    "type": "spell",
+    "class": "beastmaster",
+    "description": "Summon two 2/1 Wolves.",
+    "mana": 3,
+    "image": "pack_hunt.png"
+  },
+  {
+    "id": 95,
+    "name": "Call of the Alpha",
+    "type": "spell",
+    "class": "beastmaster",
+    "description": "All Beasts gain +2 attack this turn.",
+    "mana": 4,
+    "image": "call_of_the_alpha.png"
+  },
+  {
+    "id": 96,
+    "name": "Nature's Roar",
+    "type": "spell",
+    "class": "beastmaster",
+    "description": "Deal 1 damage to all enemies. Beasts heal for 1.",
+    "mana": 2,
+    "image": "natures_roar.png"
+  },
+  {
+    "id": 97,
+    "name": "Mark Prey",
+    "type": "spell",
+    "class": "beastmaster",
+    "description": "Mark a target. Next Beast to attack it deals double damage.",
+    "mana": 1,
+    "image": "mark_prey.png"
+  },
+  {
+    "id": 98,
+    "name": "Tracking",
+    "type": "spell",
+    "class": "beastmaster",
+    "description": "Look at the top 3 cards of your deck. Draw a Beast.",
+    "mana": 2,
+    "image": "tracking.png"
+  },
+  {
+    "id": 99,
+    "name": "Overwhelm",
+    "type": "spell",
+    "class": "beastmaster",
+    "description": "All Beasts deal damage to adjacent enemies when attacking this turn.",
+    "mana": 5,
+    "image": "overwhelm.png"
+  },
+  {
+    "id": 100,
+    "name": "Hunter's Spearhead",
+    "type": "item",
+    "class": "beastmaster",
+    "description": "+1 attack, deals +1 against Beasts.",
+    "attack": 1,
+    "mana": 2,
+    "image": "hunters_spearhead.png"
+  },
+  {
+    "id": 101,
+    "name": "Fang Necklace",
+    "type": "item",
+    "class": "beastmaster",
+    "description": "Equipped Beast gains +1 attack for each other friendly Beast.",
+    "mana": 2,
+    "image": "fang_nacklace.png"
+  },
+  {
+    "id": 102,
+    "name": "Alpha's Crest",
+    "type": "item",
+    "class": "beastmaster",
+    "description": "Backline item – Your Beasts have +1 health.",
+    "mana": 3,
+    "image": "alpha_crest.png"
+  },
+  {
+    "id": 103,
+    "name": "Whip of Command",
+    "type": "item",
+    "class": "beastmaster",
+    "description": "Grants \"Command: Move a friendly Beast one tile\" once per turn.",
+    "mana": 3,
+    "image": "whip_of_command.png"
+  },
+  {
+    "id": 104,
+    "name": "Claw Gauntlets",
+    "type": "item",
+    "class": "beastmaster",
+    "description": "+1 attack, attacks apply bleed (1 damage at end of turn).",
+    "attack": 1,
+    "mana": 2,
+    "image": "claw_gauntlets.png"
+  },
+  {
+    "id": 105,
+    "name": "spirit hide Armor",
+    "type": "item",
+    "class": "beastmaster",
+    "description": "+2 armor. When hit, summon a 1/1 Cub with Taunt.",
+    "mana": 2,
+    "image": "spirit_hide_armor.png"
+  },
+  {
+    "id": 106,
+    "name": "Callhorn",
+    "type": "item",
+    "class": "beastmaster",
+    "description": "Once per game: Summon a 3/3 Alpha Wolf with Charge and Taunt.",
+    "mana": 4,
+    "image": "callhorn.png"
+  },
+  {
+    "id": 107,
+    "name": "Totem of the Wild",
+    "type": "item",
+    "class": "beastmaster",
+    "description": "Beasts you summon this turn get +1/+1.",
+    "mana": 3,
+    "image": "totem_of_the_wild.png"
   }
 ]
