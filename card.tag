@@ -9,10 +9,10 @@
     <div class="card-image" style="background-image: url('images/{ opts.data.image }')">
       <div class="card-header">{ opts.data.name }</div>
     </div>
-      <div class="unit-type-icon" if={ opts.data.type === 'unit' && opts.data.unitType }>
-        <img src="cardIcons/{ opts.data.unitType }.png" alt="{ opts.data.unitType }" />
-      </div>
-    <div class="card-description">{ opts.data.description }</div>
+    <div class="card-description">
+      <!-- Use a show/hide approach with empty span to keep everything in-line -->
+      <span show={ opts.data.type === 'unit' && opts.data.unitType }><b>{ opts.data.unitType ? opts.data.unitType.charAt(0).toUpperCase() + opts.data.unitType.slice(1) : '' }</b> - </span>{ opts.data.description }
+    </div>
     <div class="mana-indicator">{ opts.data.mana }</div>
     <div class="attack-indicator { opts.data.type === 'item' ? 'item-attack' : '' }" if={opts.data.attack && opts.data.attack != 0}>{opts.data.attack}</div>
     <div class="health-indicator" if={ opts.data.health > 0 && opts.data.type !== 'spell' && opts.data.type !== 'item' }>{ opts.data.health }</div>
