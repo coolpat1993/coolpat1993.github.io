@@ -397,10 +397,10 @@ input, textarea, select, [contenteditable="true"] {
   position: absolute;
   bottom: -15px;
   right: -8px;
-  width: 32px;
+  width: 120px;
   height: 32px;
-  background: #f0e6d2;
-  border-radius: 50%;
+  background: #26231c;
+  border-radius: 10px;
   display: flex;
   justify-content: center;
   align-items: center;
