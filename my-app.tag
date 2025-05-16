@@ -129,11 +129,12 @@
         </div>
       
         <div class="hand" id="player-hand">
-          <div each={ card in playerHand } class="card-wrapper { card.mana <= currentMana && card.type !== 'item' ? 'playable' : '' } { card.mana <= currentMana && card.type === 'item' && hasUnitOnBoard() ? 'playable-item' : '' }">
+          <div each={ card in playerHand } class="card-wrapper">
             <card draggable="true" 
                   data={ card } 
                   onDragStart={ parent.handleCardDragStart }
-                  data-card-id={ card.instanceId }>
+                  data-card-id={ card.instanceId }
+                  playable={ getPlayableState(card) }>
             </card>
           </div>
         </div>
@@ -504,7 +505,27 @@
       }
       return false;
     };
-    
+
+    // Get the playable state of a card
+    self.getPlayableState = function(card) {
+      // Not playable if not enough mana
+      if (card.mana > self.currentMana) {
+        return '';
+      }
+      
+      // For item cards, check if there's a unit on board
+      if (card.type === 'item' && !self.hasUnitOnBoard()) {
+        return '';
+      }
+      
+      // Return the appropriate playable state based on card type
+      if (card.type === 'item') {
+        return 'playable-item';
+      } else {
+        return 'playable';
+      }
+    };
+
     // Check if a card can be dropped in a particular slot
     self.canDropInSlot = function(slot) {
       // Don't allow drops during enemy turn
