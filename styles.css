@@ -18,6 +18,47 @@ input, textarea, select, [contenteditable="true"] {
   user-select: text;
 }
 
+/* Unit Type Icon Styling */
+.unit-type-icon {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  background: rgba(20, 20, 20, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+  z-index: 5;
+  transform: translate(10px, -10px);
+}
+
+.unit-type-icon img {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+  filter: brightness(0) invert(1); /* Makes the icon white */
+}
+
+/* Unit type specific styling */
+.card[data-unit-type="melee"] .unit-type-icon {
+  background: linear-gradient(135deg, #ff6b6b 0%, #832424 100%);
+}
+
+.card[data-unit-type="ranged"] .unit-type-icon {
+  background: linear-gradient(135deg, #4facfe 0%, #0a58ca 100%);
+}
+
+.card[data-unit-type="healer"] .unit-type-icon {
+  background: linear-gradient(135deg, #4cd964 0%, #1e7931 100%);
+}
+
+.card[data-unit-type="caster"] .unit-type-icon {
+  background: linear-gradient(135deg, #cb6ce6 0%, #6a1b9a 100%);
+}
+
 .board-area {
   flex-direction: column;
   background: rgba(47, 28, 14, 0.5);

@@ -37,9 +37,8 @@
                ondragleave={ dragLeave } 
                ondrop={ handleDrop }>
             <virtual if={ slots['enemy-back-'+i] }>
-              <card draggable="true" 
+              <card draggable="false" 
                     data={ slots['enemy-back-'+i] } 
-                    onDragStart={ parent.handleCardDragStart } 
                     data-slot-id="enemy-back-{i}">
               </card>
             </virtual>
@@ -54,9 +53,8 @@
                ondragleave={ dragLeave } 
                ondrop={ handleDrop }>
             <virtual if={ slots['enemy-front-'+i] }>
-              <card draggable="true" 
+              <card draggable="false" 
                     data={ slots['enemy-front-'+i] } 
-                    onDragStart={ parent.handleCardDragStart } 
                     data-slot-id="enemy-front-{i}">
               </card>
             </virtual>
@@ -74,7 +72,8 @@
               <card draggable="true" 
                     data={ slots['player-front-'+i] } 
                     onDragStart={ parent.handleCardDragStart } 
-                    data-slot-id="player-front-{i}">
+                    data-slot-id="player-front-{i}"
+                    data-card-id={ slots['player-front-'+i].instanceId }>
               </card>
             </virtual>
           </div>
@@ -91,7 +90,8 @@
               <card draggable="true" 
                     data={ slots['player-back-'+i] } 
                     onDragStart={ parent.handleCardDragStart } 
-                    data-slot-id="player-back-{i}">
+                    data-slot-id="player-back-{i}"
+                    data-card-id={ slots['player-back-'+i].instanceId }>
               </card>
             </virtual>
           </div>
@@ -377,8 +377,15 @@
         return false;
       }
       
-      // Get the card ID from the data attribute
+      // Check if this is an enemy card
       const cardElement = e.currentTarget;
+      const slotId = cardElement.getAttribute('data-slot-id');
+      if (slotId && slotId.startsWith('enemy-')) {
+        e.preventDefault();
+        return false;
+      }
+      
+      // Get the card ID from the data attribute
       const cardId = cardElement.getAttribute('data-card-id') || 
                      cardElement.querySelector('[data-card-id]')?.getAttribute('data-card-id');
       

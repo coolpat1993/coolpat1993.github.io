@@ -30,32 +30,53 @@
         // Sort cards by mana cost (expensive to cheap)
         const sortedHand = [...this.gameState.enemyHand].sort((a, b) => b.mana - a.mana);
 
-        // Try to play each card, starting with the most expensive ones the AI can afford
-        for (const card of sortedHand) {
-            // Skip if we can't afford the card
-            if (card.mana > this.gameState.enemyMana) {
-                continue;
+        // Play cards sequentially with delay
+        this.playCardsSequentially(sortedHand, 0);
+    };
+    
+    // Play cards one by one with a delay between them
+    EnemyAI.prototype.playCardsSequentially = function(sortedCards, index) {
+        // Base case: If we've gone through all cards, stop
+        if (index >= sortedCards.length) {
+            return;
+        }
+        
+        const card = sortedCards[index];
+        
+        // Skip if we can't afford the card
+        if (card.mana > this.gameState.enemyMana) {
+            // Move on to the next card
+            this.playCardsSequentially(sortedCards, index + 1);
+            return;
+        }
+
+        // Choose a valid slot for this card
+        const slot = this.findValidSlotForCard(card);
+
+        // If a valid slot was found, place the card
+        if (slot) {
+            // Play the current card
+            this.placeCard(card, slot);
+
+            // Reduce enemy mana
+            this.gameState.enemyMana -= card.mana;
+
+            // Remove card from hand
+            const cardIndex = this.gameState.enemyHand.findIndex(c => c.instanceId === card.instanceId);
+            if (cardIndex !== -1) {
+                this.gameState.enemyHand.splice(cardIndex, 1);
             }
 
-            // Choose a valid slot for this card
-            const slot = this.findValidSlotForCard(card);
-
-            // If a valid slot was found, place the card
-            if (slot) {
-                this.placeCard(card, slot);
-
-                // Reduce enemy mana
-                this.gameState.enemyMana -= card.mana;
-
-                // Remove card from hand
-                const cardIndex = this.gameState.enemyHand.findIndex(c => c.instanceId === card.instanceId);
-                if (cardIndex !== -1) {
-                    this.gameState.enemyHand.splice(cardIndex, 1);
-                }
-
-                // Log the play
-                this.gameState.addLogEntry(`Enemy plays ${card.name} (${card.mana} mana).`);
-            }
+            // Log the play
+            this.gameState.addLogEntry(`Enemy plays ${card.name} (${card.mana} mana).`);
+            
+            // Play the next card after a delay
+            setTimeout(() => {
+                this.playCardsSequentially(sortedCards, index + 1);
+            }, 1200); // 1.2 second delay between playing cards
+        } else {
+            // If no valid slot for this card, move to the next one
+            this.playCardsSequentially(sortedCards, index + 1);
         }
     };
 
@@ -81,9 +102,12 @@
 
     // Find an empty slot with the given prefix
     EnemyAI.prototype.findEmptySlot = function (prefix) {
-        // Try each position from 1 to 5
-        for (let i = 1; i <= 5; i++) {
-            const slotId = `${prefix}${i}`;
+        // Priority order for slots: middle first (3), then adjacent slots (2, 4), then outer slots (1, 5)
+        const priorityOrder = [3, 2, 4, 1, 5];
+
+        // Try each position based on priority order
+        for (const position of priorityOrder) {
+            const slotId = `${prefix}${position}`;
             if (!this.gameState.slots[slotId]) {
                 return slotId;
             }
