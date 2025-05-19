@@ -1,5 +1,5 @@
 <card>
-  <div class="card { opts.data && opts.data.type } { opts.data && opts.data.class } { opts.data && opts.data.type === 'spell' ? 'spell' : '' } { opts.playable } { opts.data && opts.data.canAttack && opts.data.type === 'unit' ? 'can-attack' : '' } { isCombatSelected ? 'selected-for-combat' : '' } { isInvalidTarget ? 'invalid-target' : '' }"
+  <div class={ getCardClassNames() }
        draggable={ opts.draggable || false }
        data-card-id={ opts.data && opts.data.instanceId }
        data-slot-id={ opts.dataSlotId }
@@ -13,9 +13,9 @@
       <!-- Use a show/hide approach with empty span to keep everything in-line -->
       <span show={ opts.data && opts.data.type === 'unit' && opts.data.unitType }><b>{ opts.data && opts.data.type === 'unit' && opts.data.unitType ? opts.data.unitType.charAt(0).toUpperCase() + opts.data.unitType.slice(1) : '' }</b> - </span>{ opts.data && opts.data.description }
     </div>
-    <div class="mana-indicator">{ opts.data && opts.data.mana }</div>
-    <div class="attack-indicator { opts.data && opts.data.type === 'item' ? 'item-attack' : '' }" if={ opts.data && opts.data.attack && opts.data.attack != 0 }>{ opts.data && opts.data.attack }</div>
-    <div class="health-indicator { isDamaged() ? 'damaged-health' : '' }" if={ opts.data && opts.data.health > 0 && opts.data.type !== 'spell' && opts.data.type !== 'item' }>{ opts.data && opts.data.health }</div>
+    <div class="mana-indicator" if={ opts.data && opts.data.mana !== undefined }>{ opts.data && opts.data.mana }</div>
+    <div class={ getAttackIndicatorClass() } if={ shouldShowAttack() }>{ opts.data && opts.data.attack }</div>
+    <div class={ getHealthIndicatorClass() } if={ shouldShowHealth() }>{ opts.data && opts.data.health }</div>
   </div>
 
   <script>
@@ -177,6 +177,90 @@
         self.isCombatSelected = false;
       }
     });
+    
+    // Generate all card classes dynamically
+    self.getCardClassNames = function() {
+      const card = self.opts.data;
+      if (!card) return 'card';
+      
+      // Start with the base card class
+      const classes = ['card'];
+      
+      // Add card type class (unit, spell, item, etc.)
+      if (card.type) classes.push(card.type);
+      
+      // Add card class (necromancer, warrior, etc.)
+      if (card.class) classes.push(card.class);
+      
+      // Check if it's the opponent's turn before applying playable/attack classes
+      const isOpponentTurn = window.gameState && window.gameState.isOpponentTurn;
+      
+      // Add playability status - only when it's not opponent's turn
+      if (!isOpponentTurn) {
+        if (self.opts.playable) classes.push('playable');
+        if (self.opts.playable === 'playable-item') classes.push('playable-item');
+        
+        // Add attack ability status for units - only when it's not opponent's turn
+        if (card.canAttack && card.type === 'unit') classes.push('can-attack');
+      }
+      
+      // Add combat selection status
+      if (self.isCombatSelected) classes.push('selected-for-combat');
+      
+      // Add invalid target status
+      if (self.isInvalidTarget) classes.push('invalid-target');
+      
+      // Any additional conditional classes can be added here
+      
+      return classes.join(' ');
+    };
+    
+    // Helper method for attack indicator class
+    self.getAttackIndicatorClass = function() {
+      const card = self.opts.data;
+      if (!card) return 'attack-indicator';
+      
+      const classes = ['attack-indicator'];
+      
+      // Add item-attack class for items
+      if (card.type === 'item') classes.push('item-attack');
+      
+      return classes.join(' ');
+    };
+    
+    // Helper method for health indicator class
+    self.getHealthIndicatorClass = function() {
+      const card = self.opts.data;
+      if (!card) return 'health-indicator';
+      
+      const classes = ['health-indicator'];
+      
+      // Add damaged-health class if health is reduced
+      if (self.isDamaged()) classes.push('damaged-health');
+      
+      return classes.join(' ');
+    };
+    
+    // Helper method to determine if attack indicator should be shown
+    self.shouldShowAttack = function() {
+      const card = self.opts.data;
+      if (!card) return false;
+      
+      // Show attack for units and items with attack value
+      return (card.attack && card.attack !== 0) || 
+             (card.type === 'item' && card.attack);
+    };
+    
+    // Helper method to determine if health indicator should be shown
+    self.shouldShowHealth = function() {
+      const card = self.opts.data;
+      if (!card) return false;
+      
+      // Show health for units and banners, but not spells or items
+      return card.health > 0 && 
+             card.type !== 'spell' && 
+             card.type !== 'item';
+    };
   </script>
 
   <style>
@@ -356,6 +440,7 @@
       text-shadow: 0px 0px 2px #000;
     }
 
+    /* Attack indicator - now using dynamic class */
     .card .attack-indicator {
       position: absolute;
       bottom: 0;
@@ -374,12 +459,7 @@
       text-shadow: 0px 0px 2px #000;
     }
 
-    /* Green attack indicator for item cards */
-    .card .attack-indicator.item-attack {
-      background: linear-gradient(135deg, #4cd964 0%, #2ecc71 100%);
-      box-shadow: 0 0 5px rgba(0, 0, 0, 0.8), 0 0 10px rgba(46, 204, 113, 0.3) inset;
-    }
-
+    /* Health indicator - now using dynamic class */
     .card .health-indicator {
       position: absolute;
       bottom: 0;
