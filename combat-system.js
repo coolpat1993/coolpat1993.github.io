@@ -25,6 +25,10 @@ const CombatSystem = {
         this.selectedUnit = unit;
         this.attackMode = true;
         console.log('Selected unit as attacker:', unit);
+
+        // Mark invalid targets (back row if front row has units)
+        this.markInvalidTargets();
+
         return true;
     },
 
@@ -33,6 +37,9 @@ const CombatSystem = {
         this.selectedUnit = null;
         this.attackMode = false;
         console.log('Attack selection cleared');
+
+        // Clear invalid target markings
+        this.clearInvalidTargets();
     },
 
     // Check if a target is valid for the selected attacker
@@ -42,7 +49,36 @@ const CombatSystem = {
         if (!this.attackMode) return false;
         if (target.playerId === this.selectedUnit.playerId) return false;
 
+        // Check if target is in the back row and has front row protection
+        if (target.slotId && target.slotId.includes('back')) {
+            // Check if there are any units in the front row that must be attacked first
+            const frontRowOccupied = this.hasFrontRowUnits(target.playerId);
+            if (frontRowOccupied) {
+                console.log('Cannot attack back row when front row has units');
+                return false;
+            }
+        }
+
         return true;
+    },
+
+    // Helper function to check if a player has units in their front row
+    hasFrontRowUnits(playerId) {
+        // We need access to the game state to check slots
+        // This will be provided by the game when calling isValidTarget
+        const slots = window.gameState ? window.gameState.slots : {};
+
+        // Look for any occupied front row slots for this player
+        const prefix = playerId === 'player' ? 'player-front-' : 'enemy-front-';
+
+        for (let i = 1; i <= 5; i++) {
+            const slotId = `${prefix}${i}`;
+            if (slots[slotId]) {
+                return true;
+            }
+        }
+
+        return false;
     },
 
     // Process an attack between the selected unit and a target
@@ -95,6 +131,41 @@ const CombatSystem = {
         // This function would reset canAttack for all units belonging to the player
         console.log(`Reset attacks for player ${playerId}`);
         // Logic to be implemented by the calling code
+    },
+
+    // Mark invalid targets when a unit is selected for attack
+    markInvalidTargets() {
+        // Check all enemy cards
+        if (!window.gameState) return;
+
+        const slots = window.gameState.slots;
+        const hasFrontRowUnits = this.hasFrontRowUnits('enemy');
+
+        // If there are units in the front row, mark back row units as invalid targets
+        if (hasFrontRowUnits) {
+            for (let i = 1; i <= 5; i++) {
+                const slotId = `enemy-back-${i}`;
+                if (slots[slotId] && slots[slotId].cardComponent) {
+                    slots[slotId].cardComponent.isInvalidTarget = true;
+                    slots[slotId].cardComponent.update();
+                }
+            }
+        }
+    },
+
+    // Clear the invalid target markings
+    clearInvalidTargets() {
+        if (!window.gameState) return;
+
+        const slots = window.gameState.slots;
+
+        // Clear invalid target marking from all cards
+        Object.keys(slots).forEach(slotId => {
+            if (slotId.startsWith('enemy-') && slots[slotId] && slots[slotId].cardComponent) {
+                slots[slotId].cardComponent.isInvalidTarget = false;
+                slots[slotId].cardComponent.update();
+            }
+        });
     }
 };
 

@@ -1,5 +1,5 @@
 <card>
-  <div class="card { opts.data && opts.data.type } { opts.data && opts.data.class } { opts.data && opts.data.type === 'spell' ? 'spell' : '' } { opts.playable } { isCombatSelected ? 'selected-for-combat' : '' }"
+  <div class="card { opts.data && opts.data.type } { opts.data && opts.data.class } { opts.data && opts.data.type === 'spell' ? 'spell' : '' } { opts.playable } { opts.data && opts.data.canAttack && opts.data.type === 'unit' ? 'can-attack' : '' } { isCombatSelected ? 'selected-for-combat' : '' } { isInvalidTarget ? 'invalid-target' : '' }"
        draggable={ opts.draggable || false }
        data-card-id={ opts.data && opts.data.instanceId }
        data-slot-id={ opts.dataSlotId }
@@ -23,12 +23,26 @@
     
     // Track if this card is selected for combat
     self.isCombatSelected = false;
+    
+    // Track if this card is an invalid target for combat (e.g., can't attack backrow when frontrow has units)
+    self.isInvalidTarget = false;
 
     // Setup combat system when mounted
     self.on('mount', function() {
       // Access the global combat system
       if (window.CombatSystem) {
         self.combatSystem = window.CombatSystem;
+      }
+      
+      // Store a reference to this card component in the card data
+      // This allows the combat system to update card visual states
+      if (self.opts.data) {
+        self.opts.data.cardComponent = self;
+        
+        // Add slot ID to the card data for checking front/back row
+        if (self.opts.dataSlotId) {
+          self.opts.data.slotId = self.opts.dataSlotId;
+        }
       }
     });
     
@@ -186,6 +200,7 @@
       flex-direction: column;
     }
 
+  
     /* Special styling for spell cards */
     .card.spell {
       background: linear-gradient(135deg, #6a5cff 0%, #4a3cd7 100%);
@@ -413,6 +428,15 @@
       animation: playable-item-pulse 1.5s infinite alternate;
     }
 
+    /* Green glow effect for cards that can attack */
+    .card.can-attack:not(.selected-for-combat) {
+      border-color: #6BFD3F;
+      box-shadow: 
+                 0 0 6px #6BFD3F inset, 
+                 0 0 8px #6BFD3F;
+      animation: playable-pulse 1.5s infinite alternate;
+    }
+
     @keyframes playable-pulse {
       from {
           box-shadow:
@@ -439,26 +463,25 @@
       }
     }
 
-    /* Combat selection styling */
+    /* Combat selection styling - overrides can-attack */
     .card.selected-for-combat {
       border-color: #ff5722;
       box-shadow: 
                  0 0 6px #ff5722 inset, 
                  0 0 8px #ff5722;
-      animation: combat-pulse 1.5s infinite alternate;
+      animation: none;
+      transform: scale(1.1);
+      z-index: 10;
+      transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
     }
 
-    @keyframes combat-pulse {
-      from {
-          box-shadow:
-                   0 0 6px #ff5722 inset, 
-                   0 0 9px #ff5722;
-      }
-      to {
-          box-shadow:
-                   0 0 8px #ff5722 inset, 
-                   0 0 12px #ff5722;
-      }
+    /* Dimmed effect for invalid targets */
+    .card.invalid-target {
+      opacity: 0.5;
+      filter: grayscale(100%);
+      pointer-events: none; /* Prevent interaction with invalid targets */
+      transition: filter 0.3s ease-out, opacity 0.3s ease-out;
     }
+
   </style>
 </card>

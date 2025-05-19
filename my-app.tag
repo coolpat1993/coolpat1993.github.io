@@ -193,6 +193,9 @@
       if (window.CombatSystem) {
         window.CombatSystem.init();
         
+        // Make game state accessible to the combat system
+        window.gameState = self;
+        
         // Listen for combat events
         window.CombatSystem.handleUnitDefeat = function(unit) {
           self.addLogEntry(`${unit.name} has been defeated and removed from the board.`);
@@ -517,10 +520,18 @@
         self.playerHand.splice(cardIdx, 1);
         self.currentMana -= card.mana;
         
+        // Set summoning sickness for unit cards (can't attack when first placed)
+        if (card.type === 'unit') {
+          card.canAttack = false;
+        }
+        
         // Update the slot reference in game state
         self.slots[slot.id] = card;
         
         self.addLogEntry(`Card ${card.name} placed in ${slot.id}. Spent ${card.mana} mana. ${self.currentMana} mana remaining.`);
+        if (card.type === 'unit') {
+          self.addLogEntry(`${card.name} has summoning sickness and can't attack until your next turn.`);
+        }
         self.update();
       } else {
         // Handle card movement between slots
