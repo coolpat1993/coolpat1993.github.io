@@ -62,6 +62,18 @@ const CombatSystem = {
         return true;
     },
 
+    // Helper function to check if two units are in different rows (one attacking from front to back or back to front)
+    areUnitsInDifferentRows(unit1, unit2) {
+        if (!unit1.slotId || !unit2.slotId) return false;
+
+        // Check if one unit is in front row and other in back row
+        const unit1InFront = unit1.slotId.includes('-front-');
+        const unit2InFront = unit2.slotId.includes('-front-');
+
+        // If one is in front and one is in back, they're in different rows
+        return unit1InFront !== unit2InFront;
+    },
+
     // Helper function to check if a player has units in their front row
     hasFrontRowUnits(playerId) {
         // We need access to the game state to check slots
@@ -101,9 +113,30 @@ const CombatSystem = {
             target.maxHealth = target.health;
         }
 
+        // Store the attacker's health for later reference
+        const attacker = this.selectedUnit;
+        if (attacker.maxHealth === undefined) {
+            attacker.maxHealth = attacker.health;
+        }
+
         // Apply damage to target
         target.health -= damage;
-        console.log(`${this.selectedUnit.name} attacks ${target.name} for ${damage} damage`);
+        console.log(`${attacker.name} attacks ${target.name} for ${damage} damage`);
+
+        // Check if units are in different rows (one line away)
+        if (!this.areUnitsInDifferentRows(attacker, target)) {
+            // Attacker also takes damage equal to target's attack
+            const counterDamage = target.attack || 0;
+            if (counterDamage > 0) {
+                attacker.health -= counterDamage;
+                console.log(`${attacker.name} takes ${counterDamage} damage from attacking across rows`);
+
+                // Check if attacker is defeated
+                if (attacker.health <= 0) {
+                    this.handleUnitDefeat(attacker);
+                }
+            }
+        }
 
         // Check if target is defeated
         if (target.health <= 0) {
@@ -111,7 +144,7 @@ const CombatSystem = {
         }
 
         // Mark the attacker as having attacked this turn
-        this.selectedUnit.canAttack = false;
+        attacker.canAttack = false;
 
         // Clear selection after attack
         this.clearSelection();
