@@ -96,6 +96,11 @@ const CombatSystem = {
         // Calculate damage (basic implementation)
         const damage = this.calculateDamage(this.selectedUnit, target);
 
+        // Store original health as maxHealth if not already set
+        if (target.maxHealth === undefined) {
+            target.maxHealth = target.health;
+        }
+
         // Apply damage to target
         target.health -= damage;
         console.log(`${this.selectedUnit.name} attacks ${target.name} for ${damage} damage`);

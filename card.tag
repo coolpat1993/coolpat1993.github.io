@@ -53,30 +53,29 @@
       // Get the card data
       const card = self.opts.data;
       
-      // Check if card has a maxHealth property explicitly set
-      if (card.maxHealth) {
-        console.log('triggered 1:', card.maxHealth, '<', card.health);
+      // If the card doesn't have a health property at all, it can't be damaged
+      if (card.health === undefined) return false;
+      
+      // First check if maxHealth is explicitly defined
+      if (card.maxHealth !== undefined) {
         return card.health < card.maxHealth;
       }
       
       // If no maxHealth is set but the card has a base template,
       // compare with the base health from the template
-      if (card.baseCard && card.baseCard.health) {
-        console.log('triggered 2:', card.baseCard.health);
+      if (card.baseCard && card.baseCard.health !== undefined) {
         return card.health < card.baseCard.health;
       }
       
-      // If we have an original health property stored after damage was taken
-      if (card.originalHealth) {
-        console.log('triggered 3:', card.originalHealth);
+      // If we have an originalHealth property stored after damage was taken
+      if (card.originalHealth !== undefined) {
         return card.health < card.originalHealth;
       }
       
       // Last option - look at card ID in the card library if available
       if (window.cardLibrary && card.id) {
-        console.log('triggered 4:', card.id);
         const template = window.cardLibrary.find(c => c.id === card.id);
-        if (template && template.health) {
+        if (template && template.health !== undefined) {
           return card.health < template.health;
         }
       }
@@ -480,9 +479,8 @@
     
     /* Style for damaged health indicator */
     .card .health-indicator.damaged-health {
-      color:  #ff0000;
+      color: #ff0000; /* Bright yellow for better visibility */
     }
-
     /* Hide attack and health indicators for spell cards, and only health indicators for item cards */
     .card.spell .attack-indicator,
     .card.spell .health-indicator,
@@ -490,30 +488,30 @@
       display: none;
     }
 
-    /* Green glow effect for playable cards */
+    /* Green glow effect for playable cards - moved above other selectors to ensure higher specificity */
     .card.playable {
-      border-color: #6BFD3F;
+      border-color: #6BFD3F !important; /* Added !important to ensure it overrides class-specific borders */
       box-shadow: 
                  0 0 6px #6BFD3F inset, 
-                 0 0 8px #6BFD3F;
+                 0 0 8px #6BFD3F !important; /* Added !important to ensure it overrides class-specific shadows */
       animation: playable-pulse 1.5s infinite alternate;
     }
 
     /* Yellow glow effect for playable item cards when a unit is on the board */
     .card.playable-item {
-      border-color: #FFD700;
+      border-color: #FFD700 !important; /* Added !important to ensure it overrides class-specific borders */
       box-shadow: 
                  0 0 6px #FFD700 inset, 
-                 0 0 8px #FFD700;
+                 0 0 8px #FFD700 !important; /* Added !important to ensure it overrides class-specific shadows */
       animation: playable-item-pulse 1.5s infinite alternate;
     }
 
     /* Green glow effect for cards that can attack */
     .card.can-attack:not(.selected-for-combat) {
-      border-color: #6BFD3F;
+      border-color: #6BFD3F !important; /* Added !important to ensure it overrides class-specific borders */
       box-shadow: 
                  0 0 6px #6BFD3F inset, 
-                 0 0 8px #6BFD3F;
+                 0 0 8px #6BFD3F !important; /* Added !important to ensure it overrides class-specific shadows */
       animation: playable-pulse 1.5s infinite alternate;
     }
 
@@ -521,12 +519,12 @@
       from {
           box-shadow:
                    0 0 6px #6BFD3F inset, 
-                   0 0 9px #6BFD3F;
+                   0 0 9px #6BFD3F !important; /* Added !important */
       }
       to {
           box-shadow:
                    0 0 8px #6BFD3F inset, 
-                   0 0 12px #6BFD3F;
+                   0 0 12px #6BFD3F !important; /* Added !important */
       }
     }
 
@@ -534,21 +532,21 @@
       from {
           box-shadow:
                    0 0 6px #FFD700 inset, 
-                   0 0 9px #FFD700;
+                   0 0 9px #FFD700 !important; /* Added !important */
       }
       to {
           box-shadow:
                    0 0 8px #FFD700 inset, 
-                   0 0 12px #FFD700;
+                   0 0 12px #FFD700 !important; /* Added !important */
       }
     }
 
     /* Combat selection styling - overrides can-attack */
     .card.selected-for-combat {
-      border-color: #ff5722;
+      border-color: #ff5722 !important; /* Added !important to ensure it overrides class-specific borders */
       box-shadow: 
                  0 0 6px #ff5722 inset, 
-                 0 0 8px #ff5722;
+                 0 0 8px #ff5722 !important; /* Added !important to ensure it overrides class-specific shadows */
       animation: none;
       transform: scale(1.1);
       z-index: 10;
