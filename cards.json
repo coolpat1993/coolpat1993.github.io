@@ -1128,20 +1128,178 @@
   },
   {
     "id": 108,
-    "name": "Soul Harvest",
-    "type": "spell",
-    "class": "necromancer",
-    "description": "Next enemy unit that dies this turn summons a 2/2 Spirit under your control.",
-    "mana": 3,
-    "image": "soul_harvest.png"
+    "name": "Arcane Colossus",
+    "type": "unit",
+    "unitType": "caster",
+    "class": "neutral",
+    "description": "When played, deal 3 damage to the enemy. Spells cost 1 more while this is in play.",
+    "attack": 5,
+    "health": 8,
+    "mana": 8,
+    "image": "arcane_colossus.png"
   },
   {
     "id": 109,
-    "name": "Withering Curse",
+    "name": "War Mammoth",
+    "type": "unit",
+    "unitType": "melee",
+    "class": "neutral",
+    "description": "Trample - When attacking, deals 2 damage to units behind the target.",
+    "attack": 6,
+    "health": 7,
+    "mana": 7,
+    "image": "war_mammoth.png"
+  },
+  {
+    "id": 110,
+    "name": "Divine Healer",
+    "type": "unit",
+    "unitType": "healer",
+    "class": "neutral",
+    "description": "At the end of your turn, restore 1 health to all friendly units and your hero.",
+    "attack": 0,
+    "health": 6,
+    "mana": 6,
+    "image": "divine_healer.png"
+  },
+  {
+    "id": 111,
+    "name": "Master Tactician",
+    "type": "unit",
+    "unitType": "ranged",
+    "class": "neutral",
+    "description": "When played, rearrange your units in any formation. All friendly units gain +1 attack this turn.",
+    "attack": 3,
+    "health": 5,
+    "mana": 6,
+    "image": "master_tactician.png"
+  },
+  {
+    "id": 112,
+    "name": "Dragon Scale Armor",
+    "type": "item",
+    "class": "neutral",
+    "description": "+3 armor, reduces all spell damage taken by 2.",
+    "mana": 5,
+    "image": "dragon_scale_armor.png"
+  },
+  {
+    "id": 113,
+    "name": "Staff of Dominion",
+    "type": "item",
+    "class": "neutral",
+    "description": "+2 attack. Once per turn, take control of an enemy unit with 2 or less health until end of turn.",
+    "attack": 2,
+    "mana": 6,
+    "image": "staff_of_dominion.png"
+  },
+  {
+    "id": 114,
+    "name": "Banner of Victory",
+    "type": "banner",
+    "class": "neutral",
+    "description": "All friendly units gain +1/+1. When this is destroyed, draw 2 cards.",
+    "health": 3,
+    "mana": 5,
+    "image": "banner_of_victory.png"
+  },
+  {
+    "id": 115,
+    "name": "Lich Lord",
+    "type": "unit",
+    "unitType": "caster",
+    "class": "necromancer",
+    "description": "When any unit dies, gain 1 Soul. Spend 2 Souls: Resurrect a random friendly unit at full health.",
+    "attack": 3,
+    "health": 7,
+    "mana": 8,
+    "image": "lich_lord.png"
+  },
+  {
+    "id": 116,
+    "name": "Plague Harbinger",
+    "type": "unit",
+    "unitType": "caster",
+    "class": "necromancer",
+    "description": "All enemy units take 1 damage at the start of their turn. When an enemy dies to this effect, summon a 2/2 Zombie.",
+    "attack": 2,
+    "health": 6,
+    "mana": 7,
+    "image": "plague_harbinger.png"
+  },
+  {
+    "id": 117,
+    "name": "Death's Embrace",
     "type": "spell",
     "class": "necromancer",
-    "description": "All enemies lose 1 attack. For each unit affected, gain 1 Soul.",
-    "mana": 4,
-    "image": "withering_curse.png"
+    "description": "Destroy all units with 2 or less health. For each friendly unit destroyed, gain 1 Soul and draw 1 card.",
+    "mana": 7,
+    "image": "deaths_embrace.png"
+  },
+  {
+    "id": 118,
+    "name": "Warbringer",
+    "type": "unit",
+    "unitType": "melee",
+    "class": "warrior",
+    "description": "Whenever this attacks, all other friendly units gain +1 attack until end of turn. Cannot be targeted by enemy spells.",
+    "attack": 5,
+    "health": 7,
+    "mana": 7,
+    "image": "warbringer.png"
+  },
+  {
+    "id": 119,
+    "name": "Elite Guard Captain",
+    "type": "unit",
+    "unitType": "melee",
+    "class": "warrior",
+    "description": "Frontline only. All friendly frontline units take 1 less damage. When played, give all frontline allies +0/+2.",
+    "attack": 4,
+    "health": 8,
+    "mana": 8,
+    "image": "elite_guard_captain.png"
+  },
+  {
+    "id": 120,
+    "name": "Battle Frenzy",
+    "type": "spell",
+    "class": "warrior",
+    "description": "All friendly units gain +2/+1 and can attack twice this turn. At the end of turn, they take 1 damage.",
+    "mana": 6,
+    "image": "battle_frenzy.png"
+  },
+  {
+    "id": 121,
+    "name": "Alpha Warlord",
+    "type": "unit",
+    "unitType": "melee",
+    "class": "beastmaster",
+    "description": "When played, summon two 3/2 Dire Wolves with Charge. All Beasts have +1 attack while this is in play.",
+    "attack": 5,
+    "health": 6,
+    "mana": 8,
+    "image": "alpha_warlord.png"
+  },
+  {
+    "id": 122,
+    "name": "Stampede",
+    "type": "spell",
+    "class": "beastmaster",
+    "description": "Summon a Beast from your deck to each empty tile in your frontline. They all gain Charge this turn.",
+    "mana": 9,
+    "image": "stampede.png"
+  },
+  {
+    "id": 123,
+    "name": "Elder Thunderhoof",
+    "type": "unit",
+    "unitType": "melee",
+    "class": "beastmaster",
+    "description": "When damaged, stun all enemy units in the same row for 1 turn. Cannot be moved.",
+    "attack": 4,
+    "health": 9,
+    "mana": 7,
+    "image": "elder_thunderhoof.png"
   }
 ]
