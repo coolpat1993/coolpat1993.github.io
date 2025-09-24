@@ -51,11 +51,17 @@ const CombatSystem = {
 
         // Check if target is in the back row and has front row protection
         if (target.slotId && target.slotId.includes('back')) {
-            // Check if there are any units in the front row that must be attacked first
-            const frontRowOccupied = this.hasFrontRowUnits(target.playerId);
-            if (frontRowOccupied) {
-                console.log('Cannot attack back row when front row has units');
-                return false;
+            // Ranged units can attack over front row units
+            const isRangedAttacker = this.selectedUnit.unitType === 'ranged';
+            
+            // Only apply front row protection if attacker is not ranged
+            if (!isRangedAttacker) {
+                // Check if there are any units in the front row that must be attacked first
+                const frontRowOccupied = this.hasFrontRowUnits(target.playerId);
+                if (frontRowOccupied) {
+                    console.log('Cannot attack back row when front row has units (non-ranged unit)');
+                    return false;
+                }
             }
         }
 
@@ -178,9 +184,9 @@ const CombatSystem = {
 
         const slots = window.gameState.slots;
         const hasFrontRowUnits = this.hasFrontRowUnits('enemy');
-
-        // If there are units in the front row, mark back row units as invalid targets
-        if (hasFrontRowUnits) {
+        
+        // Only mark back row units as invalid if front row has units AND attacker is not ranged
+        if (hasFrontRowUnits && this.selectedUnit && this.selectedUnit.unitType !== 'ranged') {
             for (let i = 1; i <= 5; i++) {
                 const slotId = `enemy-back-${i}`;
                 if (slots[slotId] && slots[slotId].cardComponent) {

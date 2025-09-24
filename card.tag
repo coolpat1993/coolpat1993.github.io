@@ -8,6 +8,10 @@
        onclick={ handleClick }>
     <div class="card-image" style="background-image: url('images/{ opts.data && opts.data.image }')">
       <div class="card-header">{ opts.data && opts.data.name }</div>
+      <!-- Add ranged unit indicator icon -->
+      <div class="unit-type-indicator" if={ opts.data && opts.data.unitType === 'ranged' }>
+        <img src="cardIcons/ranged.png" alt="Ranged" title="Ranged: Can attack enemy back row units directly" />
+      </div>
     </div>
     <div class="card-description">
       <!-- Use a show/hide approach with empty span to keep everything in-line -->
@@ -561,5 +565,28 @@
       transition: filter 0.3s ease-out, opacity 0.3s ease-out;
     }
 
+    /* Unit type indicator icon for special abilities like ranged */
+    .card .unit-type-indicator {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 24px;
+      height: 24px;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+      transform: translate(8px, -8px);
+      z-index: 2;
+    }
+    
+    .card .unit-type-indicator img {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      filter: drop-shadow(0px 0px 2px #000);
+    }
   </style>
 </card>
