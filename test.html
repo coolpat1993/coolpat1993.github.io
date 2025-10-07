@@ -67,6 +67,11 @@
         <button id="reset-view" style="padding:6px 12px;border-radius:4px;border:1px solid #ccc;background:#f8f8f8;cursor:pointer;">Reset View</button>
         <span style="margin-left:10px;font-size:12px;color:#666;">Scroll to zoom • Middle-click drag to pan</span>
       </div>
+      <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;color:#666;">Background:</span>
+        <input id="bg-color" type="color" value="#222222" style="width:32px;height:24px;padding:0;border:1px solid #ccc;border-radius:4px;cursor:pointer;">
+        <button id="reset-bg" style="padding:4px 8px;font-size:11px;border-radius:4px;border:1px solid #ccc;background:#f8f8f8;cursor:pointer;">Reset</button>
+      </div>
     </div>
   </div>
 
@@ -83,6 +88,8 @@ const modePoly = document.getElementById('mode-poly');
 const undoBtn = document.getElementById('undo');
 const clearBtn = document.getElementById('clear');
 const resetViewBtn = document.getElementById('reset-view');
+const bgColorInput = document.getElementById('bg-color');
+const resetBgBtn = document.getElementById('reset-bg');
 const finishPolyBtn = document.createElement('button');
 finishPolyBtn.textContent = 'Finish polygon';
 finishPolyBtn.style.marginTop='8px';
@@ -110,8 +117,13 @@ function fmtPercent(v){
   return parseFloat((Math.round(v*100)/100).toFixed(2)).toString().replace(/\.00$/,'').replace(/([.][0-9])0$/,'$1');
 }
 
-function sanitizeTitle(t){
-    return t.replace(/\s+/g,' ').replace(/[^a-zA-Z0-9^_\-\.]/g,' ');
+function sanitizeTitle(t) {
+  // Allow letters, numbers, spaces, hyphens, and commas (no underscores or full stops)
+  return t
+    .replace(/[^\w\s,-]/g, '')   // Remove unwanted chars
+    .replace(/[_\.]/g, '')       // Remove underscores and full stops
+    .replace(/\s+/g, ' ')        // Collapse spaces
+    .trim();
 }
 
 // Function to pad and format coordinate values for number conversion
@@ -174,8 +186,9 @@ function updateGenerated(){
 function redraw(){
   // clear
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  // fill background
-  ctx.fillStyle = '#222'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  // fill background with selected color
+  ctx.fillStyle = bgColorInput.value; 
+  ctx.fillRect(0,0,canvas.width,canvas.height);
   
   // Save context and apply transform
   ctx.save();
@@ -445,6 +458,16 @@ clearBtn.addEventListener('click', ()=>{
   updateGenerated(); refreshCoordsPanel(); redraw(); 
 });
 
+// Background color controls
+bgColorInput.addEventListener('input', () => {
+  redraw();
+});
+
+resetBgBtn.addEventListener('click', () => {
+  bgColorInput.value = '#222222';
+  redraw();
+});
+
 // file upload
 fileInput.addEventListener('change', (e)=>{
   const f = e.target.files[0];
@@ -478,8 +501,8 @@ downloadBtn.addEventListener('click', ()=>{
   if(!imgLoaded) return alert('Please upload an image first');
   // create offscreen canvas 640x920
   const out = document.createElement('canvas'); out.width=640; out.height=920; const oc = out.getContext('2d');
-  // fill bg
-  oc.fillStyle='#000'; oc.fillRect(0,0,out.width,out.height);
+  // fill bg with selected color
+  oc.fillStyle=bgColorInput.value; oc.fillRect(0,0,out.width,out.height);
   // draw the image scaled the same way as preview (contain)
   // compute draw similar to computeImageDraw but scaled to out dims
   const iw = img.width, ih = img.height; const cw=out.width, ch=out.height;
