@@ -118,11 +118,11 @@ function fmtPercent(v){
 }
 
 function sanitizeTitle(t) {
-  // Allow letters, numbers, spaces, hyphens, and commas (no underscores or full stops)
+  // Allow letters, numbers, spaces, hyphens, commas, and carets (no underscores or full stops)
   return t
-    .replace(/[^\w\s,-]/g, '')   // Remove unwanted chars
-    .replace(/[_\.]/g, '')       // Remove underscores and full stops
-    .replace(/\s+/g, ' ')        // Collapse spaces
+    .replace(/[^\w\s,\-\^]/g, '')   // Remove unwanted chars except ^
+    .replace(/[_\.]/g, '')          // Remove underscores and full stops
+    .replace(/\s+/g, ' ')           // Collapse spaces
     .trim();
 }
 
