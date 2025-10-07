@@ -198,8 +198,17 @@ function redraw(){
         } else if(p.coords.length === 2){
           const a = toCanvasCoords(p.coords[0]);
           const b = toCanvasCoords(p.coords[1]);
+          
+          // Fill the rectangle area with semi-transparent blue (editor only)
+          ctx.fillStyle='rgba(0,100,255,0.3)'; 
+          ctx.fillRect(a.x,a.y,b.x-a.x,b.y-a.y);
+          
+          // Stroke the outline
+          ctx.strokeStyle='rgba(0,100,255,0.9)';
           ctx.strokeRect(a.x,a.y,b.x-a.x,b.y-a.y);
+          
           // Draw corner points for moving
+          ctx.fillStyle='rgba(0,100,255,0.9)'; // Reset fill style for points
           ctx.beginPath(); ctx.arc(a.x,a.y,5,0,Math.PI*2); ctx.fill();
           ctx.beginPath(); ctx.arc(b.x,b.y,5,0,Math.PI*2); ctx.fill();
         }
