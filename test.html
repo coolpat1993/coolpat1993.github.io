@@ -186,8 +186,8 @@ function updateGenerated(){
 function redraw(){
   // clear
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  // fill background with selected color
-  ctx.fillStyle = bgColorInput.value; 
+  // fill entire canvas with grey (areas outside the image)
+  ctx.fillStyle = '#888888'; 
   ctx.fillRect(0,0,canvas.width,canvas.height);
   
   // Save context and apply transform
@@ -196,18 +196,23 @@ function redraw(){
   ctx.scale(transform.scale, transform.scale);
   
   if(imgLoaded){
+    // fill the image area with selected background color (behind the image)
+    ctx.fillStyle = bgColorInput.value; 
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
     // draw image into calculated draw area
     ctx.drawImage(img, imageDraw.x, imageDraw.y, imageDraw.w, imageDraw.h);
   }
   // draw existing markers (always visible in preview)
   // draw polygons/rects/points
-  ctx.lineWidth=2; ctx.strokeStyle='rgba(0,100,255,0.9)'; ctx.fillStyle='rgba(0,100,255,0.9)';
+  // Apply inverse scaling to line width and point size so they stay constant regardless of zoom
+  ctx.lineWidth=2/transform.scale; ctx.strokeStyle='rgba(0,100,255,0.9)'; ctx.fillStyle='rgba(0,100,255,0.9)';
     points.forEach(p=>{
       if(p.type==='rect'){
         if(p.coords.length === 1){
           // show dot for first click of rectangle
           const c = toCanvasCoords(p.coords[0]);
-          ctx.beginPath(); ctx.arc(c.x,c.y,6,0,Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(c.x,c.y,6/transform.scale,0,Math.PI*2); ctx.fill();
         } else if(p.coords.length === 2){
           const a = toCanvasCoords(p.coords[0]);
           const b = toCanvasCoords(p.coords[1]);
@@ -222,8 +227,8 @@ function redraw(){
           
           // Draw corner points for moving
           ctx.fillStyle='rgba(0,100,255,0.9)'; // Reset fill style for points
-          ctx.beginPath(); ctx.arc(a.x,a.y,5,0,Math.PI*2); ctx.fill();
-          ctx.beginPath(); ctx.arc(b.x,b.y,5,0,Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(a.x,a.y,5/transform.scale,0,Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(b.x,b.y,5/transform.scale,0,Math.PI*2); ctx.fill();
         }
       } else if(p.type==='poly'){
         if(p.coords.length>0){
@@ -243,7 +248,7 @@ function redraw(){
           ctx.fillStyle='rgba(0,100,255,0.9)'; // Reset fill style for points
           p.coords.forEach(coord => {
             const c = toCanvasCoords(coord);
-            ctx.beginPath(); ctx.arc(c.x,c.y,5,0,Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(c.x,c.y,5/transform.scale,0,Math.PI*2); ctx.fill();
           });
         }
       }
@@ -261,12 +266,13 @@ function redraw(){
         ctx.fill();
       }
       
-      // Stroke the outline
+      // Stroke the outline with inverse scaling
+      ctx.lineWidth=2/transform.scale;
       ctx.strokeStyle='rgba(0,255,255,0.9)'; 
       ctx.stroke();
       
-      // Draw vertex points
-      tempPoly.forEach(t=>{const c=toCanvasCoords(t); ctx.beginPath(); ctx.arc(c.x,c.y,4,0,Math.PI*2); ctx.fillStyle='rgba(0,255,255,0.9)'; ctx.fill();});
+      // Draw vertex points with inverse scaling
+      tempPoly.forEach(t=>{const c=toCanvasCoords(t); ctx.beginPath(); ctx.arc(c.x,c.y,4/transform.scale,0,Math.PI*2); ctx.fillStyle='rgba(0,255,255,0.9)'; ctx.fill();});
     }
   
   // Restore context
@@ -343,7 +349,8 @@ function findNearbyPoint(px, py, threshold = 15) {
       const coord = shape.coords[j];
       const canvasCoord = toCanvasCoords(coord);
       const dist = Math.sqrt((canvasCoords.x - canvasCoord.x) ** 2 + (canvasCoords.y - canvasCoord.y) ** 2);
-      if(dist <= threshold / transform.scale) { // Adjust threshold for zoom level
+      // Keep threshold constant in screen space by dividing by scale
+      if(dist <= threshold / transform.scale) {
         return {shapeIndex: i, coordIndex: j};
       }
     }
