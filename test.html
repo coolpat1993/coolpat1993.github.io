@@ -31,6 +31,9 @@
     <label>Question / Title</label>
     <input id="title" type="text" placeholder="Tap on the Eiffel Tower" value="Tap on the Eiffel Tower">
 
+    <label>Extra Info</label>
+    <input id="extraInfo" type="text" placeholder="Optional extra info">
+
     <label>Mode</label>
     <div class="controls">
       <button id="mode-rect">Rectangle</button>
@@ -80,6 +83,7 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const fileInput = document.getElementById('file');
 const titleInput = document.getElementById('title');
+const extraInfoInput = document.getElementById('extraInfo');
 const coordsDiv = document.getElementById('coords');
 const generatedInput = document.getElementById('generated');
 const downloadBtn = document.getElementById('download');
@@ -166,6 +170,7 @@ function numbersToCoords(numberString) {
 
 function updateGenerated(){
   const title = sanitizeTitle(titleInput.value || 'Your_Question');
+  const extraInfo = extraInfoInput.value.trim();
   let allCoords = [];
   
   // Collect all coordinates from all shapes
@@ -178,8 +183,12 @@ function updateGenerated(){
   // Convert coordinates to number string
   const numberString = coordsToNumbers(allCoords);
   
-  // Generate filename with number format
-  const filename = `QQ_${title}_PQ${numberString}.png`;
+  // Generate filename with number format, append extra info if present
+  let filename = `QQ_${title}_PQ${numberString}`;
+  if (extraInfo) {
+    filename += `_${extraInfo}`;
+  }
+  filename += '.png';
   generatedInput.value = filename;
 }
 
@@ -522,8 +531,8 @@ downloadBtn.addEventListener('click', ()=>{
   const a = document.createElement('a'); a.href = data; a.download = generatedInput.value || 'QQ_image.png'; a.click();
 });
 
-// allow click on title to update filename
-[titleInput].forEach(inp=>inp.addEventListener('input', updateGenerated));
+// allow click on title and extraInfo to update filename
+[titleInput, extraInfoInput].forEach(inp=>inp.addEventListener('input', updateGenerated));
 
 // initial generated
 updateGenerated();
