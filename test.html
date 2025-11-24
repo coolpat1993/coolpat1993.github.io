@@ -41,6 +41,8 @@
 
     <label>Generated filename</label>
     <input id="generated" type="text" readonly>
+    
+    <div id="status-message" style="margin-top:8px;padding:8px;border-radius:6px;display:none;font-size:13px;"></div>
 
     <div style="display:flex;gap:8px;margin-top:8px">
       <button id="download">Download PNG</button>
@@ -84,6 +86,7 @@ const resetIcon = document.getElementById('reset-icon');
 const bgColorInput = document.getElementById('bg-color');
 const undoBtn = document.getElementById('undo');
 const redoBtn = document.getElementById('redo');
+const statusMessage = document.getElementById('status-message');
 let img = new Image();
 let imgLoaded = false;
 let imageDraw = {x:0,y:0,w:640,h:920}; // the area where image is drawn inside canvas (for correct %)
@@ -602,15 +605,121 @@ bgColorInput.addEventListener('input', () => {
   redraw();
 });
 
+// Function to show status message
+function showStatus(message, type = 'info') {
+  statusMessage.textContent = message;
+  statusMessage.style.display = 'block';
+  
+  if (type === 'success') {
+    statusMessage.style.backgroundColor = '#d4edda';
+    statusMessage.style.color = '#155724';
+    statusMessage.style.border = '1px solid #c3e6cb';
+  } else if (type === 'error') {
+    statusMessage.style.backgroundColor = '#f8d7da';
+    statusMessage.style.color = '#721c24';
+    statusMessage.style.border = '1px solid #f5c6cb';
+  } else {
+    statusMessage.style.backgroundColor = '#d1ecf1';
+    statusMessage.style.color = '#0c5460';
+    statusMessage.style.border = '1px solid #bee5eb';
+  }
+  
+  // Auto-hide after 5 seconds
+  setTimeout(() => {
+    statusMessage.style.display = 'none';
+  }, 5000);
+}
+
+// Function to parse filename and extract question and coordinates
+function parseFilename(filename) {
+  // Remove .png extension
+  const name = filename.replace(/\.png$/i, '');
+  
+  // Expected format: QQ_<title>_PQ<numbers>_<extrainfo>
+  // or: QQ_<title>_PQ<numbers>
+  const qqMatch = name.match(/^QQ_(.+?)_PQ(\d+)(?:_(.+))?$/);
+  
+  if (!qqMatch) {
+    console.log('Filename does not match expected format:', filename);
+    console.log('Expected format: QQ_<title>_PQ<numbers>_<extrainfo>.png');
+    return null;
+  }
+  
+  const title = qqMatch[1];
+  const numberString = qqMatch[2];
+  const extraInfo = qqMatch[3] || '';
+  
+  // Validate that number string has valid length (multiple of 8)
+  if (numberString.length === 0) {
+    console.log('Empty coordinate string');
+    return {
+      title: title,
+      extraInfo: extraInfo,
+      coords: []
+    };
+  }
+  
+  if (numberString.length % 8 !== 0) {
+    console.log('Invalid coordinate string length:', numberString.length, '(should be multiple of 8)');
+    console.log('Coordinate string:', numberString);
+    showStatus(`⚠ Warning: Coordinate string has invalid length (${numberString.length} digits, expected multiple of 8). Loading title only.`, 'error');
+    return {
+      title: title,
+      extraInfo: extraInfo,
+      coords: []
+    };
+  }
+  
+  // Parse coordinates from number string
+  const coords = numbersToCoords(numberString);
+  
+  console.log('✓ Parsed filename successfully:', { 
+    title, 
+    extraInfo, 
+    coordCount: coords.length,
+    coords: coords 
+  });
+  
+  return {
+    title: title,
+    extraInfo: extraInfo,
+    coords: coords
+  };
+}
+
 // file upload
 fileInput.addEventListener('change', (e)=>{
   const f = e.target.files[0];
   if(!f) return;
+  
+  // Try to parse the filename
+  const parsed = parseFilename(f.name);
+  if (parsed) {
+    // Populate the title and extra info fields
+    titleInput.value = parsed.title;
+    extraInfoInput.value = parsed.extraInfo;
+    
+    // Set the coordinates if any
+    if (parsed.coords && parsed.coords.length > 0) {
+      saveState(); // Save state before importing
+      currentShape = {coords: parsed.coords};
+      showStatus(`✓ Imported question "${parsed.title}" with ${parsed.coords.length} coordinate(s)`, 'success');
+    } else {
+      showStatus(`✓ Imported question "${parsed.title}" (no coordinates)`, 'success');
+    }
+  } else {
+    // Filename doesn't match format - just load the image normally
+    showStatus('Image loaded. Filename format not recognized - starting fresh.', 'info');
+  }
+  
   const url = URL.createObjectURL(f);
   img = new Image();
   img.onload = ()=>{
     imgLoaded = true;
-    computeImageDraw(); redraw(); URL.revokeObjectURL(url);
+    computeImageDraw(); 
+    updateGenerated(); // Update filename display
+    redraw(); 
+    URL.revokeObjectURL(url);
   }
   img.src = url;
 });
