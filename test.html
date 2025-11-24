@@ -674,8 +674,8 @@ canvas.addEventListener('wheel', (e) => {
   const canvasMouseY = mouseY * (canvas.height / rect.height);
   
   const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-  // Don't allow zooming out beyond the original scale (1.0), max zoom is 5x
-  const newScale = Math.max(1.0, Math.min(5.0, transform.scale * zoomFactor));
+  // Don't allow zooming out beyond the original scale (1.0), max zoom is 10x
+  const newScale = Math.max(1.0, Math.min(10.0, transform.scale * zoomFactor));
   
   // Only apply zoom if it's different from current scale
   if (newScale !== transform.scale) {
