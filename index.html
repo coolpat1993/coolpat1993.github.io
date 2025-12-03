@@ -14,6 +14,7 @@
   <script src="my-app.tag" type="riot/tag"></script>
   <script src="card.tag" type="riot/tag"></script>
   <script src="card-list.tag" type="riot/tag"></script>
+  <script src="picture-tap.tag" type="riot/tag"></script>
   
   <style>
     body {
@@ -105,6 +106,7 @@
       <div class="nav-links">
         <a href="#game" class="nav-link active" onclick="showPage('game')">Game</a>
         <a href="#cards" class="nav-link" onclick="showPage('cards')">Card Catalog</a>
+        <a href="#picture-tap" class="nav-link" onclick="showPage('picture-tap')">Picture Tap</a>
       </div>
     </div>
   </nav>
@@ -120,6 +122,11 @@
       <div id="cards-page" class="page">
         <card-list></card-list>
       </div>
+
+      <!-- Picture Tap Page -->
+      <div id="picture-tap-page" class="page">
+        <picture-tap></picture-tap>
+      </div>
     </div>
   </div>
   
@@ -131,6 +138,7 @@
     // Mount all Riot components
     riot.mount('my-app');
     riot.mount('card-list');
+    riot.mount('picture-tap');
     
     // Page navigation
     function showPage(pageId) {
