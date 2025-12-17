@@ -56,7 +56,13 @@
       </div>
 
       <button id="play-quiz" class="success" disabled>Play Quiz</button>
+      <button id="export-quiz" class="secondary" disabled>Export as Image</button>
       <button id="clear-all" class="secondary">Clear All Rectangles</button>
+      
+      <div id="export-result" style="display:none;margin-top:12px;padding:12px;background:#d4edda;border:1px solid #c3e6cb;border-radius:6px;text-align:center;">
+        <div style="font-size:14px;font-weight:600;color:#155724;margin-bottom:8px">✓ Image downloaded successfully!</div>
+        <div style="font-size:12px;color:#155724" id="export-filename"></div>
+      </div>
     </div>
 
     <div id="play-mode" style="display:none">
@@ -90,6 +96,9 @@ const fileInput = document.getElementById('file');
 const questionInput = document.getElementById('question');
 const playQuizBtn = document.getElementById('play-quiz');
 const clearAllBtn = document.getElementById('clear-all');
+const exportQuizBtn = document.getElementById('export-quiz');
+const exportResult = document.getElementById('export-result');
+const exportFilename = document.getElementById('export-filename');
 const rectangleList = document.getElementById('rectangle-list');
 const setupMode = document.getElementById('setup-mode');
 const playMode = document.getElementById('play-mode');
@@ -515,7 +524,93 @@ function updateRectangleList(){
 
 function updatePlayButton(){
   const hasCorrectAnswers = rectangles.some(r => r.isCorrect);
-  playQuizBtn.disabled = !hasCorrectAnswers || !questionInput.value.trim();
+  const hasQuestion = questionInput.value.trim().length > 0;
+  playQuizBtn.disabled = !hasCorrectAnswers || !hasQuestion;
+  exportQuizBtn.disabled = rectangles.length === 0 || !hasQuestion;
+}
+
+function padCoordValue(value) {
+  // Convert percentage to 2-digit integer (00-99)
+  const intValue = Math.round(value);
+  return intValue.toString().padStart(2, '0');
+}
+
+function coordsToNumbers(coords) {
+  // Convert x1,y1,x2,y2 to 8 digits (2 per value)
+  const x1 = padCoordValue(coords.x1);
+  const y1 = padCoordValue(coords.y1);
+  const x2 = padCoordValue(coords.x2);
+  const y2 = padCoordValue(coords.y2);
+  return x1 + y1 + x2 + y2;
+}
+
+function sanitizeTitle(t) {
+  // Allow letters, numbers, spaces, hyphens, commas, and carets (no underscores or full stops)
+  return t
+    .replace(/[^\w\s,\-\^]/g, '')   // Remove unwanted chars except ^
+    .replace(/[_\.]/g, '')          // Remove underscores and full stops
+    .replace(/\s+/g, ' ')           // Collapse spaces
+    .trim();
+}
+
+function generateExportFilename() {
+  const title = sanitizeTitle(questionInput.value || 'Question');
+  
+  // Sort rectangles by their ID (A, B, C, D, E, F)
+  const sortedRectangles = [...rectangles].sort((a, b) => a.id.localeCompare(b.id));
+  
+  // Convert each rectangle's coordinates to 8-digit string
+  const coordStrings = sortedRectangles.map(rect => coordsToNumbers(rect.coords));
+  
+  // Get correct answers (sorted)
+  const correctAnswers = sortedRectangles
+    .filter(r => r.isCorrect)
+    .map(r => r.id)
+    .sort()
+    .join('');
+  
+  // Format: QQ_<question>^^PQMT_<coords1>_<coords2>_..._<coordsN>___<correct_answers>.jpg
+  const filename = `QQ_${title}^^PQMT_${coordStrings.join('_')}___${correctAnswers}.jpg`;
+  
+  return filename;
+}
+
+function exportAsImage() {
+  if(!imgLoaded) {
+    alert('Please upload an image first');
+    return;
+  }
+  
+  // Create a temporary canvas for export
+  const exportCanvas = document.createElement('canvas');
+  exportCanvas.width = canvas.width;
+  exportCanvas.height = canvas.height;
+  const exportCtx = exportCanvas.getContext('2d');
+  
+  // Draw the background color
+  exportCtx.fillStyle = '#222222';
+  exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+  
+  // Draw only the image (no rectangles)
+  exportCtx.drawImage(img, imageDraw.x, imageDraw.y, imageDraw.w, imageDraw.h);
+  
+  // Convert to blob and download
+  exportCanvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const filename = generateExportFilename();
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    // Show success message
+    exportFilename.textContent = `Filename: ${filename}`;
+    exportResult.style.display = 'block';
+    setTimeout(() => {
+      exportResult.style.display = 'none';
+    }, 5000);
+  }, 'image/jpeg', 0.95);
 }
 
 function deleteRectangle(id){
@@ -570,6 +665,10 @@ clearAllBtn.addEventListener('click', ()=>{
     updateRectangleList();
     redraw();
   }
+});
+
+exportQuizBtn.addEventListener('click', ()=>{
+  exportAsImage();
 });
 
 submitAnswerBtn.addEventListener('click', ()=>{
