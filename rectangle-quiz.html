@@ -49,7 +49,7 @@
       <label>Question</label>
       <textarea id="question" placeholder="What are the correct answers?"></textarea>
 
-      <div class="hint">Click on the canvas to draw rectangles. Click and drag the first corner, then release at the opposite corner. You can draw up to 6 rectangles (A-F). Click on a rectangle to delete it.</div>
+      <div class="hint">Click and drag to draw rectangles (up to 6: A-F). Drag rectangles to move them. Drag corner handles to resize. <strong>Shift+click</strong> a rectangle to delete it.</div>
 
       <div class="rectangle-list" id="rectangle-list">
         <div style="font-size:13px;color:#666;font-style:italic">No rectangles drawn yet</div>
@@ -111,6 +111,11 @@ let selectedAnswers = new Set(); // For play mode
 let quizSubmitted = false; // Track if quiz has been submitted
 let correctAnswersSet = new Set(); // Store correct answers after submission
 const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
+let dragMode = null; // 'move' or 'resize'
+let dragRectIdx = -1;
+let dragResizeCorner = null; // 'tl', 'tr', 'bl', 'br'
+let dragOffset = {x: 0, y: 0};
+const RESIZE_HANDLE_SIZE = 12; // pixels
 
 // Load image
 fileInput.addEventListener('change', (e)=>{
@@ -163,6 +168,14 @@ function redraw(){
       
       ctx.fillStyle = 'rgba(0,120,255,0.3)';
       ctx.fillRect(coords.x1, coords.y1, coords.x2 - coords.x1, coords.y2 - coords.y1);
+      
+      // Draw resize handles
+      ctx.fillStyle = 'white';
+      const hs = RESIZE_HANDLE_SIZE / 2;
+      ctx.fillRect(coords.x1 - hs, coords.y1 - hs, RESIZE_HANDLE_SIZE, RESIZE_HANDLE_SIZE);
+      ctx.fillRect(coords.x2 - hs, coords.y1 - hs, RESIZE_HANDLE_SIZE, RESIZE_HANDLE_SIZE);
+      ctx.fillRect(coords.x1 - hs, coords.y2 - hs, RESIZE_HANDLE_SIZE, RESIZE_HANDLE_SIZE);
+      ctx.fillRect(coords.x2 - hs, coords.y2 - hs, RESIZE_HANDLE_SIZE, RESIZE_HANDLE_SIZE);
       
       // Draw label
       ctx.fillStyle = 'white';
@@ -279,6 +292,20 @@ function findRectangleAtPoint(px, py){
   return -1;
 }
 
+function findResizeHandle(px, py, rectIdx){
+  const rect = rectangles[rectIdx];
+  const coords = percentToCanvas(rect.coords);
+  const hs = RESIZE_HANDLE_SIZE;
+  
+  // Check each corner
+  if(Math.abs(px - coords.x1) < hs && Math.abs(py - coords.y1) < hs) return 'tl';
+  if(Math.abs(px - coords.x2) < hs && Math.abs(py - coords.y1) < hs) return 'tr';
+  if(Math.abs(px - coords.x1) < hs && Math.abs(py - coords.y2) < hs) return 'bl';
+  if(Math.abs(px - coords.x2) < hs && Math.abs(py - coords.y2) < hs) return 'br';
+  
+  return null;
+}
+
 // Canvas mouse events
 canvas.addEventListener('mousedown', (ev)=>{
   if(!imgLoaded) return alert('Please upload an image first');
@@ -287,12 +314,37 @@ canvas.addEventListener('mousedown', (ev)=>{
   const {px, py} = getCanvasCoords(ev);
   
   if(currentMode === 'setup'){
-    // Check if clicking on existing rectangle to delete it
+    // Check if clicking on existing rectangle
     const rectIdx = findRectangleAtPoint(px, py);
     if(rectIdx !== -1){
-      rectangles.splice(rectIdx, 1);
-      updateRectangleList();
-      redraw();
+      // Check if clicking on a resize handle
+      const resizeCorner = findResizeHandle(px, py, rectIdx);
+      if(resizeCorner){
+        // Start resizing
+        dragMode = 'resize';
+        dragRectIdx = rectIdx;
+        dragResizeCorner = resizeCorner;
+      } else if(ev.shiftKey){
+        // Shift+click to delete
+        rectangles.splice(rectIdx, 1);
+        // Reassign labels to fill the gap
+        rectangles.forEach((rect, idx) => {
+          rect.id = labels[idx];
+        });
+        updateRectangleList();
+        redraw();
+        return;
+      } else {
+        // Start moving
+        dragMode = 'move';
+        dragRectIdx = rectIdx;
+        const pct = canvasToPercent(px, py);
+        const rect = rectangles[rectIdx];
+        dragOffset = {
+          x: pct.x - rect.coords.x1,
+          y: pct.y - rect.coords.y1
+        };
+      }
       return;
     }
     
@@ -319,51 +371,115 @@ canvas.addEventListener('mousedown', (ev)=>{
 });
 
 canvas.addEventListener('mousemove', (ev)=>{
-  if(!isDrawing || currentMode !== 'setup') return;
+  if(currentMode !== 'setup') return;
   
   const {px, py} = getCanvasCoords(ev);
   const pct = canvasToPercent(px, py);
   
-  tempRect = {
-    x1: Math.min(drawStart.x, pct.x),
-    y1: Math.min(drawStart.y, pct.y),
-    x2: Math.max(drawStart.x, pct.x),
-    y2: Math.max(drawStart.y, pct.y)
-  };
-  
-  redraw();
+  if(isDrawing){
+    // Drawing new rectangle
+    tempRect = {
+      x1: Math.min(drawStart.x, pct.x),
+      y1: Math.min(drawStart.y, pct.y),
+      x2: Math.max(drawStart.x, pct.x),
+      y2: Math.max(drawStart.y, pct.y)
+    };
+    redraw();
+  } else if(dragMode === 'move' && dragRectIdx !== -1){
+    // Moving rectangle
+    const rect = rectangles[dragRectIdx];
+    const width = rect.coords.x2 - rect.coords.x1;
+    const height = rect.coords.y2 - rect.coords.y1;
+    
+    rect.coords.x1 = Math.max(0, Math.min(100 - width, pct.x - dragOffset.x));
+    rect.coords.y1 = Math.max(0, Math.min(100 - height, pct.y - dragOffset.y));
+    rect.coords.x2 = rect.coords.x1 + width;
+    rect.coords.y2 = rect.coords.y1 + height;
+    
+    redraw();
+  } else if(dragMode === 'resize' && dragRectIdx !== -1){
+    // Resizing rectangle
+    const rect = rectangles[dragRectIdx];
+    
+    if(dragResizeCorner === 'tl'){
+      rect.coords.x1 = Math.min(pct.x, rect.coords.x2 - 1);
+      rect.coords.y1 = Math.min(pct.y, rect.coords.y2 - 1);
+    } else if(dragResizeCorner === 'tr'){
+      rect.coords.x2 = Math.max(pct.x, rect.coords.x1 + 1);
+      rect.coords.y1 = Math.min(pct.y, rect.coords.y2 - 1);
+    } else if(dragResizeCorner === 'bl'){
+      rect.coords.x1 = Math.min(pct.x, rect.coords.x2 - 1);
+      rect.coords.y2 = Math.max(pct.y, rect.coords.y1 + 1);
+    } else if(dragResizeCorner === 'br'){
+      rect.coords.x2 = Math.max(pct.x, rect.coords.x1 + 1);
+      rect.coords.y2 = Math.max(pct.y, rect.coords.y1 + 1);
+    }
+    
+    // Clamp to bounds
+    rect.coords.x1 = Math.max(0, Math.min(100, rect.coords.x1));
+    rect.coords.y1 = Math.max(0, Math.min(100, rect.coords.y1));
+    rect.coords.x2 = Math.max(0, Math.min(100, rect.coords.x2));
+    rect.coords.y2 = Math.max(0, Math.min(100, rect.coords.y2));
+    
+    redraw();
+  } else {
+    // Update cursor based on what's under mouse
+    const rectIdx = findRectangleAtPoint(px, py);
+    if(rectIdx !== -1){
+      const resizeCorner = findResizeHandle(px, py, rectIdx);
+      if(resizeCorner){
+        if(resizeCorner === 'tl' || resizeCorner === 'br'){
+          canvas.style.cursor = 'nwse-resize';
+        } else {
+          canvas.style.cursor = 'nesw-resize';
+        }
+      } else {
+        canvas.style.cursor = 'move';
+      }
+    } else {
+      canvas.style.cursor = 'crosshair';
+    }
+  }
 });
 
 canvas.addEventListener('mouseup', (ev)=>{
-  if(!isDrawing || currentMode !== 'setup') return;
+  if(currentMode !== 'setup') return;
   
-  const {px, py} = getCanvasCoords(ev);
-  const pct = canvasToPercent(px, py);
-  
-  const finalRect = {
-    x1: Math.min(drawStart.x, pct.x),
-    y1: Math.min(drawStart.y, pct.y),
-    x2: Math.max(drawStart.x, pct.x),
-    y2: Math.max(drawStart.y, pct.y)
-  };
-  
-  // Only add if rectangle has some size
-  const width = Math.abs(finalRect.x2 - finalRect.x1);
-  const height = Math.abs(finalRect.y2 - finalRect.y1);
-  
-  if(width > 1 && height > 1){
-    const nextLabel = labels[rectangles.length];
-    rectangles.push({
-      id: nextLabel,
-      coords: finalRect,
-      isCorrect: false
-    });
-    updateRectangleList();
+  if(isDrawing){
+    const {px, py} = getCanvasCoords(ev);
+    const pct = canvasToPercent(px, py);
+    
+    const finalRect = {
+      x1: Math.min(drawStart.x, pct.x),
+      y1: Math.min(drawStart.y, pct.y),
+      x2: Math.max(drawStart.x, pct.x),
+      y2: Math.max(drawStart.y, pct.y)
+    };
+    
+    // Only add if rectangle has some size
+    const width = Math.abs(finalRect.x2 - finalRect.x1);
+    const height = Math.abs(finalRect.y2 - finalRect.y1);
+    
+    if(width > 1 && height > 1){
+      const nextLabel = labels[rectangles.length];
+      rectangles.push({
+        id: nextLabel,
+        coords: finalRect,
+        isCorrect: false
+      });
+      updateRectangleList();
+    }
+    
+    isDrawing = false;
+    drawStart = null;
+    tempRect = null;
+  } else if(dragMode === 'move' || dragMode === 'resize'){
+    // End dragging
+    dragMode = null;
+    dragRectIdx = -1;
+    dragResizeCorner = null;
   }
   
-  isDrawing = false;
-  drawStart = null;
-  tempRect = null;
   redraw();
 });
 
@@ -404,7 +520,7 @@ function updatePlayButton(){
 
 function deleteRectangle(id){
   rectangles = rectangles.filter(r => r.id !== id);
-  // Reassign labels
+  // Reassign labels to fill the gap
   rectangles.forEach((rect, idx) => {
     rect.id = labels[idx];
   });
