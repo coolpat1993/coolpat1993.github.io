@@ -185,8 +185,8 @@ const questions = [
 
 ];
 
-const QUESTION_DURATION_SECONDS = 10;
-const MAX_FAST_POINTS = 100;
+const QUESTION_DURATION_SECONDS = 10
+const MAX_FAST_POINTS = 10;
 const RESULT_DELAY_MS = 3000;
 const PRE_TIMER_DELAY_MS = 3000;
 
