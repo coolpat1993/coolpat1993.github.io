@@ -7,10 +7,10 @@ const questions = [
   {
     id: "q-multi-1",
     type: "multiple",
-    question: "Is the Isle of Man in the UK?",
+    question: "Hmm, does this question have one comma, or does it have two?",
     choices: [
-      "Yes",
-      "No"
+      "One",
+      "Two"
     ],
     answer: "B"
   },
@@ -187,8 +187,12 @@ const questions = [
 
 const QUESTION_DURATION_SECONDS = 10
 const MAX_FAST_POINTS = 10;
-const RESULT_DELAY_MS = 3000;
-const PRE_TIMER_DELAY_MS = 3000;
+const RESULT_DELAY_MS = 5000;
+const PRE_REVEAL_DELAY_MS = 600;
+const CHARACTER_REVEAL_INTERVAL_MS = 30;
+const COMMA_PAUSE_MS = 400;
+const PERIOD_PAUSE_MS = 500;
+const POST_REVEAL_TIMER_DELAY_MS = 2000;
 
 const scoreValueEl = document.querySelector("#scoreValue");
 const fastPointsValueEl = document.querySelector("#fastPointsValue");
@@ -205,6 +209,7 @@ let remainingMs = QUESTION_DURATION_SECONDS * 1000;
 let timerHandle = null;
 let autoNextHandle = null;
 let preTimerHandle = null;
+let characterRevealHandles = [];
 let questionLocked = false;
 
 function normalize(str) {
@@ -255,6 +260,79 @@ function clearPreTimerDelay() {
   }
 }
 
+function clearCharacterRevealTimers() {
+  if (characterRevealHandles.length === 0) {
+    return;
+  }
+
+  characterRevealHandles.forEach((handle) => {
+    window.clearTimeout(handle);
+  });
+  characterRevealHandles = [];
+}
+
+function revealAllQuestionCharacters() {
+  const characterEls = questionTextEl.querySelectorAll(".question-character");
+  if (characterEls.length === 0) {
+    const current = getCurrentQuestion();
+    questionTextEl.textContent = String(current?.question || "");
+    return;
+  }
+
+  characterEls.forEach((characterEl) => {
+    characterEl.classList.add("revealed");
+  });
+}
+
+function getPostCharacterPauseMs(char) {
+  if (char === ",") {
+    return COMMA_PAUSE_MS;
+  }
+
+  if (char === ".") {
+    return PERIOD_PAUSE_MS;
+  }
+
+  return 0;
+}
+
+function renderQuestionCharacterReveal(questionText, startDelayMs = 0) {
+  clearCharacterRevealTimers();
+  questionTextEl.innerHTML = "";
+
+  const chars = Array.from(String(questionText || ""));
+  const fragment = document.createDocumentFragment();
+  let cumulativeRevealDelayMs = Math.max(0, startDelayMs);
+
+  chars.forEach((char) => {
+    if (char === "") {
+      return;
+    }
+
+    if (/^\s$/.test(char)) {
+      fragment.appendChild(document.createTextNode(char));
+      return;
+    }
+
+    const characterEl = document.createElement("span");
+    characterEl.className = "question-character";
+    characterEl.textContent = char;
+    fragment.appendChild(characterEl);
+
+    cumulativeRevealDelayMs += CHARACTER_REVEAL_INTERVAL_MS;
+
+    const revealHandle = window.setTimeout(() => {
+      characterEl.classList.add("revealed");
+    }, cumulativeRevealDelayMs);
+
+    characterRevealHandles.push(revealHandle);
+    cumulativeRevealDelayMs += getPostCharacterPauseMs(char);
+  });
+
+  questionTextEl.appendChild(fragment);
+  return cumulativeRevealDelayMs;
+}
+
 function scheduleAutoNext() {
   clearAutoNextTimer();
   autoNextHandle = window.setTimeout(() => {
@@ -264,6 +342,8 @@ function scheduleAutoNext() {
 
 function lockQuestion(message) {
   clearPreTimerDelay();
+  clearCharacterRevealTimers();
+  revealAllQuestionCharacters();
   questionLocked = true;
   stopTimer();
   feedbackTextEl.textContent = message;
@@ -352,10 +432,24 @@ function handleAnswerPick(answerCode) {
   evaluateAnswer(answerCode);
 }
 
-function buildKeyButton({ label, className = "", onClick, childNodes = [], disabled = false }) {
+function buildKeyButton({
+  label,
+  className = "",
+  onClick,
+  childNodes = [],
+  disabled = false,
+  cornerIcon = null,
+  flash = false
+}) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = `key-btn ${className}`.trim();
+  if (cornerIcon) {
+    button.dataset.cornerIcon = cornerIcon;
+  }
+  if (flash) {
+    button.classList.add("reveal-flash");
+  }
   if (childNodes.length > 0) {
     childNodes.forEach((node) => button.appendChild(node));
   } else {
@@ -382,7 +476,7 @@ function buildChoiceButton(choice, { placeholder = false } = {}) {
 
   if (placeholder) {
     return buildKeyButton({
-      className: "choice-row dimmed",
+      className: "choice-row dimmed empty-choice",
       onClick: () => {},
       childNodes: [code, label],
       disabled: true
@@ -394,12 +488,17 @@ function buildChoiceButton(choice, { placeholder = false } = {}) {
   const correctCode = getQuestionAnswerCodes(current)[0];
   const isCorrect = questionLocked && normalize(choice.code) === correctCode;
   const isWrongPick = questionLocked && isSelected && !isCorrect;
+  const playerGotItCorrect = questionLocked && normalize(typedAnswer) === correctCode;
   const isDimmed = questionLocked && typedAnswer !== "" && !isCorrect && !isWrongPick;
+  const showCorrectTick = isCorrect && playerGotItCorrect;
+  const cornerIcon = isWrongPick ? "cross" : showCorrectTick ? "check" : null;
 
   return buildKeyButton({
     className: `choice-row ${isSelected ? "selected" : ""} ${isCorrect ? "correct" : ""} ${isWrongPick ? "wrong" : ""} ${isDimmed ? "dimmed" : ""}`,
     onClick: () => handleAnswerPick(choice.code),
-    childNodes: [code, label]
+    childNodes: [code, label],
+    cornerIcon,
+    flash: showCorrectTick
   });
 }
 
@@ -410,6 +509,7 @@ function renderKeypad() {
   if (current.type === "letters") {
     keypadEl.className = "keypad letters";
     const correctCode = getQuestionAnswerCodes(current)[0];
+    const playerGotItCorrect = questionLocked && normalize(typedAnswer) === correctCode;
 
     getLetterKeys().forEach((key) => {
       const normalizedKey = normalize(key);
@@ -417,6 +517,8 @@ function renderKeypad() {
       const isCorrect = questionLocked && normalizedKey === correctCode;
       const isWrongPick = questionLocked && isSelected && !isCorrect;
       const isDimmed = questionLocked && typedAnswer !== "" && !isCorrect && !isWrongPick;
+      const showCorrectTick = isCorrect && playerGotItCorrect;
+      const cornerIcon = isWrongPick ? "cross" : showCorrectTick ? "check" : null;
 
       keypadEl.appendChild(
         buildKeyButton({
@@ -427,7 +529,9 @@ function renderKeypad() {
             isWrongPick ? "wrong" : "",
             isDimmed ? "dimmed" : "",
           ].filter(Boolean).join(" "),
-          onClick: () => handleAnswerPick(key)
+          onClick: () => handleAnswerPick(key),
+          cornerIcon,
+          flash: showCorrectTick
         })
       );
     });
@@ -484,14 +588,14 @@ function loadQuestion() {
   const current = getCurrentQuestion();
   clearAutoNextTimer();
   clearPreTimerDelay();
+  clearCharacterRevealTimers();
   stopTimer();
   questionLocked = false;
   typedAnswer = "";
   remainingMs = QUESTION_DURATION_SECONDS * 1000;
   renderTimer();
-
-  questionTextEl.textContent = current.question;
   feedbackTextEl.textContent = "";
+  const revealDurationMs = renderQuestionCharacterReveal(current.question, PRE_REVEAL_DELAY_MS);
 
   renderKeypad();
   preTimerHandle = window.setTimeout(() => {
@@ -499,7 +603,7 @@ function loadQuestion() {
       return;
     }
     beginQuestionTimer();
-  }, PRE_TIMER_DELAY_MS);
+  }, revealDurationMs + POST_REVEAL_TIMER_DELAY_MS);
 }
 
 document.addEventListener("keydown", (event) => {

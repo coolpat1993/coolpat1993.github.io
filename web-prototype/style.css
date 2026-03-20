@@ -23,13 +23,17 @@
   --sq-red: #cf2718;
   --sq-dark: #000000;
   --sq-text: #ffffff;
-  --sq-cyan-dark: hwb(191 0% 28%);
+  --sq-cyan-dark: hwb(191 0% 36%);
   --sq-text-muted: rgba(255, 255, 255, 0.7);
   --sq-btn-shadow: rgba(0, 0, 0, 0.4);
 }
 
 * {
   box-sizing: border-box;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 html,
@@ -142,6 +146,14 @@ body {
   font-weight: 500;
 }
 
+.question-character {
+  color: #000;
+}
+
+.question-character.revealed {
+  color: var(--sq-text);
+}
+
 .feedback-text {
   margin: 4px 0 0;
   min-height: 1.25em;
@@ -181,6 +193,7 @@ body {
 }
 
 .key-btn {
+  position: relative;
   border: 0;
   border-radius: 10px;
   color: #000;
@@ -193,6 +206,38 @@ body {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+}
+
+.key-btn::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  font-size: 1.05rem;
+  font-weight: 900;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.key-btn[data-corner-icon="check"]::after {
+  content: "✓";
+  color: rgba(23, 153, 88, 0.9);
+  opacity: 1;
+}
+
+.key-btn[data-corner-icon="cross"]::after {
+  content: "✕";
+  color: rgba(176, 31, 21, 0.9);
+  opacity: 1;
+}
+
+.key-btn.correct.reveal-flash {
+  animation: reveal-white-flicker 3s linear 1;
 }
 
 .key-btn.selected {
@@ -246,6 +291,19 @@ body {
   background: var(--sq-cyan-dark);
   color: #000;
   box-shadow: none;
+}
+
+.key-btn.choice-row.empty-choice {
+  background: rgba(0, 120, 147, 0.5);
+  color: rgba(0, 0, 0, 0.35);
+}
+
+.key-btn.choice-row.empty-choice .choice-code {
+  display: none;
+}
+
+.key-btn.choice-row.empty-choice .choice-label {
+  color: rgba(0, 0, 0, 0.35);
 }
 
 .choice-code {
@@ -304,6 +362,61 @@ body {
 .key-btn.choice-row.correct .choice-code,
 .key-btn.choice-row.wrong .choice-code {
   color: rgba(0, 0, 0, 0.18);
+}
+
+@keyframes reveal-white-flicker {
+  0% { filter: brightness(1); }
+  3.333% { filter: brightness(1); }
+  3.334% { filter: brightness(0.82); }
+  6.667% { filter: brightness(0.82); }
+  6.668% { filter: brightness(1); }
+  10% { filter: brightness(1); }
+  10.001% { filter: brightness(0.82); }
+  13.333% { filter: brightness(0.82); }
+  13.334% { filter: brightness(1); }
+  16.667% { filter: brightness(1); }
+  16.668% { filter: brightness(0.82); }
+  20% { filter: brightness(0.82); }
+  20.001% { filter: brightness(1); }
+  36.667% { filter: brightness(1); }
+  36.668% { filter: brightness(0.82); }
+  40% { filter: brightness(0.82); }
+  40.001% { filter: brightness(1); }
+  43.333% { filter: brightness(1); }
+  43.334% { filter: brightness(0.82); }
+  46.667% { filter: brightness(0.82); }
+  46.668% { filter: brightness(1); }
+  50% { filter: brightness(1); }
+  50.001% { filter: brightness(0.82); }
+  53.333% { filter: brightness(0.82); }
+  53.334% { filter: brightness(1); }
+  56.667% { filter: brightness(1); }
+  56.668% { filter: brightness(0.82); }
+  60% { filter: brightness(0.82); }
+  60.001% { filter: brightness(1); }
+  63.333% { filter: brightness(1); }
+  63.334% { filter: brightness(0.82); }
+  66.667% { filter: brightness(0.82); }
+  66.668% { filter: brightness(1); }
+  70% { filter: brightness(1); }
+  70.001% { filter: brightness(0.82); }
+  73.333% { filter: brightness(0.82); }
+  73.334% { filter: brightness(1); }
+  76.667% { filter: brightness(1); }
+  76.668% { filter: brightness(0.82); }
+  80% { filter: brightness(0.82); }
+  80.001% { filter: brightness(1); }
+  83.333% { filter: brightness(1); }
+  83.334% { filter: brightness(0.82); }
+  86.667% { filter: brightness(0.82); }
+  86.668% { filter: brightness(1); }
+  90% { filter: brightness(1); }
+  90.001% { filter: brightness(0.82); }
+  93.333% { filter: brightness(0.82); }
+  93.334% { filter: brightness(1); }
+  96.667% { filter: brightness(1); }
+  96.668% { filter: brightness(0.82); }
+  100% { filter: brightness(0.82); }
 }
 
 @media (max-height: 760px) {
