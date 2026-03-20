@@ -93,12 +93,34 @@ const questions = [
 const QUESTION_DURATION_SECONDS = 10
 const MAX_FAST_POINTS = 10;
 const RESULT_DELAY_MS = 5000;
-const PRE_REVEAL_DELAY_MS = 600;
-const CHARACTER_REVEAL_INTERVAL_MS = 30;
+const PRE_REVEAL_DELAY_MS = 400;
+const CHARACTER_REVEAL_INTERVAL_MS = 45;
 const COMMA_PAUSE_MS = 400;
 const PERIOD_PAUSE_MS = 500;
-const POST_REVEAL_TIMER_DELAY_MS = 2000;
+const POST_REVEAL_TIMER_DELAY_MS = {
+  letters: 2500,
+  multiple: 1500,
+  numbers: 2500
+};
 const LONG_PRESS_MS = 450;
+const TIMER_FULLSCREEN_HOLD_MS = 500;
+const LAST_TEAM_NAME_STORAGE_KEY = "speedQuizzingTeamName";
+const GAME_PROGRESS_STORAGE_KEY = "speedQuizzingProgress";
+
+const POINTS_EMOJI = {
+  1: "1️⃣",
+  2: "2️⃣",
+  3: "3️⃣",
+  4: "4️⃣",
+  5: "5️⃣",
+  6: "6️⃣",
+  7: "7️⃣",
+  8: "8️⃣",
+  9: "9️⃣",
+  10: "🔟"
+};
+
+const TOTAL_POSSIBLE_SCORE = questions.length * MAX_FAST_POINTS;
 
 const scoreValueEl = document.querySelector("#scoreValue");
 const fastPointsValueEl = document.querySelector("#fastPointsValue");
@@ -108,6 +130,15 @@ const questionTextEl = document.querySelector("#questionText");
 const feedbackTextEl = document.querySelector("#feedbackText");
 const numberAnswerDisplayEl = document.querySelector("#numberAnswerDisplay");
 const keypadEl = document.querySelector("#keypad");
+const finishPanelEl = document.querySelector("#finishPanel");
+const finalScoreValueEl = document.querySelector("#finalScoreValue");
+const finalScoreTotalEl = document.querySelector("#finalScoreTotal");
+const teamNameInputEl = document.querySelector("#teamNameInput");
+const shareScoreButtonEl = document.querySelector("#shareScoreButton");
+const submitScoreButtonEl = document.querySelector("#submitScoreButton");
+const devResetProgressButtonEl = document.querySelector("#devResetProgressButton");
+const leaderboardStatusEl = document.querySelector("#leaderboardStatus");
+const teamTrayNameEl = document.querySelector(".team-tray-name");
 
 let score = 0;
 let questionIndex = 0;
@@ -118,6 +149,421 @@ let autoNextHandle = null;
 let preTimerHandle = null;
 let characterRevealHandles = [];
 let questionLocked = false;
+let gameFinished = false;
+let answerHistory = [];
+
+let savedProgress = loadSavedProgress();
+
+let timerFullscreenHoldHandle = null;
+
+function syncTeamTrayName(name) {
+  const safeName = String(name || "").trim();
+  teamTrayNameEl.textContent = safeName || "Team Name";
+}
+
+function loadSavedTeamName() {
+  try {
+    return window.localStorage.getItem(LAST_TEAM_NAME_STORAGE_KEY) || "";
+  } catch (error) {
+    return "";
+  }
+}
+
+function loadSavedProgress() {
+  const defaultProgress = {
+    completed: false,
+    submitted: false,
+    firstScore: 0,
+    totalPossible: TOTAL_POSSIBLE_SCORE,
+    answerHistory: [],
+    completedAt: null,
+    submittedAt: null
+  };
+
+  try {
+    const rawValue = window.localStorage.getItem(GAME_PROGRESS_STORAGE_KEY);
+    if (!rawValue) {
+      return defaultProgress;
+    }
+
+    const parsed = JSON.parse(rawValue);
+    if (!parsed || typeof parsed !== "object") {
+      return defaultProgress;
+    }
+
+    return {
+      completed: Boolean(parsed.completed),
+      submitted: Boolean(parsed.submitted),
+      firstScore: Number.isFinite(parsed.firstScore) ? parsed.firstScore : 0,
+      totalPossible: Number.isFinite(parsed.totalPossible) ? parsed.totalPossible : TOTAL_POSSIBLE_SCORE,
+      answerHistory: Array.isArray(parsed.answerHistory) ? parsed.answerHistory : [],
+      completedAt: parsed.completedAt || null,
+      submittedAt: parsed.submittedAt || null
+    };
+  } catch (error) {
+    return defaultProgress;
+  }
+}
+
+function persistSavedProgress() {
+  try {
+    window.localStorage.setItem(GAME_PROGRESS_STORAGE_KEY, JSON.stringify(savedProgress));
+  } catch (error) {
+    return;
+  }
+}
+
+function syncSubmitAvailability() {
+  submitScoreButtonEl.disabled = savedProgress.submitted || getTeamName() === "";
+}
+
+function clearSavedProgressForDevTesting() {
+  savedProgress = {
+    completed: false,
+    submitted: false,
+    firstScore: 0,
+    totalPossible: TOTAL_POSSIBLE_SCORE,
+    answerHistory: [],
+    completedAt: null,
+    submittedAt: null
+  };
+  persistSavedProgress();
+  setLeaderboardStatus("Saved game completion/submission state cleared for testing.");
+  restartGame();
+}
+
+function persistCompletedProgressIfFirstRun() {
+  if (savedProgress.completed) {
+    return;
+  }
+
+  savedProgress = {
+    ...savedProgress,
+    completed: true,
+    firstScore: score,
+    totalPossible: TOTAL_POSSIBLE_SCORE,
+    answerHistory: answerHistory.map((entry) => ({ ...entry })),
+    completedAt: new Date().toISOString()
+  };
+
+  persistSavedProgress();
+}
+
+function persistSubmittedProgress() {
+  if (savedProgress.submitted) {
+    return;
+  }
+
+  savedProgress = {
+    ...savedProgress,
+    submitted: true,
+    submittedAt: new Date().toISOString()
+  };
+
+  persistSavedProgress();
+}
+
+function persistTeamName(name) {
+  try {
+    window.localStorage.setItem(LAST_TEAM_NAME_STORAGE_KEY, String(name || "").trim());
+  } catch (error) {
+    return;
+  }
+}
+
+function getTeamName() {
+  return String(teamNameInputEl?.value || "").trim();
+}
+
+function setLeaderboardStatus(message, isError = false) {
+  leaderboardStatusEl.textContent = message;
+  leaderboardStatusEl.dataset.state = isError ? "error" : "default";
+}
+
+function getPointsEmoji(points) {
+  return POINTS_EMOJI[points] || "❌";
+}
+
+function getAnswerBreakdownText() {
+  return answerHistory.map((entry) => (
+    entry.isCorrect ? getPointsEmoji(entry.earnedPoints) : "❌"
+  )).join(" ");
+}
+
+function buildShareText() {
+  const heading = `We scored ${score}/${TOTAL_POSSIBLE_SCORE}`;
+  const breakdown = getAnswerBreakdownText();
+  return `${heading}\n${breakdown}`;
+}
+
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return true;
+  }
+
+  const fallbackInput = document.createElement("textarea");
+  fallbackInput.value = text;
+  fallbackInput.setAttribute("readonly", "readonly");
+  fallbackInput.style.position = "fixed";
+  fallbackInput.style.top = "-1000px";
+  fallbackInput.style.left = "-1000px";
+  document.body.appendChild(fallbackInput);
+  fallbackInput.focus();
+  fallbackInput.select();
+
+  let didCopy = false;
+  try {
+    didCopy = document.execCommand("copy");
+  } finally {
+    document.body.removeChild(fallbackInput);
+  }
+
+  if (!didCopy) {
+    throw new Error("Clipboard copy failed");
+  }
+
+  return true;
+}
+
+function recordAnswerResult(question, userAnswer, { isCorrect = false, earnedPoints = 0, timedOut = false } = {}) {
+  answerHistory.push({
+    questionId: question.id,
+    userAnswer,
+    correctAnswer: getRevealAnswerText(question),
+    isCorrect,
+    earnedPoints,
+    timedOut
+  });
+}
+
+function showFinishPanel() {
+  finishPanelEl.hidden = false;
+  keypadEl.hidden = true;
+  numberAnswerDisplayEl.hidden = true;
+  finalScoreValueEl.textContent = String(score);
+  finalScoreTotalEl.textContent = String(TOTAL_POSSIBLE_SCORE);
+  syncSubmitAvailability();
+}
+
+function completeGame() {
+  clearAutoNextTimer();
+  clearPreTimerDelay();
+  clearCharacterRevealTimers();
+  stopTimer();
+  gameFinished = true;
+  questionLocked = true;
+  remainingMs = 0;
+  renderTimer();
+  fastPointsValueEl.textContent = "0";
+  questionTextEl.textContent = "Game finished";
+  feedbackTextEl.textContent = `You scored ${score} out of ${TOTAL_POSSIBLE_SCORE}.`;
+  persistCompletedProgressIfFirstRun();
+  showFinishPanel();
+}
+
+function restartGame() {
+  if (savedProgress.completed) {
+    restoreCompletedGameState();
+    return;
+  }
+
+  clearAutoNextTimer();
+  clearPreTimerDelay();
+  clearCharacterRevealTimers();
+  stopTimer();
+  score = 0;
+  questionIndex = 0;
+  typedAnswer = "";
+  remainingMs = QUESTION_DURATION_SECONDS * 1000;
+  questionLocked = false;
+  gameFinished = false;
+  answerHistory = [];
+  scoreValueEl.textContent = "0";
+  finishPanelEl.hidden = true;
+  setLeaderboardStatus("");
+  loadQuestion();
+}
+
+function restoreCompletedGameState() {
+  clearAutoNextTimer();
+  clearPreTimerDelay();
+  clearCharacterRevealTimers();
+  stopTimer();
+
+  score = savedProgress.firstScore;
+  answerHistory = Array.isArray(savedProgress.answerHistory)
+    ? savedProgress.answerHistory.map((entry) => ({ ...entry }))
+    : [];
+  questionIndex = Math.max(0, questions.length - 1);
+  typedAnswer = "";
+  gameFinished = true;
+  questionLocked = true;
+  remainingMs = 0;
+
+  scoreValueEl.textContent = String(score);
+  renderTimer();
+  fastPointsValueEl.textContent = "0";
+  questionTextEl.textContent = "Game finished";
+  feedbackTextEl.textContent = `You scored ${score} out of ${TOTAL_POSSIBLE_SCORE}.`;
+  renderNumberAnswerDisplay();
+  renderKeypad();
+  showFinishPanel();
+
+  if (savedProgress.submitted) {
+    setLeaderboardStatus("Score already submitted.");
+    return;
+  }
+
+  setLeaderboardStatus("Game already completed. You can still submit your score.");
+}
+
+async function handleShareScore() {
+  if (!gameFinished) {
+    return;
+  }
+
+  const shareText = buildShareText();
+  const shareData = {
+    title: "SpeedQuizzing score",
+    text: shareText,
+    url: window.location.href
+  };
+
+  if (navigator.share) {
+    try {
+      if (!navigator.canShare || navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.share({
+          title: shareData.title,
+          text: shareData.text
+        });
+      }
+      setLeaderboardStatus("Score shared.");
+      return;
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        return;
+      }
+    }
+  }
+
+  try {
+    await copyTextToClipboard(`${shareText}\n${window.location.href}`);
+    setLeaderboardStatus("Share text copied to the clipboard.");
+    return;
+  } catch (error) {
+    setLeaderboardStatus("Sharing is unavailable here.", true);
+    return;
+  }
+}
+
+function handleSubmitScore() {
+  if (!gameFinished) {
+    return;
+  }
+
+  if (savedProgress.submitted) {
+    setLeaderboardStatus("Score already submitted.", true);
+    syncSubmitAvailability();
+    return;
+  }
+
+  const teamName = getTeamName();
+  if (!teamName) {
+    setLeaderboardStatus("Enter a team name before submitting.", true);
+    teamNameInputEl.focus();
+    return;
+  }
+
+  persistTeamName(teamName);
+
+  const submission = {
+    name: teamName,
+    score,
+    totalPossible: TOTAL_POSSIBLE_SCORE,
+    results: answerHistory.map((entry) => ({
+      questionId: entry.questionId,
+      correct: entry.isCorrect,
+      points: entry.earnedPoints,
+      timedOut: entry.timedOut
+    })),
+    shareText: buildShareText(),
+    completedAt: savedProgress.completedAt || new Date().toISOString()
+  };
+
+  console.log("Leaderboard submission", submission);
+  persistSubmittedProgress();
+  syncSubmitAvailability();
+  setLeaderboardStatus("Submission printed to the console. You cannot submit again.");
+}
+
+function clearTimerFullscreenHold() {
+  if (timerFullscreenHoldHandle) {
+    window.clearTimeout(timerFullscreenHoldHandle);
+    timerFullscreenHoldHandle = null;
+  }
+}
+
+function requestPageFullscreen() {
+  const fullscreenElement =
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.msFullscreenElement;
+
+  if (fullscreenElement) {
+    const exitFullscreen =
+      document.exitFullscreen ||
+      document.webkitExitFullscreen ||
+      document.msExitFullscreen;
+
+    if (typeof exitFullscreen === "function") {
+      exitFullscreen.call(document);
+    }
+    return;
+  }
+
+  const root = document.documentElement;
+  const requestFullscreen =
+    root.requestFullscreen ||
+    root.webkitRequestFullscreen ||
+    root.msRequestFullscreen;
+
+  if (typeof requestFullscreen === "function") {
+    requestFullscreen.call(root);
+  }
+}
+
+function bindTimerBarFullscreenHold() {
+  if (!timerTrackEl) {
+    return;
+  }
+
+  let holdTriggered = false;
+
+  timerTrackEl.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    holdTriggered = false;
+    clearTimerFullscreenHold();
+    timerFullscreenHoldHandle = window.setTimeout(() => {
+      holdTriggered = true;
+      requestPageFullscreen();
+    }, TIMER_FULLSCREEN_HOLD_MS);
+  });
+
+  const handlePressEnd = (event) => {
+    event.preventDefault();
+    clearTimerFullscreenHold();
+    if (holdTriggered) {
+      holdTriggered = false;
+    }
+  };
+
+  timerTrackEl.addEventListener("pointerup", handlePressEnd);
+  timerTrackEl.addEventListener("pointercancel", handlePressEnd);
+  timerTrackEl.addEventListener("pointerleave", handlePressEnd);
+}
 
 function normalize(str) {
   return String(str || "").trim().toUpperCase();
@@ -144,7 +590,9 @@ function renderTimer() {
   timerFillEl.style.width = `${pct}%`;
   timerFillEl.style.background = getTimerColor(progress);
   timerTrackEl.setAttribute("aria-valuenow", String(Math.round(pct)));
-  fastPointsValueEl.textContent = String(getFastPoints());
+  if (!gameFinished) {
+    fastPointsValueEl.textContent = String(getFastPoints());
+  }
 }
 
 function stopTimer() {
@@ -275,6 +723,7 @@ function beginQuestionTimer() {
 
     if (remainingMs <= 0) {
       const current = getCurrentQuestion();
+      recordAnswerResult(current, normalize(typedAnswer), { timedOut: true });
       lockQuestion(getResultMessage(current, { timedOut: true }));
       renderKeypad();
     }
@@ -321,6 +770,10 @@ function getResultMessage(question, { isCorrect = false, earned = 0, timedOut = 
 
   if (isCorrect) {
     return `Correct, the answer is ${answerText}`;
+  }
+
+  if (timedOut) {
+    return `Time's up, the correct answer is ${answerText}`;
   }
 
   return `Incorrect, the correct answer is ${answerText}`;
@@ -519,20 +972,24 @@ function buildChoiceButton(choice, { placeholder = false } = {}) {
   const isCorrect = questionLocked && normalize(choice.code) === correctCode;
   const isWrongPick = questionLocked && isSelected && !isCorrect;
   const playerGotItCorrect = questionLocked && normalize(typedAnswer) === correctCode;
-  const isDimmed = questionLocked && typedAnswer !== "" && !isCorrect && !isWrongPick;
-  const showCorrectTick = isCorrect && playerGotItCorrect;
-  const cornerIcon = isWrongPick ? "cross" : showCorrectTick ? "check" : null;
+  const isDimmed = questionLocked && !isCorrect && !isWrongPick;
+  const cornerIcon = isWrongPick ? "cross" : (isCorrect && playerGotItCorrect) ? "check" : null;
 
   return buildKeyButton({
     className: `choice-row ${isSelected ? "selected" : ""} ${isCorrect ? "correct" : ""} ${isWrongPick ? "wrong" : ""} ${isDimmed ? "dimmed" : ""}`,
     onClick: () => handleAnswerPick(choice.code),
     childNodes: [code, label],
     cornerIcon,
-    flash: showCorrectTick
+    flash: isCorrect
   });
 }
 
 function renderKeypad() {
+  if (gameFinished) {
+    keypadEl.hidden = true;
+    return;
+  }
+
   const current = getCurrentQuestion();
   keypadEl.innerHTML = "";
   keypadEl.hidden = current.type === "numbers" && questionLocked && typedAnswer.length > 0;
@@ -551,9 +1008,8 @@ function renderKeypad() {
       const isSelected = normalize(typedAnswer) === normalizedKey;
       const isCorrect = questionLocked && normalizedKey === correctCode;
       const isWrongPick = questionLocked && isSelected && !isCorrect;
-      const isDimmed = questionLocked && typedAnswer !== "" && !isCorrect && !isWrongPick;
-      const showCorrectTick = isCorrect && playerGotItCorrect;
-      const cornerIcon = isWrongPick ? "cross" : showCorrectTick ? "check" : null;
+      const isDimmed = questionLocked && !isCorrect && !isWrongPick;
+      const cornerIcon = isWrongPick ? "cross" : (isCorrect && playerGotItCorrect) ? "check" : null;
 
       keypadEl.appendChild(
         buildKeyButton({
@@ -566,12 +1022,13 @@ function renderKeypad() {
           ].filter(Boolean).join(" "),
           onClick: () => handleAnswerPick(key),
           cornerIcon,
-          flash: showCorrectTick
+          flash: isCorrect
         })
       );
     });
   } else if (current.type === "numbers") {
     keypadEl.className = "keypad numbers";
+    const shouldDimNumberKeypad = questionLocked && typedAnswer.length === 0;
     const keypadButtons = [
       ...getNumberKeys().slice(0, 9),
       "C",
@@ -584,7 +1041,7 @@ function renderKeypad() {
         keypadEl.appendChild(
           buildKeyButton({
             label,
-            className: "number-control number-clear",
+            className: `number-control number-clear ${shouldDimNumberKeypad ? "dimmed" : ""}`.trim(),
             onClick: () => pressNumberClear(),
             onLongPress: () => pressNumberClearAll(),
             disabled: questionLocked || typedAnswer.length === 0
@@ -597,7 +1054,7 @@ function renderKeypad() {
         keypadEl.appendChild(
           buildKeyButton({
             label,
-            className: "number-control number-enter",
+            className: `number-control number-enter ${shouldDimNumberKeypad ? "dimmed" : ""}`.trim(),
             onClick: () => submitCurrentNumberAnswer(),
             disabled: questionLocked || typedAnswer.length === 0
           })
@@ -608,7 +1065,7 @@ function renderKeypad() {
       keypadEl.appendChild(
         buildKeyButton({
           label,
-          className: "number-digit",
+          className: `number-digit ${shouldDimNumberKeypad ? "dimmed" : ""}`.trim(),
           onClick: () => pressNumberDigit(label),
           disabled: questionLocked || typedAnswer.length >= 15
         })
@@ -645,26 +1102,32 @@ function evaluateAnswer(answerOverride = null) {
   }
 
   const isCorrect = validAnswers.includes(userAnswer);
+  const earned = isCorrect ? getFastPoints() : 0;
 
   if (isCorrect) {
-    const earned = getFastPoints();
     score += earned;
     scoreValueEl.textContent = String(score);
-    lockQuestion(getResultMessage(current, { isCorrect: true, earned }));
-  } else {
-    lockQuestion(getResultMessage(current));
   }
+
+  recordAnswerResult(current, userAnswer, { isCorrect, earnedPoints: earned });
+  lockQuestion(getResultMessage(current, { isCorrect, earned }));
 
   renderNumberAnswerDisplay();
   renderKeypad();
 }
 
 function nextQuestion() {
-  questionIndex = (questionIndex + 1) % questions.length;
+  if (questionIndex >= questions.length - 1) {
+    completeGame();
+    return;
+  }
+
+  questionIndex += 1;
   loadQuestion();
 }
 
 function loadQuestion() {
+  finishPanelEl.hidden = true;
   const current = getCurrentQuestion();
   clearAutoNextTimer();
   clearPreTimerDelay();
@@ -684,10 +1147,17 @@ function loadQuestion() {
       return;
     }
     beginQuestionTimer();
-  }, revealDurationMs + POST_REVEAL_TIMER_DELAY_MS);
+  }, revealDurationMs + POST_REVEAL_TIMER_DELAY_MS[current.type]);
 }
 
 document.addEventListener("keydown", (event) => {
+  if (gameFinished) {
+    if (event.key === "Enter" && document.activeElement === teamNameInputEl) {
+      handleSubmitScore();
+    }
+    return;
+  }
+
   const current = getCurrentQuestion();
   if (questionLocked) return;
 
@@ -730,4 +1200,26 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-loadQuestion();
+teamNameInputEl.value = loadSavedTeamName();
+syncTeamTrayName(teamNameInputEl.value);
+teamNameInputEl.addEventListener("input", () => {
+  syncTeamTrayName(teamNameInputEl.value);
+  syncSubmitAvailability();
+  if (gameFinished && !savedProgress.submitted) {
+    setLeaderboardStatus("");
+  }
+});
+
+shareScoreButtonEl.addEventListener("click", handleShareScore);
+submitScoreButtonEl.addEventListener("click", handleSubmitScore);
+if (devResetProgressButtonEl) {
+  devResetProgressButtonEl.addEventListener("click", clearSavedProgressForDevTesting);
+}
+
+bindTimerBarFullscreenHold();
+
+if (savedProgress.completed) {
+  restoreCompletedGameState();
+} else {
+  loadQuestion();
+}

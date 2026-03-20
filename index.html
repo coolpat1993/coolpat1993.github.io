@@ -31,6 +31,25 @@
         <section class="answer-panel">
           <div id="numberAnswerDisplay" class="number-answer-display" hidden aria-live="polite"></div>
           <div id="keypad" class="keypad" aria-label="Answer keypad"></div>
+          <section id="finishPanel" class="finish-panel" hidden aria-live="polite">
+            <div class="finish-card">
+              <p class="finish-label">Final score</p>
+              <p class="finish-score"><span id="finalScoreValue">0</span><span class="finish-score-separator">/</span><span id="finalScoreTotal">100</span></p>
+
+              <label class="finish-field" for="teamNameInput">
+                <span class="finish-field-label">Team name</span>
+                <input id="teamNameInput" class="finish-input" type="text" maxlength="32" autocomplete="nickname" placeholder="Enter your team name" />
+              </label>
+
+              <div class="finish-actions">
+                <button id="shareScoreButton" class="finish-button" type="button">Share score</button>
+                <button id="submitScoreButton" class="finish-button finish-button-primary" type="button">Submit to leaderboard</button>
+                <button id="devResetProgressButton" class="finish-button" type="button">Dev: clear saved game state</button>
+              </div>
+
+              <p id="leaderboardStatus" class="leaderboard-status" aria-live="polite"></p>
+            </div>
+          </section>
         </section>
 
         <div class="team-tray">

@@ -48,7 +48,7 @@ body {
   background: #000;
   display: grid;
   place-items: center;
-  padding: 20px;
+  padding: 10px;
 }
 
 .app-shell {
@@ -169,6 +169,14 @@ body {
   flex-direction: column;
 }
 
+input,
+textarea {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
 .number-answer-display {
   min-height: 84px;
   margin: 0 0 8px;
@@ -236,6 +244,10 @@ body {
   display: grid;
   gap: 4px;
   flex: 1;
+}
+
+.keypad[hidden] {
+  display: none;
 }
 
 .keypad.letters {
@@ -335,7 +347,7 @@ body {
 }
 
 .key-btn.wrong {
-  background: #c0c0c0;
+  background: #868686;
   color: #000;
 }
 
@@ -343,6 +355,12 @@ body {
   background: var(--sq-cyan-dark);
   color: #000;
   box-shadow: none;
+}
+
+.keypad.numbers .key-btn.number-clear.dimmed,
+.keypad.numbers .key-btn.number-enter.dimmed {
+  background: rgba(0, 164, 201, 0.521);
+  color: rgb(0, 0, 0);
 }
 
 .key-btn.choice-row {
@@ -368,7 +386,7 @@ body {
 }
 
 .key-btn.choice-row.wrong {
-  background: #e4e4e4;
+  background: #868686;
   color: #000;
 }
 
@@ -441,6 +459,116 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
+}
+
+.finish-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.finish-panel[hidden] {
+  display: none;
+}
+
+.finish-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 10px 4px 0;
+}
+
+.finish-label {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.78rem;
+  text-align: center;
+  color: var(--sq-text-muted);
+}
+
+.finish-score {
+  margin: 0;
+  text-align: center;
+  font-family: "LuckiestGuy", "Montserrat", sans-serif;
+  font-size: clamp(2.3rem, 9vw, 3.4rem);
+  letter-spacing: 0.03em;
+  color: var(--sq-cyan);
+}
+
+.finish-score-separator {
+  margin: 0 0.2em;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.finish-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.finish-field-label {
+  font-size: 0.92rem;
+  color: var(--sq-text-muted);
+}
+
+.finish-input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  padding: 14px 16px;
+  font: inherit;
+  font-size: 1rem;
+  outline: none;
+}
+
+.finish-input::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.finish-input:focus {
+  border-color: var(--sq-cyan);
+  box-shadow: 0 0 0 3px rgba(0, 207, 255, 0.18);
+}
+
+.finish-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.finish-button {
+  border: 0;
+  border-radius: 12px;
+  min-height: 48px;
+  padding: 0 14px;
+  font: inherit;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.finish-button:disabled {
+  opacity: 0.45;
+}
+
+.finish-button-primary {
+  background: var(--sq-cyan);
+  color: #000;
+}
+
+.leaderboard-status {
+  margin: 0;
+  min-height: 1.25em;
+  font-size: 0.9rem;
+  color: var(--sq-text-muted);
+}
+
+.leaderboard-status[data-state="error"] {
+  color: #ff8a80;
 }
 
 .key-btn.choice-row.selected .choice-code,
@@ -524,5 +652,13 @@ body {
 
   .timer-track {
     height: 26px;
+  }
+
+  .finish-card {
+    gap: 10px;
+  }
+
+  .finish-button {
+    min-height: 44px;
   }
 }
