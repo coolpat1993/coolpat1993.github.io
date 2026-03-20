@@ -3,186 +3,91 @@ const LETTER_KEYS = [
   "O", "P", "R", "S", "T", "U", "QV", "W", "Y", "XZ"
 ];
 
+const NUMBER_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
+
 const questions = [
   {
-    id: "q-multi-1",
-    type: "multiple",
-    question: "Hmm, does this question have one comma, or does it have two?",
-    choices: [
-      "One",
-      "Two"
-    ],
-    answer: "B"
+    id: "question1",
+    type: "numbers",
+    question: "What is the maximum number of consecutive terms that a US President can now serve?",
+    answer: "2"
   },
   {
-    id: "q-letters-1",
+    id: "question2",
     type: "letters",
-    question: "Mr Keating was the deputy headteacher at which fictional school between 1979 and 1984?",
-    answer: "G",
-    longAnswer: "Grange Hill"
-  },
-  {
-    id: "q-letters-2",
-    type: "letters",
-    question: "Name the feared and funny food critic for The Sunday Times who sadly died in 2016.",
-    answer: "A",
-    longAnswer: "A.A. Gill"
-  },
-  {
-    id: "q-letters-4",
-    type: "letters",
-    question: "Despite fears it could lead to enhanced or modified humans, work began in 2025 on a major science project to recreate what building blocks of human life from scratch?",
+    question: "What is the common name given to the sewing technique used to repair holes or worn areas in fabric using needle and thread alone?",
     answer: "D",
-    longAnswer: "DNA"
+    longAnswer: "Darn/Darning"
   },
   {
-    id: "q-multi-2",
+    id: "question3",
     type: "multiple",
-    question: "In which year was The London Symphony Orchestra founded?",
+    question: "What was the name of legendary baseball player Babe Ruth's famous 44 oz bat?",
     choices: [
-      "1704",
-      "1804",
-      "1904",
-      "2004"
+      "Blue Thunder",
+      "Brown Bomber",
+      "Black Betsy",
+      "Pink Panther"
     ],
     answer: "C"
   },
   {
-    id: "q-letters-5",
+    id: "question4",
     type: "letters",
-    question: "With the security of Greenland likely to be the central issue, the prime minister of which European country recently announced a snap election?",
-    answer: "D",
-    longAnswer: "Denmark"
+    question: "Which common kitchen herb is used in a mojito?",
+    answer: "M",
+    longAnswer: "Mint"
   },
   {
-    id: "q-letters-7",
-    type: "letters",
-    question: "What Netflix series is about a woman named Emily, who moves from Chicago to Paris to work on the social media team for a fashion company named Savoir?",
-    answer: "E",
-    longAnswer: "Emily in Paris"
+    id: "question5",
+    type: "numbers",
+    question: "What number was the title of singer Beyonce's album, released in June 2011?",
+    answer: "4"
   },
   {
-    id: "q-multi-3",
+    id: "question6",
+    type: "letters",
+    question: "Which country has its own version of YouTube named Youku?",
+    answer: "C",
+    longAnswer: "China"
+  },
+  {
+    id: "question7",
     type: "multiple",
-    question: "Two of Arsene Wenger's cousins were in The Venga Boys. Is this...?",
+    question: "Which of these is a region located in the south of Spain?",
     choices: [
-      "True",
-      "False"
+      "Provence",
+      "Tuscany",
+      "Andalucia",
+      "Lorraine"
     ],
-    answer: "B"
+    answer: "C"
   },
   {
-    id: "q-letters-9",
+    id: "question8",
     type: "letters",
-    question: "Which surname is combined with 'Whyte' in the name of a Scottish whisky company?",
-    answer: "M",
-    longAnswer: "Mackay"
+    question: "Which planet in our solar system has a feature known as the \"Great Red Spot\"?",
+    answer: "J",
+    longAnswer: "Jupiter"
   },
   {
-    id: "q-letters-10",
-    type: "letters",
-    question: "Which Roald Dahl book was adapted into a musical in 2010 with all music and lyrics composed by Australian musical comedian Tim Minchin?",
-    answer: "M",
-    longAnswer: "Matilda"
+    id: "question9",
+    type: "multiple",
+    question: "Who had a hit in the 1950s with 'Mack The Knife'?",
+    choices: [
+      "Billy Darin",
+      "Benny Darin",
+      "Barry Darin",
+      "Bobby Darin"
+    ],
+    answer: "D"
   },
   {
-  id: "q-letters-11",
-  type: "letters",
-  question: "In 'Harry Potter', what name is given to people from magical families who do not possess magical powers?",
-  answer: "S",
-  longAnswer: "Squib"
-},
-{
-  id: "q-letters-12",
-  type: "letters",
-  question: "What is the official language of Namibia?",
-  answer: "E",
-  longAnswer: "English"
-},
-{
-  id: "q-letters-13",
-  type: "letters",
-  question: "Often accompanied by its own type of thinner, what brand of much-used office item was registered by Wolfgang Dabisch in 1962?",
-  answer: "T",
-  longAnswer: "Tipp-ex"
-},
-{
-  id: "q-letters-14",
-  type: "letters",
-  question: "Name the planet closest to the sun.",
-  answer: "M",
-  longAnswer: "Mercury"
-},
-{
-  id: "q-letters-15",
-  type: "letters",
-  question: "In the video game 'Final Fantasy VII', which character from the main party is famously killed by Sephiroth?",
-  answer: "A",
-  longAnswer: "Aerith/Aeris"
-},
-{
-  id: "q-multi-4",
-  type: "multiple",
-  question: "\"Put that cookie down\" is a quote from which Arnold Schwarzenegger film?",
-  choices: [
-    "Kindergarten Cop",
-    "Jingle All the Way",
-    "Last Action Hero",
-    "Predator"
-  ],
-  answer: "B"
-},
-{
-  id: "q-letters-16",
-  type: "letters",
-  question: "What eight-letter word is commonly used to describe a situation where a person deliberately gets themselves or their partner pregnant, so as to keep the relationship from ending?",
-  answer: "B",
-  longAnswer: "Babytrap"
-},
-{
-  id: "q-multi-5",
-  type: "multiple",
-  question: "With 99.3% of the population following a religion, which American state or territory is the most religious in the USA?",
-  choices: [
-    "Puerto Rico",
-    "Alaska",
-    "Utah",
-    "American Samoa"
-  ],
-  answer: "D"
-},
-{
-  id: "q-letters-17",
-  type: "letters",
-  question: "'Onkel' is the German word for which member of the family?",
-  answer: "U",
-  longAnswer: "Uncle"
-},
-{
-  id: "q-multi-6",
-  type: "multiple",
-  question: "What process must take place in order for oxidation to occur?",
-  choices: [
-    "Electrolysis",
-    "Osmosis",
-    "Reduction",
-    "Fermentation"
-  ],
-  answer: "C"
-},
-{
-  id: "q-multi-7",
-  type: "multiple",
-  question: "Which of these snooker players was given the nickname 'Interesting'?",
-  choices: [
-    "Steve Davis",
-    "John Virgo",
-    "Ronnie O'Sullivan",
-    "John Parrott"
-  ],
-  answer: "A"
-},
-
+    id: "question10",
+    type: "numbers",
+    question: "In the 'Star Wars' films, how many digits does Yoda have on each hand?",
+    answer: "3"
+  }
 ];
 
 const QUESTION_DURATION_SECONDS = 10
@@ -193,6 +98,7 @@ const CHARACTER_REVEAL_INTERVAL_MS = 30;
 const COMMA_PAUSE_MS = 400;
 const PERIOD_PAUSE_MS = 500;
 const POST_REVEAL_TIMER_DELAY_MS = 2000;
+const LONG_PRESS_MS = 450;
 
 const scoreValueEl = document.querySelector("#scoreValue");
 const fastPointsValueEl = document.querySelector("#fastPointsValue");
@@ -200,6 +106,7 @@ const timerFillEl = document.querySelector("#timerFill");
 const timerTrackEl = document.querySelector(".timer-track");
 const questionTextEl = document.querySelector("#questionText");
 const feedbackTextEl = document.querySelector("#feedbackText");
+const numberAnswerDisplayEl = document.querySelector("#numberAnswerDisplay");
 const keypadEl = document.querySelector("#keypad");
 
 let score = 0;
@@ -217,6 +124,7 @@ function normalize(str) {
 }
 
 function getCurrentQuestion() {
+  console.log('question length is', questions.length, 'current index is', questionIndex);
   return questions[questionIndex];
 }
 
@@ -422,20 +330,108 @@ function getLetterKeys() {
   return LETTER_KEYS;
 }
 
+function getNumberKeys() {
+  return NUMBER_KEYS;
+}
+
 function getExpandedLetterInputs() {
   return getLetterKeys().flatMap((key) => key.split(""));
 }
 
 function handleAnswerPick(answerCode) {
   if (questionLocked) return;
+
+  if (getCurrentQuestion().type === "numbers") {
+    appendNumberDigit(answerCode);
+    return;
+  }
+
   typedAnswer = answerCode;
   evaluateAnswer(answerCode);
+}
+
+function isCurrentAnswerCorrect(question, answerValue = typedAnswer) {
+  const validAnswers = getQuestionAnswerCodes(question);
+  return validAnswers.includes(normalize(answerValue));
+}
+
+function renderNumberAnswerDisplay() {
+  const current = getCurrentQuestion();
+  const isNumberQuestion = current?.type === "numbers";
+
+  numberAnswerDisplayEl.hidden = !isNumberQuestion;
+
+  if (!isNumberQuestion) {
+    numberAnswerDisplayEl.textContent = "";
+    numberAnswerDisplayEl.classList.remove("filled");
+    numberAnswerDisplayEl.classList.remove("result");
+    delete numberAnswerDisplayEl.dataset.cornerIcon;
+    return;
+  }
+
+  const displayText = typedAnswer;
+  numberAnswerDisplayEl.textContent = displayText;
+  numberAnswerDisplayEl.classList.toggle("filled", typedAnswer.length > 0);
+  numberAnswerDisplayEl.classList.toggle("result", questionLocked);
+
+  if (questionLocked) {
+    numberAnswerDisplayEl.dataset.cornerIcon = isCurrentAnswerCorrect(current) ? "check" : "cross";
+  } else {
+    delete numberAnswerDisplayEl.dataset.cornerIcon;
+  }
+}
+
+function appendNumberDigit(digit) {
+  if (typedAnswer.length >= 15) {
+    return;
+  }
+
+  typedAnswer += String(digit);
+  renderNumberAnswerDisplay();
+}
+
+function clearLastNumberDigit() {
+  if (typedAnswer.length === 0) {
+    return;
+  }
+
+  typedAnswer = typedAnswer.slice(0, -1);
+  renderNumberAnswerDisplay();
+}
+
+function clearAllNumberDigits() {
+  if (typedAnswer.length === 0) {
+    return;
+  }
+
+  typedAnswer = "";
+  renderNumberAnswerDisplay();
+}
+
+function submitCurrentNumberAnswer() {
+  evaluateAnswer(typedAnswer);
+}
+
+function pressNumberDigit(digit) {
+  appendNumberDigit(digit);
+  renderKeypad();
+}
+
+function pressNumberClear() {
+  clearLastNumberDigit();
+  renderKeypad();
+}
+
+function pressNumberClearAll() {
+  clearAllNumberDigits();
+  renderKeypad();
 }
 
 function buildKeyButton({
   label,
   className = "",
   onClick,
+  onLongPress = null,
   childNodes = [],
   disabled = false,
   cornerIcon = null,
@@ -456,10 +452,44 @@ function buildKeyButton({
     button.textContent = label;
   }
   if (!disabled) {
-    button.addEventListener("pointerdown", (event) => {
-      event.preventDefault();
-      onClick();
-    });
+    if (typeof onLongPress === "function") {
+      let longPressHandle = null;
+      let longPressTriggered = false;
+
+      const clearLongPressHandle = () => {
+        if (longPressHandle) {
+          window.clearTimeout(longPressHandle);
+          longPressHandle = null;
+        }
+      };
+
+      button.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        longPressTriggered = false;
+        clearLongPressHandle();
+        longPressHandle = window.setTimeout(() => {
+          longPressTriggered = true;
+          onLongPress();
+        }, LONG_PRESS_MS);
+      });
+
+      const handlePressEnd = (event) => {
+        event.preventDefault();
+        clearLongPressHandle();
+        if (!longPressTriggered) {
+          onClick();
+        }
+      };
+
+      button.addEventListener("pointerup", handlePressEnd);
+      button.addEventListener("pointercancel", clearLongPressHandle);
+      button.addEventListener("pointerleave", clearLongPressHandle);
+    } else {
+      button.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        onClick();
+      });
+    }
   }
   button.disabled = disabled || questionLocked;
   return button;
@@ -505,6 +535,11 @@ function buildChoiceButton(choice, { placeholder = false } = {}) {
 function renderKeypad() {
   const current = getCurrentQuestion();
   keypadEl.innerHTML = "";
+  keypadEl.hidden = current.type === "numbers" && questionLocked && typedAnswer.length > 0;
+
+  if (keypadEl.hidden) {
+    return;
+  }
 
   if (current.type === "letters") {
     keypadEl.className = "keypad letters";
@@ -532,6 +567,50 @@ function renderKeypad() {
           onClick: () => handleAnswerPick(key),
           cornerIcon,
           flash: showCorrectTick
+        })
+      );
+    });
+  } else if (current.type === "numbers") {
+    keypadEl.className = "keypad numbers";
+    const keypadButtons = [
+      ...getNumberKeys().slice(0, 9),
+      "C",
+      "0",
+      "enter"
+    ];
+
+    keypadButtons.forEach((label) => {
+      if (label === "C") {
+        keypadEl.appendChild(
+          buildKeyButton({
+            label,
+            className: "number-control number-clear",
+            onClick: () => pressNumberClear(),
+            onLongPress: () => pressNumberClearAll(),
+            disabled: questionLocked || typedAnswer.length === 0
+          })
+        );
+        return;
+      }
+
+      if (label === "enter") {
+        keypadEl.appendChild(
+          buildKeyButton({
+            label,
+            className: "number-control number-enter",
+            onClick: () => submitCurrentNumberAnswer(),
+            disabled: questionLocked || typedAnswer.length === 0
+          })
+        );
+        return;
+      }
+
+      keypadEl.appendChild(
+        buildKeyButton({
+          label,
+          className: "number-digit",
+          onClick: () => pressNumberDigit(label),
+          disabled: questionLocked || typedAnswer.length >= 15
         })
       );
     });
@@ -576,6 +655,7 @@ function evaluateAnswer(answerOverride = null) {
     lockQuestion(getResultMessage(current));
   }
 
+  renderNumberAnswerDisplay();
   renderKeypad();
 }
 
@@ -595,6 +675,7 @@ function loadQuestion() {
   remainingMs = QUESTION_DURATION_SECONDS * 1000;
   renderTimer();
   feedbackTextEl.textContent = "";
+  renderNumberAnswerDisplay();
   const revealDurationMs = renderQuestionCharacterReveal(current.question, PRE_REVEAL_DELAY_MS);
 
   renderKeypad();
@@ -608,9 +689,9 @@ function loadQuestion() {
 
 document.addEventListener("keydown", (event) => {
   const current = getCurrentQuestion();
-  if (questionLocked || current.type !== "letters") return;
+  if (questionLocked) return;
 
-  if (event.key.length === 1) {
+  if (current.type === "letters" && event.key.length === 1) {
     const key = event.key.toUpperCase();
     if (getExpandedLetterInputs().includes(key)) {
       if (key === "Q" || key === "V") {
@@ -625,6 +706,27 @@ document.addEventListener("keydown", (event) => {
 
       handleAnswerPick(key);
     }
+
+    return;
+  }
+
+  if (current.type === "numbers" && /^[0-9]$/.test(event.key)) {
+    pressNumberDigit(event.key);
+    return;
+  }
+
+  if (current.type === "numbers" && event.key === "Backspace") {
+    pressNumberClear();
+    return;
+  }
+
+  if (current.type === "numbers" && event.key === "Escape") {
+    pressNumberClearAll();
+    return;
+  }
+
+  if (current.type === "numbers" && event.key === "Enter") {
+    submitCurrentNumberAnswer();
   }
 });
 

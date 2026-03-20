@@ -169,6 +169,68 @@ body {
   flex-direction: column;
 }
 
+.number-answer-display {
+  min-height: 84px;
+  margin: 0 0 8px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(16, 166, 199, 0.72);
+  color: #ffffff;
+  text-align: right;
+  font-family: "Kumbh", sans-serif;
+  font-size: clamp(2rem, 7vw, 3.2rem);
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+}
+
+.number-answer-display[hidden] {
+  display: none;
+}
+
+.number-answer-display::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  font-weight: 900;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.number-answer-display.filled {
+  background: rgba(16, 166, 199, 0.72);
+}
+
+.number-answer-display.result {
+  background: #ffffff;
+  color: #000000;
+  text-align: center;
+  justify-content: center;
+}
+
+.number-answer-display.result[data-corner-icon="check"]::after {
+  content: "✓";
+  color: rgba(23, 153, 88, 0.9);
+  opacity: 1;
+}
+
+.number-answer-display.result[data-corner-icon="cross"]::after {
+  content: "✕";
+  color: rgba(176, 31, 21, 0.9);
+  opacity: 1;
+}
+
 .keypad {
   min-height: 0;
   display: grid;
@@ -184,6 +246,29 @@ body {
 
 .keypad.letters .key-btn {
   font-size: clamp(1.4rem, 4.5vw, 1.8rem);
+}
+
+.keypad.numbers {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  align-content: stretch;
+}
+
+.keypad.numbers .key-btn {
+  font-size: clamp(1.6rem, 5vw, 2rem);
+}
+
+.keypad.numbers .key-btn.number-control {
+  font-size: clamp(1rem, 3.6vw, 1.3rem);
+  letter-spacing: 0.01em;
+}
+
+.keypad.numbers .key-btn.number-clear {
+  background: rgba(16, 166, 199, 0.8);
+}
+
+.keypad.numbers .key-btn.number-enter {
+  background: rgba(16, 166, 199, 0.8);
 }
 
 .keypad.multiple {
