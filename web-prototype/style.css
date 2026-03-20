@@ -191,6 +191,8 @@ body {
   background: var(--sq-cyan);
   min-height: 58px;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .key-btn.selected {
