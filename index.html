@@ -1,163 +1,44 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Card Game</title>
-  <script src="externalScripts/riotJs.js"></script>
-  <script src="externalScripts/peerJs.js"></script>
-  <script src="deck-manager.js"></script>
-  <script src="combat-system.js"></script>
-  <script src="enemy-ai.js"></script>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SpeedQuizzing Web Prototype</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="phone-frame" aria-label="Game screen">
+        <header class="hud">
+          <div class="hud-row">
+            <div class="hud-score">
+              <span id="scoreValue" class="hud-value">0</span>
+            </div>
+            <div class="timer-track" role="progressbar" aria-label="Question timer" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
+              <div id="timerFill" class="timer-fill"></div>
+            </div>
+            <div class="hud-fastest">
+              <span id="fastPointsValue" class="hud-value">10</span>
+            </div>
+          </div>
+        </header>
 
-  <!-- Include all Riot tag components -->
-  <script src="my-app.tag" type="riot/tag"></script>
-  <script src="card.tag" type="riot/tag"></script>
-  <script src="card-list.tag" type="riot/tag"></script>
-  <script src="picture-tap.tag" type="riot/tag"></script>
-  
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #2c1e12 fixed;
-      color: #e6b948;
-    }
-    
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    
-    .nav-menu {
-      background: rgba(47, 28, 14, 0.9);
-      padding: 15px 0;
-      border-bottom: 3px solid #8c6d35;
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
-    }
-    
-    .nav-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 20px;
-    }
-    
-    .logo {
-      color: #e6b948;
-      font-size: 24px;
-      font-weight: bold;
-      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
-      font-family: 'Belwe Bold', 'Times New Roman', serif;
-    }
-    
-    .nav-links {
-      display: flex;
-      gap: 20px;
-    }
-    
-    .nav-link {
-      color: #e6b948;
-      text-decoration: none;
-      font-weight: bold;
-      padding: 8px 15px;
-      border-radius: 5px;
-      transition: background 0.3s;
-      font-family: 'Belwe Bold', 'Times New Roman', serif;
-    }
-    
-    .nav-link:hover,
-    .nav-link.active {
-      background: rgba(230, 185, 72, 0.3);
-    }
-    
-    .content {
-      padding: 20px 0;
-    }
-    
-    .page {
-      display: none;
-    }
-    
-    .page.active {
-      display: block;
-    }
-    
-    footer {
-      text-align: center;
-      padding: 20px;
-      background: rgba(47, 28, 14, 0.7);
-      color: #e6b948;
-      border-top: 2px solid #8c6d35;
-      margin-top: 40px;
-      font-family: 'Belwe Bold', 'Times New Roman', serif;
-    }
-  </style>
-</head>
-<body>
-  <!-- Navigation -->
-  <nav class="nav-menu">
-    <div class="nav-container">
-      <div class="logo">Card Game</div>
-      <div class="nav-links">
-        <a href="#game" class="nav-link active" onclick="showPage('game')">Game</a>
-        <a href="#cards" class="nav-link" onclick="showPage('cards')">Card Catalog</a>
-        <a href="#picture-tap" class="nav-link" onclick="showPage('picture-tap')">Picture Tap</a>
-      </div>
-    </div>
-  </nav>
-  
-  <div class="container">
-    <div class="content">
-      <!-- Game Page -->
-      <div id="game-page" class="page active">
-        <my-app></my-app>
-      </div>
-      
-      <!-- Cards Catalog Page -->
-      <div id="cards-page" class="page">
-        <card-list></card-list>
-      </div>
+        <section class="question-panel">
+          <h1 id="questionText" class="question-text"></h1>
+          <p id="feedbackText" class="feedback-text" aria-live="polite"></p>
+        </section>
 
-      <!-- Picture Tap Page -->
-      <div id="picture-tap-page" class="page">
-        <picture-tap></picture-tap>
-      </div>
-    </div>
-  </div>
-  
-  <footer>
-    &copy; 2025 Card Game - All rights reserved
-  </footer>
+        <section class="answer-panel">
+          <div id="numberAnswerDisplay" class="number-answer-display" hidden aria-live="polite"></div>
+          <div id="keypad" class="keypad" aria-label="Answer keypad"></div>
+        </section>
 
-  <script>
-    // Mount all Riot components
-    riot.mount('my-app');
-    riot.mount('card-list');
-    riot.mount('picture-tap');
-    
-    // Page navigation
-    function showPage(pageId) {
-      // Hide all pages
-      document.querySelectorAll('.page').forEach(page => {
-        page.classList.remove('active');
-      });
-      
-      // Show the selected page
-      document.getElementById(pageId + '-page').classList.add('active');
-      
-      // Update active link
-      document.querySelectorAll('.nav-link').forEach(link => {
-        link.classList.remove('active');
-      });
-      
-      // Set the clicked link as active
-      event.target.classList.add('active');
-    }
-  </script>
-</body>
+        <div class="team-tray">
+          <span class="team-tray-name">Team Name</span>
+        </div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
 </html>
