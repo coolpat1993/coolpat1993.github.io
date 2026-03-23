@@ -125,6 +125,7 @@ const POST_REVEAL_TIMER_DELAY_MS = {
 const LONG_PRESS_MS = 450;
 const TIMER_FULLSCREEN_HOLD_MS = 500;
 const LAST_TEAM_NAME_STORAGE_KEY = "speedQuizzingTeamName";
+const PLAYER_UNID_STORAGE_KEY = "speedQuizzingPlayerUnid";
 const GAME_PROGRESS_STORAGE_KEY_PREFIX = "speedQuizzingProgress";
 
 const IS_DEV_MODE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || true;
@@ -253,8 +254,50 @@ let sequenceOrderCodes = [];
 let sequenceFinalizing = false;
 
 let savedProgress = loadSavedProgress();
+const playerUnid = getOrCreatePlayerUnid();
 
 let timerFullscreenHoldHandle = null;
+
+function generatePlayerUnid() {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const targetLength = 28;
+
+  if (window.crypto && typeof window.crypto.getRandomValues === "function") {
+    const randomBytes = new Uint8Array(targetLength);
+    window.crypto.getRandomValues(randomBytes);
+    let generated = "";
+
+    for (let idx = 0; idx < targetLength; idx += 1) {
+      generated += chars[randomBytes[idx] % chars.length];
+    }
+
+    return generated;
+  }
+
+  let fallbackValue = "";
+  for (let idx = 0; idx < targetLength; idx += 1) {
+    const randomIndex = Math.floor(Math.random() * chars.length);
+    fallbackValue += chars[randomIndex];
+  }
+
+  return fallbackValue;
+}
+
+function getOrCreatePlayerUnid() {
+  try {
+    const existingValue = window.localStorage.getItem(PLAYER_UNID_STORAGE_KEY);
+    const normalizedExisting = String(existingValue || "").trim();
+    if (normalizedExisting) {
+      return normalizedExisting;
+    }
+
+    const createdUnid = generatePlayerUnid();
+    window.localStorage.setItem(PLAYER_UNID_STORAGE_KEY, createdUnid);
+    return createdUnid;
+  } catch (error) {
+    return generatePlayerUnid();
+  }
+}
 
 function syncTeamTrayName(name) {
   const safeName = String(name || "").trim();
@@ -649,6 +692,7 @@ function handleSubmitScore() {
   persistTeamName(teamName);
 
   const submission = {
+    playerUnid,
     name: teamName,
     score,
     totalPossible: TOTAL_POSSIBLE_SCORE,
