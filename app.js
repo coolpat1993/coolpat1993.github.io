@@ -116,8 +116,8 @@ const CHARACTER_REVEAL_INTERVAL_MS = 45;
 const COMMA_PAUSE_MS = 400;
 const PERIOD_PAUSE_MS = 500;
 const POST_REVEAL_TIMER_DELAY_MS = {
-  letters: 2500,
-  multiple: 1500,
+  letters: 1500,
+  multiple: 500,
   numbers: 2500
 };
 const LONG_PRESS_MS = 450;
