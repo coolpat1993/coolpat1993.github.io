@@ -15,7 +15,7 @@ const LETTER_KEYS = [
 
 const NUMBER_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
 
-const QUESTION_SET_SOURCE = {
+let QUESTION_SET_SOURCE = {
   unid: "aug-2025-easy-pack-10-v2",
   questions: [
     {
@@ -130,7 +130,7 @@ const GAME_PROGRESS_STORAGE_KEY_PREFIX = "speedQuizzingProgress";
 
 const IS_DEV_MODE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || true;
 
-const questions = QUESTION_SET_SOURCE.questions;
+let questions = QUESTION_SET_SOURCE.questions;
 
 function getQuestionSetStorageId() {
   return String(QUESTION_SET_SOURCE.unid).trim();
@@ -138,6 +138,31 @@ function getQuestionSetStorageId() {
 
 function getGameProgressStorageKey() {
   return `${GAME_PROGRESS_STORAGE_KEY_PREFIX}:${getQuestionSetStorageId()}`;
+}
+
+function recalculateTotalPossibleScore() {
+  TOTAL_POSSIBLE_SCORE = questions.length * MAX_FAST_POINTS;
+}
+
+function applyQuestionSetSource(nextSource) {
+  if (!nextSource || typeof nextSource !== "object") {
+    return;
+  }
+
+  const normalizedUnid = String(nextSource.unid || "").trim();
+  const nextQuestions = Array.isArray(nextSource.questions) ? nextSource.questions : [];
+
+  if (!normalizedUnid || nextQuestions.length === 0) {
+    return;
+  }
+
+  QUESTION_SET_SOURCE = {
+    unid: normalizedUnid,
+    questions: nextQuestions
+  };
+
+  questions = nextQuestions;
+  recalculateTotalPossibleScore();
 }
 
 const POINTS_EMOJI = {
@@ -153,7 +178,7 @@ const POINTS_EMOJI = {
   10: "🔟"
 };
 
-const TOTAL_POSSIBLE_SCORE = questions.length * MAX_FAST_POINTS;
+let TOTAL_POSSIBLE_SCORE = questions.length * MAX_FAST_POINTS;
 
 const FAST_POINT_WINDOW_DURATIONS_MS = Array.from(
   { length: MAX_FAST_POINTS },
@@ -161,7 +186,6 @@ const FAST_POINT_WINDOW_DURATIONS_MS = Array.from(
 );
 
 const QUESTION_DURATION_MS = FAST_POINT_WINDOW_DURATIONS_MS.reduce((sum, durationMs) => sum + durationMs, 0);
-console.log("Total question duration (ms)", QUESTION_DURATION_MS);
 
 const scoreValueEl = document.querySelector("#scoreValue");
 const fastPointsValueEl = document.querySelector("#fastPointsValue");
@@ -252,6 +276,8 @@ let gameFinished = false;
 let answerHistory = [];
 let sequenceOrderCodes = [];
 let sequenceFinalizing = false;
+let questionPendingValidation = false;
+let remotePackId = getQuestionSetStorageId();
 
 let savedProgress = loadSavedProgress();
 const playerUnid = getOrCreatePlayerUnid();
@@ -562,6 +588,7 @@ function completeGame() {
   clearPreTimerDelay();
   clearCharacterRevealTimers();
   stopTimer();
+  questionPendingValidation = false;
   gameFinished = true;
   questionLocked = true;
   remainingMs = 0;
@@ -586,6 +613,7 @@ function restartGame() {
   score = 0;
   questionIndex = 0;
   typedAnswer = "";
+  questionPendingValidation = false;
   remainingMs = QUESTION_DURATION_MS;
   questionLocked = false;
   gameFinished = false;
@@ -609,6 +637,7 @@ function restoreCompletedGameState() {
     : [];
   questionIndex = Math.max(0, questions.length - 1);
   typedAnswer = "";
+  questionPendingValidation = false;
   gameFinished = true;
   questionLocked = true;
   remainingMs = 0;
@@ -923,6 +952,7 @@ function lockQuestion(message) {
   clearPreTimerDelay();
   clearCharacterRevealTimers();
   revealAllQuestionCharacters();
+  questionPendingValidation = false;
   questionLocked = true;
   stopTimer();
   feedbackTextEl.textContent = message;
@@ -936,7 +966,7 @@ function beginQuestionTimer() {
 
   const tickMs = 100;
   timerHandle = window.setInterval(() => {
-    if (questionLocked) {
+    if (questionLocked || questionPendingValidation) {
       stopTimer();
       return;
     }
@@ -946,10 +976,7 @@ function beginQuestionTimer() {
 
     if (remainingMs <= 0) {
       const current = getCurrentQuestion();
-      recordAnswerResult(current, normalize(typedAnswer), { timedOut: true });
-      persistInProgressPosition({ indexOffset: 1 });
-      lockQuestion(getResultMessage(current, { timedOut: true }));
-      renderKeypad();
+      handleQuestionTimeout(current);
     }
   }, tickMs);
 }
@@ -1033,7 +1060,7 @@ function getExpandedLetterInputs() {
 }
 
 function handleAnswerPick(answerCode) {
-  if (questionLocked) return;
+  if (questionLocked || questionPendingValidation) return;
 
   const current = getCurrentQuestion();
 
@@ -1245,7 +1272,7 @@ function buildKeyButton({
       });
     }
   }
-  button.disabled = disabled || questionLocked;
+  button.disabled = disabled || questionLocked || questionPendingValidation;
   return button;
 }
 
@@ -1480,30 +1507,128 @@ function renderKeypad() {
   }
 }
 
-function evaluateAnswer(answerOverride = null) {
-  if (questionLocked) return;
+async function requestDailyQuizResult({ index, answer, speed }) {
+  if (!window.DailyQuizApi?.getDailyQuizResult) {
+    return null;
+  }
+
+  try {
+    return await window.DailyQuizApi.getDailyQuizResult({
+      pack_id: remotePackId,
+      uniq_sess_id: playerUnid,
+      question_index: index,
+      answer,
+      speed
+    });
+  } catch (error) {
+    console.warn("Daily quiz result lookup failed", error);
+    return null;
+  }
+}
+
+function mergeResultAnswerIntoQuestion(question, resultPayload) {
+  if (!resultPayload) {
+    return question;
+  }
+
+  const shortAnswer = normalize(resultPayload.short_answer);
+  const longAnswer = String(resultPayload.long_answer || "").trim();
+
+  if (!shortAnswer && !longAnswer) {
+    return question;
+  }
+
+  return {
+    ...question,
+    answer: shortAnswer || question.answer,
+    longAnswer: longAnswer || question.longAnswer
+  };
+}
+
+function persistResolvedQuestionAtCurrentIndex(resolvedQuestion) {
+  if (!resolvedQuestion || questionIndex < 0 || questionIndex >= questions.length) {
+    return;
+  }
+
+  questions[questionIndex] = resolvedQuestion;
+}
+
+function lockTimedOutQuestion(questionWithAnswer) {
+  recordAnswerResult(questionWithAnswer, normalize(typedAnswer), { timedOut: true });
+  persistInProgressPosition({ indexOffset: 1 });
+  lockQuestion(getResultMessage(questionWithAnswer, { timedOut: true }));
+  renderNumberAnswerDisplay();
+  renderKeypad();
+}
+
+async function handleQuestionTimeout(currentQuestion) {
+  if (questionLocked || questionPendingValidation) {
+    return;
+  }
+
+  questionPendingValidation = true;
+  stopTimer();
+  feedbackTextEl.textContent = "Time's up. Checking answer...";
+  renderKeypad();
+
+  const resultPayload = await requestDailyQuizResult({
+    index: questionIndex,
+    answer: "",
+    speed: 0
+  });
+
+  if (getCurrentQuestion()?.id !== currentQuestion?.id) {
+    return;
+  }
+
+  const resolvedQuestion = mergeResultAnswerIntoQuestion(currentQuestion, resultPayload);
+  persistResolvedQuestionAtCurrentIndex(resolvedQuestion);
+  lockTimedOutQuestion(resolvedQuestion);
+}
+
+async function evaluateAnswer(answerOverride = null) {
+  if (questionLocked || questionPendingValidation) return;
 
   const current = getCurrentQuestion();
   const userAnswer = normalize(answerOverride ?? typedAnswer);
-  const validAnswers = getQuestionAnswerCodes(current);
 
   if (!userAnswer) {
     feedbackTextEl.textContent = "Enter or pick an answer first.";
     return;
   }
 
+  questionPendingValidation = true;
+  stopTimer();
+  feedbackTextEl.textContent = "Checking answer...";
+  renderKeypad();
+
+  const earned = getFastPoints();
+  const resultPayload = await requestDailyQuizResult({
+    index: questionIndex,
+    answer: userAnswer,
+    speed: earned
+  });
+
+  if (getCurrentQuestion()?.id !== current?.id) {
+    return;
+  }
+
+  const resolvedQuestion = mergeResultAnswerIntoQuestion(current, resultPayload);
+  persistResolvedQuestionAtCurrentIndex(resolvedQuestion);
+  const validAnswers = getQuestionAnswerCodes(resolvedQuestion);
+
   const userAnswerOptions = getComparableAnswerOptions(current, userAnswer);
   const isCorrect = userAnswerOptions.some(option => validAnswers.includes(option));
-  const earned = isCorrect ? getFastPoints() : 0;
+  const earnedPoints = isCorrect ? earned : 0;
 
   if (isCorrect) {
-    score += earned;
+    score += earnedPoints;
     scoreValueEl.textContent = String(score);
   }
 
-  recordAnswerResult(current, userAnswer, { isCorrect, earnedPoints: earned });
+  recordAnswerResult(resolvedQuestion, userAnswer, { isCorrect, earnedPoints });
   persistInProgressPosition({ indexOffset: 1 });
-  lockQuestion(getResultMessage(current, { isCorrect, earned }));
+  lockQuestion(getResultMessage(resolvedQuestion, { isCorrect, earned: earnedPoints }));
 
   renderNumberAnswerDisplay();
   renderKeypad();
@@ -1532,6 +1657,7 @@ function loadQuestion() {
   clearCharacterRevealTimers();
   stopTimer();
   questionLocked = false;
+  questionPendingValidation = false;
   typedAnswer = "";
   sequenceOrderCodes = [];
   sequenceFinalizing = false;
@@ -1545,11 +1671,46 @@ function loadQuestion() {
   persistInProgressPosition({ indexOffset: 1 });
 
   preTimerHandle = window.setTimeout(() => {
-    if (questionLocked) {
+    if (questionLocked || questionPendingValidation) {
       return;
     }
     beginQuestionTimer();
   }, revealDurationMs + POST_REVEAL_TIMER_DELAY_MS[current.type]);
+}
+
+async function hydrateQuizFromApi() {
+  if (!window.DailyQuizApi?.getDailyQuizQuestions) {
+    return;
+  }
+
+  try {
+    const payload = await window.DailyQuizApi.getDailyQuizQuestions();
+    if (!payload?.pack_id || !Array.isArray(payload.questions) || payload.questions.length === 0) {
+      return;
+    }
+
+    applyQuestionSetSource({
+      unid: payload.pack_id,
+      questions: payload.questions
+    });
+
+    remotePackId = payload.pack_id;
+    savedProgress = loadSavedProgress();
+    updateStartButtonText();
+  } catch (error) {
+    console.warn("Failed to load remote daily quiz. Using local fallback questions.", error);
+  }
+}
+
+async function bootstrapGame() {
+  await hydrateQuizFromApi();
+
+  if (savedProgress.completed) {
+    restoreCompletedGameState();
+    return;
+  }
+
+  setCurrentView(VIEW_STATES.START);
 }
 
 document.addEventListener("keydown", (event) => {
@@ -1561,7 +1722,7 @@ document.addEventListener("keydown", (event) => {
   }
 
   const current = getCurrentQuestion();
-  if (questionLocked) return;
+  if (questionLocked || questionPendingValidation) return;
 
   if (current.type === "letters" && event.key.length === 1) {
     const key = event.key.toUpperCase();
@@ -1640,9 +1801,4 @@ leaderboardButtonEl.addEventListener("click", handleLeaderboard);
 
 bindTimerBarFullscreenHold();
 
-// Initialize view
-if (savedProgress.completed) {
-  restoreCompletedGameState();
-} else {
-  setCurrentView(VIEW_STATES.START);
-}
+bootstrapGame();
