@@ -108,7 +108,8 @@ const QUESTION_SET_SOURCE = {
   ]
 };
 
-const QUESTION_DURATION_SECONDS = 10
+const FAST_POINT_INITIAL_DURATION_SECONDS = 1;
+const FAST_POINT_DURATION_STEP_SECONDS = 0.1;
 const MAX_FAST_POINTS = 10;
 const RESULT_DELAY_MS = 4500;
 const PRE_REVEAL_DELAY_MS = 400;
@@ -116,17 +117,17 @@ const CHARACTER_REVEAL_INTERVAL_MS = 45;
 const COMMA_PAUSE_MS = 400;
 const PERIOD_PAUSE_MS = 500;
 const POST_REVEAL_TIMER_DELAY_MS = {
-  letters:   1500,
+  letters:   500,
   multiple:   500,
-  numbers:   2500,
-  sequence:   5000
+  numbers:   1000,
+  sequence:   3000
 };
 const LONG_PRESS_MS = 450;
 const TIMER_FULLSCREEN_HOLD_MS = 500;
 const LAST_TEAM_NAME_STORAGE_KEY = "speedQuizzingTeamName";
 const GAME_PROGRESS_STORAGE_KEY_PREFIX = "speedQuizzingProgress";
 
-const IS_DEV_MODE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+const IS_DEV_MODE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || true;
 
 const questions = QUESTION_SET_SOURCE.questions;
 
@@ -152,6 +153,14 @@ const POINTS_EMOJI = {
 };
 
 const TOTAL_POSSIBLE_SCORE = questions.length * MAX_FAST_POINTS;
+
+const FAST_POINT_WINDOW_DURATIONS_MS = Array.from(
+  { length: MAX_FAST_POINTS },
+  (_, idx) => Math.round((FAST_POINT_INITIAL_DURATION_SECONDS + (idx * FAST_POINT_DURATION_STEP_SECONDS)) * 1000)
+);
+
+const QUESTION_DURATION_MS = FAST_POINT_WINDOW_DURATIONS_MS.reduce((sum, durationMs) => sum + durationMs, 0);
+console.log("Total question duration (ms)", QUESTION_DURATION_MS);
 
 const scoreValueEl = document.querySelector("#scoreValue");
 const fastPointsValueEl = document.querySelector("#fastPointsValue");
@@ -232,7 +241,7 @@ function setCurrentView(viewState) {
 let score = 0;
 let questionIndex = 0;
 let typedAnswer = "";
-let remainingMs = QUESTION_DURATION_SECONDS * 1000;
+let remainingMs = QUESTION_DURATION_MS;
 let timerHandle = null;
 let autoNextHandle = null;
 let preTimerHandle = null;
@@ -241,7 +250,6 @@ let questionLocked = false;
 let gameFinished = false;
 let answerHistory = [];
 let sequenceOrderCodes = [];
-let sequenceChoicesVisible = true;
 let sequenceFinalizing = false;
 
 let savedProgress = loadSavedProgress();
@@ -535,7 +543,7 @@ function restartGame() {
   score = 0;
   questionIndex = 0;
   typedAnswer = "";
-  remainingMs = QUESTION_DURATION_SECONDS * 1000;
+  remainingMs = QUESTION_DURATION_MS;
   questionLocked = false;
   gameFinished = false;
   answerHistory = [];
@@ -736,7 +744,17 @@ function getCurrentQuestion() {
 }
 
 function getFastPoints() {
-  return Math.max(0, Math.ceil((remainingMs / (QUESTION_DURATION_SECONDS * 1000)) * MAX_FAST_POINTS));
+  const elapsedMs = Math.max(0, QUESTION_DURATION_MS - remainingMs);
+  let cumulativeDurationMs = 0;
+
+  for (let idx = 0; idx < FAST_POINT_WINDOW_DURATIONS_MS.length; idx += 1) {
+    cumulativeDurationMs += FAST_POINT_WINDOW_DURATIONS_MS[idx];
+    if (elapsedMs < cumulativeDurationMs) {
+      return MAX_FAST_POINTS - idx;
+    }
+  }
+
+  return 0;
 }
 
 function getTimerColor(progress) {
@@ -746,7 +764,7 @@ function getTimerColor(progress) {
 }
 
 function renderTimer() {
-  const progress = remainingMs / (QUESTION_DURATION_SECONDS * 1000);
+  const progress = remainingMs / QUESTION_DURATION_MS;
   const pct = Math.max(0, Math.min(100, progress * 100));
   timerFillEl.style.width = `${pct}%`;
   timerFillEl.style.background = getTimerColor(progress);
@@ -869,7 +887,7 @@ function lockQuestion(message) {
 
 function beginQuestionTimer() {
   stopTimer();
-  remainingMs = QUESTION_DURATION_SECONDS * 1000;
+  remainingMs = QUESTION_DURATION_MS;
   renderTimer();
 
   const tickMs = 100;
@@ -994,7 +1012,7 @@ function handleAnswerPick(answerCode) {
 
 function pickSequenceAnswer(answerCode) {
   const current = getCurrentQuestion();
-  if (current.type !== "sequence" || !sequenceChoicesVisible) {
+  if (current.type !== "sequence") {
     return;
   }
 
@@ -1223,17 +1241,17 @@ function buildChoiceButton(choice, { placeholder = false } = {}) {
   });
 }
 
-function buildSequenceButton(choice, { masked = false, showOrderNumber = true, cornerIcon = null } = {}) {
+function buildSequenceButton(choice, { showOrderNumber = true, cornerIcon = null } = {}) {
   const label = document.createElement("span");
   label.className = "choice-label sequence-label";
-  label.textContent = masked ? "• • • •" : choice.label;
+  label.textContent = choice.label;
 
   const selectedOrder = sequenceOrderCodes.indexOf(normalize(choice.code));
   const button = buildKeyButton({
     className: `choice-row sequence-row ${selectedOrder >= 0 ? "selected" : ""}`,
     onClick: () => handleAnswerPick(choice.code),
     childNodes: [label],
-    disabled: questionLocked || masked,
+    disabled: questionLocked,
     cornerIcon
   });
 
@@ -1371,7 +1389,6 @@ function renderKeypad() {
         : null;
 
       keypadEl.appendChild(buildSequenceButton(choice, {
-        masked: !sequenceChoicesVisible,
         showOrderNumber: !hasFullSequence,
         cornerIcon
       }));
@@ -1474,8 +1491,7 @@ function loadQuestion() {
   typedAnswer = "";
   sequenceOrderCodes = [];
   sequenceFinalizing = false;
-  sequenceChoicesVisible = true;
-  remainingMs = QUESTION_DURATION_SECONDS * 1000;
+  remainingMs = QUESTION_DURATION_MS;
   renderTimer();
   feedbackTextEl.textContent = "";
   renderNumberAnswerDisplay();
