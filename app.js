@@ -110,7 +110,7 @@ const QUESTION_SET_SOURCE = {
 
 const QUESTION_DURATION_SECONDS = 10
 const MAX_FAST_POINTS = 10;
-const RESULT_DELAY_MS = 5000;
+const RESULT_DELAY_MS = 4500;
 const PRE_REVEAL_DELAY_MS = 400;
 const CHARACTER_REVEAL_INTERVAL_MS = 45;
 const COMMA_PAUSE_MS = 400;
@@ -449,7 +449,7 @@ function getAnswerBreakdownText() {
 }
 
 function buildShareText() {
-  const heading = `We scored ${score}/${TOTAL_POSSIBLE_SCORE}`;
+  const heading = `I scored ${score}/${TOTAL_POSSIBLE_SCORE}`;
   const breakdown = getAnswerBreakdownText();
   return `${heading}\n${breakdown}`;
 }
@@ -607,7 +607,7 @@ async function handleShareScore() {
   }
 
   try {
-    await copyTextToClipboard(`${shareText}\n${window.location.href}`);
+    await copyTextToClipboard(`${shareText}\nhttps://coolpat1993.github.io/`);
     setLeaderboardStatus("Share text copied to the clipboard.");
     return;
   } catch (error) {
@@ -966,9 +966,19 @@ function expandAnswerChoices(answerCode) {
   return Array.from(normalized);
 }
 
+function getComparableAnswerOptions(question, answerValue) {
+  const normalized = normalize(answerValue);
+
+  if (question?.type === "letters") {
+    return expandAnswerChoices(normalized);
+  }
+
+  return [normalized];
+}
+
 function isCurrentAnswerCorrect(question, answerValue = typedAnswer) {
   const validAnswers = getQuestionAnswerCodes(question);
-  const userAnswerOptions = expandAnswerChoices(answerValue);
+  const userAnswerOptions = getComparableAnswerOptions(question, answerValue);
   return userAnswerOptions.some(option => validAnswers.includes(option));
 }
 
@@ -1267,7 +1277,7 @@ function evaluateAnswer(answerOverride = null) {
     return;
   }
 
-  const userAnswerOptions = expandAnswerChoices(userAnswer);
+  const userAnswerOptions = getComparableAnswerOptions(current, userAnswer);
   const isCorrect = userAnswerOptions.some(option => validAnswers.includes(option));
   const earned = isCorrect ? getFastPoints() : 0;
 
