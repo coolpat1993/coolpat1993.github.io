@@ -47,9 +47,9 @@ const QUESTION_SET_SOURCE = {
     {
       id: "question4",
       type: "numbers",
-      question: "What is 101 x 51?",
-      answer: "5151",
-      longAnswer: "5151"
+      question: "What is 102 x 5?",
+      answer: "510",
+      longAnswer: "510"
     },
     {
       id: "question5",
@@ -125,6 +125,8 @@ const TIMER_FULLSCREEN_HOLD_MS = 500;
 const LAST_TEAM_NAME_STORAGE_KEY = "speedQuizzingTeamName";
 const GAME_PROGRESS_STORAGE_KEY_PREFIX = "speedQuizzingProgress";
 
+const IS_DEV_MODE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+
 const questions = QUESTION_SET_SOURCE.questions;
 
 function getQuestionSetStorageId() {
@@ -173,8 +175,15 @@ const teamNameInputEl = document.querySelector("#teamNameInput");
 const shareScoreButtonEl = document.querySelector("#shareScoreButton");
 const submitScoreButtonEl = document.querySelector("#submitScoreButton");
 const devResetProgressButtonEl = document.querySelector("#devResetProgressButton");
+const devResetProgressButtonIntroEl = document.querySelector("#devResetProgressButtonIntro");
 const leaderboardStatusEl = document.querySelector("#leaderboardStatus");
 const teamTrayNameEl = document.querySelector(".team-tray-name");
+
+// Hide dev buttons if not in development mode
+if (!IS_DEV_MODE) {
+  if (devResetProgressButtonEl) devResetProgressButtonEl.hidden = true;
+  if (devResetProgressButtonIntroEl) devResetProgressButtonIntroEl.hidden = true;
+}
 
 // Central view state setter
 function setCurrentView(viewState) {
@@ -952,9 +961,15 @@ function handleAnswerPick(answerCode) {
   evaluateAnswer(answerCode);
 }
 
+function expandAnswerChoices(answerCode) {
+  const normalized = normalize(answerCode);
+  return Array.from(normalized);
+}
+
 function isCurrentAnswerCorrect(question, answerValue = typedAnswer) {
   const validAnswers = getQuestionAnswerCodes(question);
-  return validAnswers.includes(normalize(answerValue));
+  const userAnswerOptions = expandAnswerChoices(answerValue);
+  return userAnswerOptions.some(option => validAnswers.includes(option));
 }
 
 function renderNumberAnswerDisplay() {
@@ -1150,12 +1165,14 @@ function renderKeypad() {
   if (current.type === "letters") {
     keypadEl.className = "keypad letters";
     const correctCode = getQuestionAnswerCodes(current)[0];
-    const playerGotItCorrect = questionLocked && normalize(typedAnswer) === correctCode;
+    const playerGotItCorrect = questionLocked && isCurrentAnswerCorrect(current, typedAnswer);
 
     getLetterKeys().forEach((key) => {
       const normalizedKey = normalize(key);
+      const keyOptions = expandAnswerChoices(normalizedKey);
       const isSelected = normalize(typedAnswer) === normalizedKey;
-      const isCorrect = questionLocked && normalizedKey === correctCode;
+      const keyIsCorrect = questionLocked && keyOptions.some(option => option === correctCode);
+      const isCorrect = keyIsCorrect;
       const isWrongPick = questionLocked && isSelected && !isCorrect;
       const isDimmed = questionLocked && !isCorrect && !isWrongPick;
       const cornerIcon = isWrongPick ? "cross" : (isCorrect && playerGotItCorrect) ? "check" : null;
@@ -1250,7 +1267,8 @@ function evaluateAnswer(answerOverride = null) {
     return;
   }
 
-  const isCorrect = validAnswers.includes(userAnswer);
+  const userAnswerOptions = expandAnswerChoices(userAnswer);
+  const isCorrect = userAnswerOptions.some(option => validAnswers.includes(option));
   const earned = isCorrect ? getFastPoints() : 0;
 
   if (isCorrect) {
@@ -1370,6 +1388,9 @@ shareScoreButtonEl.addEventListener("click", handleShareScore);
 submitScoreButtonEl.addEventListener("click", handleSubmitScore);
 if (devResetProgressButtonEl) {
   devResetProgressButtonEl.addEventListener("click", clearSavedProgressForDevTesting);
+}
+if (devResetProgressButtonIntroEl) {
+  devResetProgressButtonIntroEl.addEventListener("click", clearSavedProgressForDevTesting);
 }
 
 startButtonEl.addEventListener("click", handleStartGame);
