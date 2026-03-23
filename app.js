@@ -1,166 +1,47 @@
+import {
+  VIEW_STATES,
+  LETTER_KEYS,
+  NUMBER_KEYS,
+  RESULT_DELAY_MS,
+  PRE_REVEAL_DELAY_MS,
+  CHARACTER_REVEAL_INTERVAL_MS,
+  COMMA_PAUSE_MS,
+  PERIOD_PAUSE_MS,
+  POST_REVEAL_TIMER_DELAY_MS,
+  LONG_PRESS_MS,
+  TIMER_FULLSCREEN_HOLD_MS,
+  LAST_TEAM_NAME_STORAGE_KEY,
+  PLAYER_UNID_STORAGE_KEY,
+  IS_DEV_MODE,
+  questions,
+  getGameProgressStorageKey,
+  POINTS_EMOJI,
+  TOTAL_POSSIBLE_SCORE,
+  FAST_POINT_WINDOW_DURATIONS_MS,
+  QUESTION_DURATION_MS,
+  MAX_FAST_POINTS
+} from "./js/config.js";
+import {
+  getOrCreatePlayerUnid,
+  loadSavedTeamName,
+  loadSavedProgress,
+  persistSavedProgress,
+  persistTeamName
+} from "./js/storage.js";
+import {
+  normalize,
+  getQuestionAnswerCodes,
+  getRevealAnswerText,
+  getResultMessage,
+  expandAnswerChoices,
+  getComparableAnswerOptions,
+  isCurrentAnswerCorrect
+} from "./js/quiz-helpers.js";
+
 // View state management
-const VIEW_STATES = {
-  START: "START",
-  HOW_TO_PLAY: "HOW_TO_PLAY",
-  GAME: "GAME",
-  FINISH: "FINISH"
-};
-
 let currentView = null;
+const GAME_PROGRESS_STORAGE_KEY = getGameProgressStorageKey();
 
-const LETTER_KEYS = [
-  "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N",
-  "O", "P", "R", "S", "T", "U", "QV", "W", "Y", "XZ"
-];
-
-const NUMBER_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
-
-const QUESTION_SET_SOURCE = {
-  unid: "aug-2025-easy-pack-10-v2",
-  questions: [
-    {
-      id: "question1",
-      type: "multiple",
-      question: "Which of the following actors stars in the film 'Inception'?",
-      choices: [
-        "Matt Damon",
-        "Brad Pitt",
-        "Keanu Reeves",
-        "Leonardo DiCaprio"
-      ],
-      answer: "D"
-    },
-    {
-      id: "question2",
-      type: "numbers",
-      question: "How many lanes are there on an Olympic athletics track?",
-      answer: "8",
-      longAnswer: "8"
-    },
-    {
-      id: "question3",
-      type: "letters",
-      question: "In which city did the first 'Hard Rock Cafe' open?",
-      answer: "L",
-      longAnswer: "London"
-    },
-    {
-      id: "question4",
-      type: "numbers",
-      question: "What is 102 x 5?",
-      answer: "510",
-      longAnswer: "510"
-    },
-    {
-      id: "question5",
-      type: "multiple",
-      question: "At the start of a game of chess, who moves first?",
-      choices: [
-        "White",
-        "Black"
-      ],
-      answer: "A"
-    },
-    {
-      id: "question6",
-      type: "letters",
-      question: "In Greek mythology, who was the father and king of the gods?",
-      answer: "Z",
-      longAnswer: "Zeus"
-    },
-    {
-      id: "question7",
-      type: "multiple",
-      question: "For how many years must Scotch whisky be aged in oak casks before it can legally be sold in the UK?",
-      choices: [
-        "3",
-        "6",
-        "9"
-      ],
-      answer: "A"
-    },
-    {
-      id: "question8",
-      type: "letters",
-      question: "What is the capital city of Norway?",
-      answer: "O",
-      longAnswer: "Oslo"
-    },
-    {
-      id: "question9",
-      type: "multiple",
-      question: "In which country was the composer Chopin born?",
-      choices: [
-        "Poland",
-        "Austria",
-        "Italy",
-        "Denmark"
-      ],
-      answer: "A"
-    },
-    {
-      id: "question10",
-      type: "letters",
-      question: "Which term for a hired detective is also the name of a popular satirical magazine?",
-      answer: "P",
-      longAnswer: "Private Eye"
-    }
-  ]
-};
-
-const FAST_POINT_INITIAL_DURATION_SECONDS = 1;
-const FAST_POINT_DURATION_STEP_SECONDS = 0.1;
-const MAX_FAST_POINTS = 10;
-const RESULT_DELAY_MS = 4500;
-const PRE_REVEAL_DELAY_MS = 400;
-const CHARACTER_REVEAL_INTERVAL_MS = 45;
-const COMMA_PAUSE_MS = 400;
-const PERIOD_PAUSE_MS = 500;
-const POST_REVEAL_TIMER_DELAY_MS = {
-  letters:   500,
-  multiple:   500,
-  numbers:   1000,
-  sequence:   3000
-};
-const LONG_PRESS_MS = 450;
-const TIMER_FULLSCREEN_HOLD_MS = 500;
-const LAST_TEAM_NAME_STORAGE_KEY = "speedQuizzingTeamName";
-const PLAYER_UNID_STORAGE_KEY = "speedQuizzingPlayerUnid";
-const GAME_PROGRESS_STORAGE_KEY_PREFIX = "speedQuizzingProgress";
-
-const IS_DEV_MODE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || true;
-
-const questions = QUESTION_SET_SOURCE.questions;
-
-function getQuestionSetStorageId() {
-  return String(QUESTION_SET_SOURCE.unid).trim();
-}
-
-function getGameProgressStorageKey() {
-  return `${GAME_PROGRESS_STORAGE_KEY_PREFIX}:${getQuestionSetStorageId()}`;
-}
-
-const POINTS_EMOJI = {
-  1: "1️⃣",
-  2: "2️⃣",
-  3: "3️⃣",
-  4: "4️⃣",
-  5: "5️⃣",
-  6: "6️⃣",
-  7: "7️⃣",
-  8: "8️⃣",
-  9: "9️⃣",
-  10: "🔟"
-};
-
-const TOTAL_POSSIBLE_SCORE = questions.length * MAX_FAST_POINTS;
-
-const FAST_POINT_WINDOW_DURATIONS_MS = Array.from(
-  { length: MAX_FAST_POINTS },
-  (_, idx) => Math.round((FAST_POINT_INITIAL_DURATION_SECONDS + (idx * FAST_POINT_DURATION_STEP_SECONDS)) * 1000)
-);
-
-const QUESTION_DURATION_MS = FAST_POINT_WINDOW_DURATIONS_MS.reduce((sum, durationMs) => sum + durationMs, 0);
 console.log("Total question duration (ms)", QUESTION_DURATION_MS);
 
 const scoreValueEl = document.querySelector("#scoreValue");
@@ -253,51 +134,10 @@ let answerHistory = [];
 let sequenceOrderCodes = [];
 let sequenceFinalizing = false;
 
-let savedProgress = loadSavedProgress();
-const playerUnid = getOrCreatePlayerUnid();
+let savedProgress = loadSavedProgress(GAME_PROGRESS_STORAGE_KEY, TOTAL_POSSIBLE_SCORE);
+const playerUnid = getOrCreatePlayerUnid(PLAYER_UNID_STORAGE_KEY);
 
 let timerFullscreenHoldHandle = null;
-
-function generatePlayerUnid() {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  const targetLength = 28;
-
-  if (window.crypto && typeof window.crypto.getRandomValues === "function") {
-    const randomBytes = new Uint8Array(targetLength);
-    window.crypto.getRandomValues(randomBytes);
-    let generated = "";
-
-    for (let idx = 0; idx < targetLength; idx += 1) {
-      generated += chars[randomBytes[idx] % chars.length];
-    }
-
-    return generated;
-  }
-
-  let fallbackValue = "";
-  for (let idx = 0; idx < targetLength; idx += 1) {
-    const randomIndex = Math.floor(Math.random() * chars.length);
-    fallbackValue += chars[randomIndex];
-  }
-
-  return fallbackValue;
-}
-
-function getOrCreatePlayerUnid() {
-  try {
-    const existingValue = window.localStorage.getItem(PLAYER_UNID_STORAGE_KEY);
-    const normalizedExisting = String(existingValue || "").trim();
-    if (normalizedExisting) {
-      return normalizedExisting;
-    }
-
-    const createdUnid = generatePlayerUnid();
-    window.localStorage.setItem(PLAYER_UNID_STORAGE_KEY, createdUnid);
-    return createdUnid;
-  } catch (error) {
-    return generatePlayerUnid();
-  }
-}
 
 function syncTeamTrayName(name) {
   const safeName = String(name || "").trim();
@@ -336,62 +176,6 @@ function handleLeaderboard() {
   alert("Leaderboard feature coming soon!");
 }
 
-function loadSavedTeamName() {
-  try {
-    return window.localStorage.getItem(LAST_TEAM_NAME_STORAGE_KEY) || "";
-  } catch (error) {
-    return "";
-  }
-}
-
-function loadSavedProgress() {
-  const defaultProgress = {
-    completed: false,
-    submitted: false,
-    firstScore: 0,
-    currentScore: 0,
-    currentQuestionIndex: 0,
-    totalPossible: TOTAL_POSSIBLE_SCORE,
-    answerHistory: [],
-    completedAt: null,
-    submittedAt: null
-  };
-
-  try {
-    const rawValue = window.localStorage.getItem(getGameProgressStorageKey());
-    if (!rawValue) {
-      return defaultProgress;
-    }
-
-    const parsed = JSON.parse(rawValue);
-    if (!parsed || typeof parsed !== "object") {
-      return defaultProgress;
-    }
-
-    return {
-      completed: Boolean(parsed.completed),
-      submitted: Boolean(parsed.submitted),
-      firstScore: Number.isFinite(parsed.firstScore) ? parsed.firstScore : 0,
-      currentScore: Number.isFinite(parsed.currentScore) ? parsed.currentScore : 0,
-      currentQuestionIndex: Number.isInteger(parsed.currentQuestionIndex) ? parsed.currentQuestionIndex : 0,
-      totalPossible: Number.isFinite(parsed.totalPossible) ? parsed.totalPossible : TOTAL_POSSIBLE_SCORE,
-      answerHistory: Array.isArray(parsed.answerHistory) ? parsed.answerHistory : [],
-      completedAt: parsed.completedAt || null,
-      submittedAt: parsed.submittedAt || null
-    };
-  } catch (error) {
-    return defaultProgress;
-  }
-}
-
-function persistSavedProgress() {
-  try {
-    window.localStorage.setItem(getGameProgressStorageKey(), JSON.stringify(savedProgress));
-  } catch (error) {
-    return;
-  }
-}
-
 function syncSubmitAvailability() {
   submitScoreButtonEl.disabled = savedProgress.submitted || getTeamName() === "";
 }
@@ -408,7 +192,7 @@ function clearSavedProgressForDevTesting() {
     completedAt: null,
     submittedAt: null
   };
-  persistSavedProgress();
+  persistSavedProgress(GAME_PROGRESS_STORAGE_KEY, savedProgress);
   setLeaderboardStatus("Saved game completion/submission state cleared for testing.");
   restartGame();
 }
@@ -429,7 +213,7 @@ function persistCompletedProgressIfFirstRun() {
     completedAt: new Date().toISOString()
   };
 
-  persistSavedProgress();
+  persistSavedProgress(GAME_PROGRESS_STORAGE_KEY, savedProgress);
 }
 
 function persistSubmittedProgress() {
@@ -443,7 +227,7 @@ function persistSubmittedProgress() {
     submittedAt: new Date().toISOString()
   };
 
-  persistSavedProgress();
+  persistSavedProgress(GAME_PROGRESS_STORAGE_KEY, savedProgress);
 }
 
 function clampResumeQuestionIndex(rawIndex) {
@@ -463,7 +247,7 @@ function persistInProgressPosition({ indexOffset = 0 } = {}) {
     answerHistory: answerHistory.map((entry) => ({ ...entry }))
   };
 
-  persistSavedProgress();
+  persistSavedProgress(GAME_PROGRESS_STORAGE_KEY, savedProgress);
 }
 
 function restoreInProgressGameState() {
@@ -473,14 +257,6 @@ function restoreInProgressGameState() {
 
   if (questionIndex >= questions.length) {
     completeGame();
-  }
-}
-
-function persistTeamName(name) {
-  try {
-    window.localStorage.setItem(LAST_TEAM_NAME_STORAGE_KEY, String(name || "").trim());
-  } catch (error) {
-    return;
   }
 }
 
@@ -689,7 +465,7 @@ function handleSubmitScore() {
     return;
   }
 
-  persistTeamName(teamName);
+  persistTeamName(LAST_TEAM_NAME_STORAGE_KEY, teamName);
 
   const submission = {
     playerUnid,
@@ -776,10 +552,6 @@ function bindTimerBarFullscreenHold() {
   timerTrackEl.addEventListener("pointerup", handlePressEnd);
   timerTrackEl.addEventListener("pointercancel", handlePressEnd);
   timerTrackEl.addEventListener("pointerleave", handlePressEnd);
-}
-
-function normalize(str) {
-  return String(str || "").trim().toUpperCase();
 }
 
 function getCurrentQuestion() {
@@ -954,72 +726,6 @@ function beginQuestionTimer() {
   }, tickMs);
 }
 
-function getQuestionAnswerCodes(question) {
-  if (Array.isArray(question.answers)) {
-    return question.answers.map(normalize);
-  }
-
-  if (question.answer) {
-    return [normalize(question.answer)];
-  }
-
-  return [];
-}
-
-function getRevealAnswerText(question) {
-  if (question.type === "sequence" && Array.isArray(question.choices)) {
-    const answerCodes = getQuestionAnswerCodes(question);
-    if (answerCodes.length > 0) {
-      const sequenceLabel = answerCodes[0]
-        .split("")
-        .map((code) => {
-          const idx = code.charCodeAt(0) - 65;
-          return question.choices[idx] || code;
-        })
-        .join(" -> ");
-
-      if (sequenceLabel) {
-        return sequenceLabel;
-      }
-    }
-  }
-
-  if (question.type === "multiple" && Array.isArray(question.choices)) {
-    const answerCodes = getQuestionAnswerCodes(question);
-    if (answerCodes.length > 0) {
-      const labels = answerCodes.map((code) => {
-        const idx = code.charCodeAt(0) - 65;
-        return question.choices[idx] || code;
-      });
-      return labels.join(" / ");
-    }
-  }
-
-  if (question.longAnswer) {
-    return question.longAnswer;
-  }
-
-  if (Array.isArray(question.answers) && question.answers.length > 0) {
-    return question.answers.join(" / ");
-  }
-
-  return question.answer || "";
-}
-
-function getResultMessage(question, { isCorrect = false, earned = 0, timedOut = false } = {}) {
-  const answerText = getRevealAnswerText(question);
-
-  if (isCorrect) {
-    return `Correct, the answer is ${answerText}`;
-  }
-
-  if (timedOut) {
-    return `Time's up, the correct answer is ${answerText}`;
-  }
-
-  return `Incorrect, the correct answer is ${answerText}`;
-}
-
 function getLetterKeys() {
   return LETTER_KEYS;
 }
@@ -1088,27 +794,6 @@ function pickSequenceAnswer(answerCode) {
   }
 }
 
-function expandAnswerChoices(answerCode) {
-  const normalized = normalize(answerCode);
-  return Array.from(normalized);
-}
-
-function getComparableAnswerOptions(question, answerValue) {
-  const normalized = normalize(answerValue);
-
-  if (question?.type === "letters") {
-    return expandAnswerChoices(normalized);
-  }
-
-  return [normalized];
-}
-
-function isCurrentAnswerCorrect(question, answerValue = typedAnswer) {
-  const validAnswers = getQuestionAnswerCodes(question);
-  const userAnswerOptions = getComparableAnswerOptions(question, answerValue);
-  return userAnswerOptions.some(option => validAnswers.includes(option));
-}
-
 function renderNumberAnswerDisplay() {
   const current = getCurrentQuestion();
   const isNumberQuestion = current?.type === "numbers";
@@ -1129,7 +814,7 @@ function renderNumberAnswerDisplay() {
   numberAnswerDisplayEl.classList.toggle("result", questionLocked);
 
   if (questionLocked) {
-    numberAnswerDisplayEl.dataset.cornerIcon = isCurrentAnswerCorrect(current) ? "check" : "cross";
+    numberAnswerDisplayEl.dataset.cornerIcon = isCurrentAnswerCorrect(current, typedAnswer) ? "check" : "cross";
   } else {
     delete numberAnswerDisplayEl.dataset.cornerIcon;
   }
@@ -1612,7 +1297,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-teamNameInputEl.value = loadSavedTeamName();
+teamNameInputEl.value = loadSavedTeamName(LAST_TEAM_NAME_STORAGE_KEY);
 syncTeamTrayName(teamNameInputEl.value);
 teamNameInputEl.addEventListener("input", () => {
   syncTeamTrayName(teamNameInputEl.value);
