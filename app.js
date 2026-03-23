@@ -116,9 +116,10 @@ const CHARACTER_REVEAL_INTERVAL_MS = 45;
 const COMMA_PAUSE_MS = 400;
 const PERIOD_PAUSE_MS = 500;
 const POST_REVEAL_TIMER_DELAY_MS = {
-  letters: 1500,
-  multiple: 500,
-  numbers: 2500
+  letters:   1500,
+  multiple:   500,
+  numbers:   2500,
+  sequence:   5000
 };
 const LONG_PRESS_MS = 450;
 const TIMER_FULLSCREEN_HOLD_MS = 500;
@@ -239,6 +240,9 @@ let characterRevealHandles = [];
 let questionLocked = false;
 let gameFinished = false;
 let answerHistory = [];
+let sequenceOrderCodes = [];
+let sequenceChoicesVisible = true;
+let sequenceFinalizing = false;
 
 let savedProgress = loadSavedProgress();
 
@@ -901,6 +905,23 @@ function getQuestionAnswerCodes(question) {
 }
 
 function getRevealAnswerText(question) {
+  if (question.type === "sequence" && Array.isArray(question.choices)) {
+    const answerCodes = getQuestionAnswerCodes(question);
+    if (answerCodes.length > 0) {
+      const sequenceLabel = answerCodes[0]
+        .split("")
+        .map((code) => {
+          const idx = code.charCodeAt(0) - 65;
+          return question.choices[idx] || code;
+        })
+        .join(" -> ");
+
+      if (sequenceLabel) {
+        return sequenceLabel;
+      }
+    }
+  }
+
   if (question.type === "multiple" && Array.isArray(question.choices)) {
     const answerCodes = getQuestionAnswerCodes(question);
     if (answerCodes.length > 0) {
@@ -952,13 +973,57 @@ function getExpandedLetterInputs() {
 function handleAnswerPick(answerCode) {
   if (questionLocked) return;
 
-  if (getCurrentQuestion().type === "numbers") {
+  const current = getCurrentQuestion();
+
+  if (current.type === "numbers") {
     appendNumberDigit(answerCode);
+    return;
+  }
+
+  if (current.type === "sequence") {
+    if (sequenceFinalizing) {
+      return;
+    }
+    pickSequenceAnswer(answerCode);
     return;
   }
 
   typedAnswer = answerCode;
   evaluateAnswer(answerCode);
+}
+
+function pickSequenceAnswer(answerCode) {
+  const current = getCurrentQuestion();
+  if (current.type !== "sequence" || !sequenceChoicesVisible) {
+    return;
+  }
+
+  const normalizedCode = normalize(answerCode);
+  const existingIndex = sequenceOrderCodes.indexOf(normalizedCode);
+
+  if (existingIndex >= 0) {
+    if (existingIndex === sequenceOrderCodes.length - 1) {
+      sequenceOrderCodes.pop();
+    } else {
+      sequenceOrderCodes = [];
+    }
+  } else {
+    sequenceOrderCodes.push(normalizedCode);
+  }
+
+  typedAnswer = sequenceOrderCodes.join("");
+  renderKeypad();
+
+  const totalSequenceChoices = Array.isArray(current.choices) ? current.choices.length : 0;
+  if (totalSequenceChoices > 0 && sequenceOrderCodes.length === totalSequenceChoices) {
+    sequenceFinalizing = true;
+      if (getCurrentQuestion()?.id !== current.id) {
+        sequenceFinalizing = false;
+        return;
+      }
+      sequenceFinalizing = false;
+      evaluateAnswer(typedAnswer);
+  }
 }
 
 function expandAnswerChoices(answerCode) {
@@ -1158,6 +1223,29 @@ function buildChoiceButton(choice, { placeholder = false } = {}) {
   });
 }
 
+function buildSequenceButton(choice, { masked = false, showOrderNumber = true, cornerIcon = null } = {}) {
+  const label = document.createElement("span");
+  label.className = "choice-label sequence-label";
+  label.textContent = masked ? "• • • •" : choice.label;
+
+  const selectedOrder = sequenceOrderCodes.indexOf(normalize(choice.code));
+  const button = buildKeyButton({
+    className: `choice-row sequence-row ${selectedOrder >= 0 ? "selected" : ""}`,
+    onClick: () => handleAnswerPick(choice.code),
+    childNodes: [label],
+    disabled: questionLocked || masked,
+    cornerIcon
+  });
+
+  button.dataset.sequenceCode = normalize(choice.code);
+
+  if (showOrderNumber && selectedOrder >= 0) {
+    button.dataset.sequenceOrder = String(selectedOrder + 1);
+  }
+
+  return button;
+}
+
 function renderKeypad() {
   if (gameFinished) {
     keypadEl.hidden = true;
@@ -1165,6 +1253,13 @@ function renderKeypad() {
   }
 
   const current = getCurrentQuestion();
+  let previousSequencePositions = null;
+  if (current.type === "sequence") {
+    previousSequencePositions = new Map();
+    keypadEl.querySelectorAll(".sequence-row[data-sequence-code]").forEach((rowEl) => {
+      previousSequencePositions.set(rowEl.dataset.sequenceCode, rowEl.getBoundingClientRect().top);
+    });
+  }
   keypadEl.innerHTML = "";
   keypadEl.hidden = current.type === "numbers" && questionLocked && typedAnswer.length > 0;
 
@@ -1173,6 +1268,7 @@ function renderKeypad() {
   }
 
   if (current.type === "letters") {
+    keypadEl.style.gridTemplateRows = "";
     keypadEl.className = "keypad letters";
     const correctCode = getQuestionAnswerCodes(current)[0];
     const playerGotItCorrect = questionLocked && isCurrentAnswerCorrect(current, typedAnswer);
@@ -1203,6 +1299,7 @@ function renderKeypad() {
       );
     });
   } else if (current.type === "numbers") {
+    keypadEl.style.gridTemplateRows = "";
     keypadEl.className = "keypad numbers";
     const shouldDimNumberKeypad = questionLocked && typedAnswer.length === 0;
     const keypadButtons = [
@@ -1247,7 +1344,64 @@ function renderKeypad() {
         })
       );
     });
+  } else if (current.type === "sequence") {
+    keypadEl.className = "keypad sequence";
+    const choices = Array.isArray(current.choices) ? current.choices : [];
+    const correctSequence = getQuestionAnswerCodes(current)[0] || "";
+    const choiceEntries = choices.map((label, index) => ({
+      code: String.fromCharCode(65 + index),
+      label
+    }));
+    const hasFullSequence = choices.length > 0 && sequenceOrderCodes.length === choices.length;
+    const isFullSequenceCorrect = hasFullSequence && sequenceOrderCodes.join("") === correctSequence;
+
+    const renderedChoices = hasFullSequence
+      ? [...choiceEntries].sort((a, b) => (
+          sequenceOrderCodes.indexOf(a.code) - sequenceOrderCodes.indexOf(b.code)
+        ))
+      : choiceEntries;
+
+    if (choices.length > 0) {
+      keypadEl.style.gridTemplateRows = `repeat(${choices.length}, minmax(0, 1fr))`;
+    }
+
+    renderedChoices.forEach((choice, renderedIndex) => {
+      const cornerIcon = hasFullSequence
+        ? (isFullSequenceCorrect ? "check" : "cross")
+        : null;
+
+      keypadEl.appendChild(buildSequenceButton(choice, {
+        masked: !sequenceChoicesVisible,
+        showOrderNumber: !hasFullSequence,
+        cornerIcon
+      }));
+    });
+
+    if (hasFullSequence && previousSequencePositions && previousSequencePositions.size > 0) {
+      keypadEl.querySelectorAll(".sequence-row[data-sequence-code]").forEach((rowEl) => {
+        const code = rowEl.dataset.sequenceCode;
+        const previousTop = previousSequencePositions.get(code);
+        if (typeof previousTop !== "number") {
+          return;
+        }
+
+        const currentTop = rowEl.getBoundingClientRect().top;
+        const deltaY = previousTop - currentTop;
+        if (Math.abs(deltaY) < 1) {
+          return;
+        }
+
+        rowEl.style.transition = "none";
+        rowEl.style.transform = `translateY(${deltaY}px)`;
+
+        window.requestAnimationFrame(() => {
+          rowEl.style.transition = "transform 280ms cubic-bezier(0.22, 1, 0.36, 1)";
+          rowEl.style.transform = "translateY(0)";
+        });
+      });
+    }
   } else {
+    keypadEl.style.gridTemplateRows = "";
     keypadEl.className = "keypad multiple";
     const totalChoiceRows = 6;
     const choiceLabels = Array.isArray(current.choices) ? current.choices : [];
@@ -1318,6 +1472,9 @@ function loadQuestion() {
   stopTimer();
   questionLocked = false;
   typedAnswer = "";
+  sequenceOrderCodes = [];
+  sequenceFinalizing = false;
+  sequenceChoicesVisible = true;
   remainingMs = QUESTION_DURATION_SECONDS * 1000;
   renderTimer();
   feedbackTextEl.textContent = "";
@@ -1326,6 +1483,7 @@ function loadQuestion() {
 
   renderKeypad();
   persistInProgressPosition({ indexOffset: 1 });
+
   preTimerHandle = window.setTimeout(() => {
     if (questionLocked) {
       return;
@@ -1361,6 +1519,16 @@ document.addEventListener("keydown", (event) => {
       handleAnswerPick(key);
     }
 
+    return;
+  }
+
+  if (current.type === "sequence" && event.key.length === 1) {
+    const key = event.key.toUpperCase();
+    const choiceIndex = key.charCodeAt(0) - 65;
+    const choices = Array.isArray(current.choices) ? current.choices : [];
+    if (choiceIndex >= 0 && choiceIndex < choices.length) {
+      handleAnswerPick(key);
+    }
     return;
   }
 

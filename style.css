@@ -293,6 +293,11 @@ textarea {
   align-content: stretch;
 }
 
+.keypad.sequence {
+  grid-template-columns: 1fr;
+  align-content: stretch;
+}
+
 .key-btn {
   position: relative;
   border: 0;
@@ -441,6 +446,50 @@ textarea {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.key-btn.choice-row.sequence-row {
+  justify-content: center;
+  padding: 10px 16px;
+}
+
+.choice-label.sequence-label {
+  text-align: center;
+  padding-right: 0;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  font-size: clamp(1.2rem, 4.2vw, 1.8rem);
+}
+
+.key-btn.choice-row.sequence-row[data-sequence-order]::before {
+  content: attr(data-sequence-order);
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: "Montserrat", "Kumbh", sans-serif;
+  font-size: clamp(2rem, 9vw, 3rem);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--sq-cyan);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.key-btn.choice-row.sequence-row .choice-label.sequence-label {
+  position: relative;
+  z-index: 1;
+}
+
+.key-btn.choice-row.sequence-row[data-corner-icon]::after {
+  left: auto;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  font-size: 1.3rem;
 }
 
 .team-tray {
