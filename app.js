@@ -1,3 +1,13 @@
+// View state management
+const VIEW_STATES = {
+  START: "START",
+  HOW_TO_PLAY: "HOW_TO_PLAY",
+  GAME: "GAME",
+  FINISH: "FINISH"
+};
+
+let currentView = null;
+
 const LETTER_KEYS = [
   "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N",
   "O", "P", "R", "S", "T", "U", "QV", "W", "Y", "XZ"
@@ -5,90 +15,98 @@ const LETTER_KEYS = [
 
 const NUMBER_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
 
-const questions = [
-  {
-    id: "question1",
-    type: "numbers",
-    question: "What is the maximum number of consecutive terms that a US President can now serve?",
-    answer: "2"
-  },
-  {
-    id: "question2",
-    type: "letters",
-    question: "What is the common name given to the sewing technique used to repair holes or worn areas in fabric using needle and thread alone?",
-    answer: "D",
-    longAnswer: "Darn/Darning"
-  },
-  {
-    id: "question3",
-    type: "multiple",
-    question: "What was the name of legendary baseball player Babe Ruth's famous 44 oz bat?",
-    choices: [
-      "Blue Thunder",
-      "Brown Bomber",
-      "Black Betsy",
-      "Pink Panther"
-    ],
-    answer: "C"
-  },
-  {
-    id: "question4",
-    type: "letters",
-    question: "Which common kitchen herb is used in a mojito?",
-    answer: "M",
-    longAnswer: "Mint"
-  },
-  {
-    id: "question5",
-    type: "numbers",
-    question: "What number was the title of singer Beyonce's album, released in June 2011?",
-    answer: "4"
-  },
-  {
-    id: "question6",
-    type: "letters",
-    question: "Which country has its own version of YouTube named Youku?",
-    answer: "C",
-    longAnswer: "China"
-  },
-  {
-    id: "question7",
-    type: "multiple",
-    question: "Which of these is a region located in the south of Spain?",
-    choices: [
-      "Provence",
-      "Tuscany",
-      "Andalucia",
-      "Lorraine"
-    ],
-    answer: "C"
-  },
-  {
-    id: "question8",
-    type: "letters",
-    question: "Which planet in our solar system has a feature known as the \"Great Red Spot\"?",
-    answer: "J",
-    longAnswer: "Jupiter"
-  },
-  {
-    id: "question9",
-    type: "multiple",
-    question: "Who had a hit in the 1950s with 'Mack The Knife'?",
-    choices: [
-      "Billy Darin",
-      "Benny Darin",
-      "Barry Darin",
-      "Bobby Darin"
-    ],
-    answer: "D"
-  },
-  {
-    id: "question10",
-    type: "numbers",
-    question: "In the 'Star Wars' films, how many digits does Yoda have on each hand?",
-    answer: "3"
-  }
-];
+const QUESTION_SET_SOURCE = {
+  unid: "aug-2025-easy-pack-10-v2",
+  questions: [
+    {
+      id: "question1",
+      type: "multiple",
+      question: "Which of the following actors stars in the film 'Inception'?",
+      choices: [
+        "Matt Damon",
+        "Brad Pitt",
+        "Keanu Reeves",
+        "Leonardo DiCaprio"
+      ],
+      answer: "D"
+    },
+    {
+      id: "question2",
+      type: "numbers",
+      question: "How many lanes are there on an Olympic athletics track?",
+      answer: "8",
+      longAnswer: "8"
+    },
+    {
+      id: "question3",
+      type: "letters",
+      question: "In which city did the first 'Hard Rock Cafe' open?",
+      answer: "L",
+      longAnswer: "London"
+    },
+    {
+      id: "question4",
+      type: "numbers",
+      question: "What is 101 x 51?",
+      answer: "5151",
+      longAnswer: "5151"
+    },
+    {
+      id: "question5",
+      type: "multiple",
+      question: "At the start of a game of chess, who moves first?",
+      choices: [
+        "White",
+        "Black"
+      ],
+      answer: "A"
+    },
+    {
+      id: "question6",
+      type: "letters",
+      question: "In Greek mythology, who was the father and king of the gods?",
+      answer: "Z",
+      longAnswer: "Zeus"
+    },
+    {
+      id: "question7",
+      type: "multiple",
+      question: "For how many years must Scotch whisky be aged in oak casks before it can legally be sold in the UK?",
+      choices: [
+        "3",
+        "6",
+        "9"
+      ],
+      answer: "A"
+    },
+    {
+      id: "question8",
+      type: "letters",
+      question: "What is the capital city of Norway?",
+      answer: "O",
+      longAnswer: "Oslo"
+    },
+    {
+      id: "question9",
+      type: "multiple",
+      question: "In which country was the composer Chopin born?",
+      choices: [
+        "Poland",
+        "Austria",
+        "Italy",
+        "Denmark"
+      ],
+      answer: "A"
+    },
+    {
+      id: "question10",
+      type: "letters",
+      question: "Which term for a hired detective is also the name of a popular satirical magazine?",
+      answer: "P",
+      longAnswer: "Private Eye"
+    }
+  ]
+};
 
 const QUESTION_DURATION_SECONDS = 10
 const MAX_FAST_POINTS = 10;
@@ -105,7 +123,17 @@ const POST_REVEAL_TIMER_DELAY_MS = {
 const LONG_PRESS_MS = 450;
 const TIMER_FULLSCREEN_HOLD_MS = 500;
 const LAST_TEAM_NAME_STORAGE_KEY = "speedQuizzingTeamName";
-const GAME_PROGRESS_STORAGE_KEY = "speedQuizzingProgress";
+const GAME_PROGRESS_STORAGE_KEY_PREFIX = "speedQuizzingProgress";
+
+const questions = QUESTION_SET_SOURCE.questions;
+
+function getQuestionSetStorageId() {
+  return String(QUESTION_SET_SOURCE.unid).trim();
+}
+
+function getGameProgressStorageKey() {
+  return `${GAME_PROGRESS_STORAGE_KEY_PREFIX}:${getQuestionSetStorageId()}`;
+}
 
 const POINTS_EMOJI = {
   1: "1️⃣",
@@ -126,10 +154,18 @@ const scoreValueEl = document.querySelector("#scoreValue");
 const fastPointsValueEl = document.querySelector("#fastPointsValue");
 const timerFillEl = document.querySelector("#timerFill");
 const timerTrackEl = document.querySelector(".timer-track");
+const questionPanelEl = document.querySelector("#questionPanel");
 const questionTextEl = document.querySelector("#questionText");
 const feedbackTextEl = document.querySelector("#feedbackText");
 const numberAnswerDisplayEl = document.querySelector("#numberAnswerDisplay");
 const keypadEl = document.querySelector("#keypad");
+const pregameHeaderEl = document.querySelector("#pregameHeader");
+const introPanelEl = document.querySelector("#introPanel");
+const howToPlayPanelEl = document.querySelector("#howToPlayPanel");
+const startButtonEl = document.querySelector("#startButton");
+const howToPlayButtonEl = document.querySelector("#howToPlayButton");
+const howToPlayBackButtonEl = document.querySelector("#howToPlayBackButton");
+const leaderboardButtonEl = document.querySelector("#leaderboardButton");
 const finishPanelEl = document.querySelector("#finishPanel");
 const finalScoreValueEl = document.querySelector("#finalScoreValue");
 const finalScoreTotalEl = document.querySelector("#finalScoreTotal");
@@ -139,6 +175,49 @@ const submitScoreButtonEl = document.querySelector("#submitScoreButton");
 const devResetProgressButtonEl = document.querySelector("#devResetProgressButton");
 const leaderboardStatusEl = document.querySelector("#leaderboardStatus");
 const teamTrayNameEl = document.querySelector(".team-tray-name");
+
+// Central view state setter
+function setCurrentView(viewState) {
+  if (currentView === viewState) {
+    return;
+  }
+
+  currentView = viewState;
+
+  // Hide all panels
+  introPanelEl.hidden = true;
+  howToPlayPanelEl.hidden = true;
+  questionPanelEl.hidden = true;
+  finishPanelEl.hidden = true;
+  pregameHeaderEl.hidden = true;
+  keypadEl.hidden = true;
+  numberAnswerDisplayEl.hidden = true;
+
+  // Show relevant panels based on view state
+  switch (viewState) {
+    case VIEW_STATES.START:
+      introPanelEl.hidden = false;
+      pregameHeaderEl.hidden = false;
+      updateStartButtonText();
+      break;
+
+    case VIEW_STATES.HOW_TO_PLAY:
+      howToPlayPanelEl.hidden = false;
+      pregameHeaderEl.hidden = false;
+      break;
+
+    case VIEW_STATES.GAME:
+      pregameHeaderEl.hidden = true;
+      questionPanelEl.hidden = false;
+      keypadEl.hidden = false;
+      numberAnswerDisplayEl.hidden = true;
+      break;
+
+    case VIEW_STATES.FINISH:
+      finishPanelEl.hidden = false;
+      break;
+  }
+}
 
 let score = 0;
 let questionIndex = 0;
@@ -161,6 +240,38 @@ function syncTeamTrayName(name) {
   teamTrayNameEl.textContent = safeName || "Team Name";
 }
 
+function updateStartButtonText() {
+  if (savedProgress.completed || (savedProgress.currentQuestionIndex > 0)) {
+    startButtonEl.textContent = "Continue";
+  } else {
+    startButtonEl.textContent = "Start";
+  }
+}
+
+function handleStartGame() {
+  if (savedProgress.completed) {
+    restoreCompletedGameState();
+  } else if (savedProgress.currentQuestionIndex > 0) {
+    restoreInProgressGameState();
+    setCurrentView(VIEW_STATES.GAME);
+    loadQuestion();
+  } else {
+    restartGame();
+  }
+}
+
+function handleHowToPlay() {
+  setCurrentView(VIEW_STATES.HOW_TO_PLAY);
+}
+
+function handleHowToPlayBack() {
+  setCurrentView(VIEW_STATES.START);
+}
+
+function handleLeaderboard() {
+  alert("Leaderboard feature coming soon!");
+}
+
 function loadSavedTeamName() {
   try {
     return window.localStorage.getItem(LAST_TEAM_NAME_STORAGE_KEY) || "";
@@ -174,6 +285,8 @@ function loadSavedProgress() {
     completed: false,
     submitted: false,
     firstScore: 0,
+    currentScore: 0,
+    currentQuestionIndex: 0,
     totalPossible: TOTAL_POSSIBLE_SCORE,
     answerHistory: [],
     completedAt: null,
@@ -181,7 +294,7 @@ function loadSavedProgress() {
   };
 
   try {
-    const rawValue = window.localStorage.getItem(GAME_PROGRESS_STORAGE_KEY);
+    const rawValue = window.localStorage.getItem(getGameProgressStorageKey());
     if (!rawValue) {
       return defaultProgress;
     }
@@ -195,6 +308,8 @@ function loadSavedProgress() {
       completed: Boolean(parsed.completed),
       submitted: Boolean(parsed.submitted),
       firstScore: Number.isFinite(parsed.firstScore) ? parsed.firstScore : 0,
+      currentScore: Number.isFinite(parsed.currentScore) ? parsed.currentScore : 0,
+      currentQuestionIndex: Number.isInteger(parsed.currentQuestionIndex) ? parsed.currentQuestionIndex : 0,
       totalPossible: Number.isFinite(parsed.totalPossible) ? parsed.totalPossible : TOTAL_POSSIBLE_SCORE,
       answerHistory: Array.isArray(parsed.answerHistory) ? parsed.answerHistory : [],
       completedAt: parsed.completedAt || null,
@@ -207,7 +322,7 @@ function loadSavedProgress() {
 
 function persistSavedProgress() {
   try {
-    window.localStorage.setItem(GAME_PROGRESS_STORAGE_KEY, JSON.stringify(savedProgress));
+    window.localStorage.setItem(getGameProgressStorageKey(), JSON.stringify(savedProgress));
   } catch (error) {
     return;
   }
@@ -222,6 +337,8 @@ function clearSavedProgressForDevTesting() {
     completed: false,
     submitted: false,
     firstScore: 0,
+    currentScore: 0,
+    currentQuestionIndex: 0,
     totalPossible: TOTAL_POSSIBLE_SCORE,
     answerHistory: [],
     completedAt: null,
@@ -241,6 +358,8 @@ function persistCompletedProgressIfFirstRun() {
     ...savedProgress,
     completed: true,
     firstScore: score,
+    currentScore: score,
+    currentQuestionIndex: Math.max(0, questions.length - 1),
     totalPossible: TOTAL_POSSIBLE_SCORE,
     answerHistory: answerHistory.map((entry) => ({ ...entry })),
     completedAt: new Date().toISOString()
@@ -261,6 +380,36 @@ function persistSubmittedProgress() {
   };
 
   persistSavedProgress();
+}
+
+function clampResumeQuestionIndex(rawIndex) {
+  const parsedIndex = Number.isInteger(rawIndex) ? rawIndex : 0;
+  return Math.min(Math.max(parsedIndex, 0), questions.length);
+}
+
+function persistInProgressPosition({ indexOffset = 0 } = {}) {
+  if (savedProgress.completed) {
+    return;
+  }
+
+  savedProgress = {
+    ...savedProgress,
+    currentScore: score,
+    currentQuestionIndex: clampResumeQuestionIndex(questionIndex + indexOffset),
+    answerHistory: answerHistory.map((entry) => ({ ...entry }))
+  };
+
+  persistSavedProgress();
+}
+
+function restoreInProgressGameState() {
+  score = Number.isFinite(savedProgress.currentScore) ? savedProgress.currentScore : 0;
+  questionIndex = clampResumeQuestionIndex(savedProgress.currentQuestionIndex);
+  scoreValueEl.textContent = String(score);
+
+  if (questionIndex >= questions.length) {
+    completeGame();
+  }
 }
 
 function persistTeamName(name) {
@@ -338,12 +487,10 @@ function recordAnswerResult(question, userAnswer, { isCorrect = false, earnedPoi
 }
 
 function showFinishPanel() {
-  finishPanelEl.hidden = false;
-  keypadEl.hidden = true;
-  numberAnswerDisplayEl.hidden = true;
   finalScoreValueEl.textContent = String(score);
   finalScoreTotalEl.textContent = String(TOTAL_POSSIBLE_SCORE);
   syncSubmitAvailability();
+  setCurrentView(VIEW_STATES.FINISH);
 }
 
 function completeGame() {
@@ -380,8 +527,9 @@ function restartGame() {
   gameFinished = false;
   answerHistory = [];
   scoreValueEl.textContent = "0";
-  finishPanelEl.hidden = true;
+  persistInProgressPosition();
   setLeaderboardStatus("");
+  setCurrentView(VIEW_STATES.GAME);
   loadQuestion();
 }
 
@@ -724,6 +872,7 @@ function beginQuestionTimer() {
     if (remainingMs <= 0) {
       const current = getCurrentQuestion();
       recordAnswerResult(current, normalize(typedAnswer), { timedOut: true });
+      persistInProgressPosition({ indexOffset: 1 });
       lockQuestion(getResultMessage(current, { timedOut: true }));
       renderKeypad();
     }
@@ -1110,6 +1259,7 @@ function evaluateAnswer(answerOverride = null) {
   }
 
   recordAnswerResult(current, userAnswer, { isCorrect, earnedPoints: earned });
+  persistInProgressPosition({ indexOffset: 1 });
   lockQuestion(getResultMessage(current, { isCorrect, earned }));
 
   renderNumberAnswerDisplay();
@@ -1127,7 +1277,12 @@ function nextQuestion() {
 }
 
 function loadQuestion() {
-  finishPanelEl.hidden = true;
+  if (questionIndex >= questions.length) {
+    completeGame();
+    return;
+  }
+
+  setCurrentView(VIEW_STATES.GAME);
   const current = getCurrentQuestion();
   clearAutoNextTimer();
   clearPreTimerDelay();
@@ -1142,6 +1297,7 @@ function loadQuestion() {
   const revealDurationMs = renderQuestionCharacterReveal(current.question, PRE_REVEAL_DELAY_MS);
 
   renderKeypad();
+  persistInProgressPosition({ indexOffset: 1 });
   preTimerHandle = window.setTimeout(() => {
     if (questionLocked) {
       return;
@@ -1216,10 +1372,18 @@ if (devResetProgressButtonEl) {
   devResetProgressButtonEl.addEventListener("click", clearSavedProgressForDevTesting);
 }
 
+startButtonEl.addEventListener("click", handleStartGame);
+howToPlayButtonEl.addEventListener("click", handleHowToPlay);
+if (howToPlayBackButtonEl) {
+  howToPlayBackButtonEl.addEventListener("click", handleHowToPlayBack);
+}
+leaderboardButtonEl.addEventListener("click", handleLeaderboard);
+
 bindTimerBarFullscreenHold();
 
+// Initialize view
 if (savedProgress.completed) {
   restoreCompletedGameState();
 } else {
-  loadQuestion();
+  setCurrentView(VIEW_STATES.START);
 }
