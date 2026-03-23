@@ -15,7 +15,7 @@ const LETTER_KEYS = [
 
 const NUMBER_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
 
-const QUESTION_SET_SOURCE = {
+const FALLBACK_QUESTION_SET_SOURCE = {
   unid: "aug-2025-easy-pack-10-v2",
   questions: [
     {
@@ -108,6 +108,9 @@ const QUESTION_SET_SOURCE = {
   ]
 };
 
+let questionSetSource = FALLBACK_QUESTION_SET_SOURCE;
+let questions = questionSetSource.questions;
+
 const QUESTION_DURATION_SECONDS = 10
 const MAX_FAST_POINTS = 10;
 const RESULT_DELAY_MS = 4500;
@@ -127,10 +130,11 @@ const GAME_PROGRESS_STORAGE_KEY_PREFIX = "speedQuizzingProgress";
 
 const IS_DEV_MODE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 
-const questions = QUESTION_SET_SOURCE.questions;
+let savedProgress;
+let quizDataReady = false;
 
 function getQuestionSetStorageId() {
-  return String(QUESTION_SET_SOURCE.unid).trim();
+  return String(questionSetSource.unid).trim();
 }
 
 function getGameProgressStorageKey() {
@@ -150,7 +154,20 @@ const POINTS_EMOJI = {
   10: "🔟"
 };
 
-const TOTAL_POSSIBLE_SCORE = questions.length * MAX_FAST_POINTS;
+let TOTAL_POSSIBLE_SCORE = questions.length * MAX_FAST_POINTS;
+
+function applyQuestionSet(nextQuestionSet) {
+  if (!nextQuestionSet || !Array.isArray(nextQuestionSet.questions) || nextQuestionSet.questions.length === 0) {
+    return;
+  }
+
+  questionSetSource = {
+    unid: String(nextQuestionSet.unid || FALLBACK_QUESTION_SET_SOURCE.unid).trim(),
+    questions: nextQuestionSet.questions
+  };
+  questions = questionSetSource.questions;
+  TOTAL_POSSIBLE_SCORE = questions.length * MAX_FAST_POINTS;
+}
 
 const scoreValueEl = document.querySelector("#scoreValue");
 const fastPointsValueEl = document.querySelector("#fastPointsValue");
@@ -240,8 +257,6 @@ let questionLocked = false;
 let gameFinished = false;
 let answerHistory = [];
 
-let savedProgress = loadSavedProgress();
-
 let timerFullscreenHoldHandle = null;
 
 function syncTeamTrayName(name) {
@@ -250,6 +265,11 @@ function syncTeamTrayName(name) {
 }
 
 function updateStartButtonText() {
+  if (!quizDataReady) {
+    startButtonEl.textContent = "Loading...";
+    return;
+  }
+
   if (savedProgress.completed || (savedProgress.currentQuestionIndex > 0)) {
     startButtonEl.textContent = "Continue";
   } else {
@@ -258,6 +278,10 @@ function updateStartButtonText() {
 }
 
 function handleStartGame() {
+  if (!quizDataReady) {
+    return;
+  }
+
   if (savedProgress.completed) {
     restoreCompletedGameState();
   } else if (savedProgress.currentQuestionIndex > 0) {
@@ -281,16 +305,8 @@ function handleLeaderboard() {
   alert("Leaderboard feature coming soon!");
 }
 
-function loadSavedTeamName() {
-  try {
-    return window.localStorage.getItem(LAST_TEAM_NAME_STORAGE_KEY) || "";
-  } catch (error) {
-    return "";
-  }
-}
-
-function loadSavedProgress() {
-  const defaultProgress = {
+function createDefaultProgress() {
+  return {
     completed: false,
     submitted: false,
     firstScore: 0,
@@ -301,6 +317,18 @@ function loadSavedProgress() {
     completedAt: null,
     submittedAt: null
   };
+}
+
+function loadSavedTeamName() {
+  try {
+    return window.localStorage.getItem(LAST_TEAM_NAME_STORAGE_KEY) || "";
+  } catch (error) {
+    return "";
+  }
+}
+
+function loadSavedProgress() {
+  const defaultProgress = createDefaultProgress();
 
   try {
     const rawValue = window.localStorage.getItem(getGameProgressStorageKey());
@@ -342,17 +370,7 @@ function syncSubmitAvailability() {
 }
 
 function clearSavedProgressForDevTesting() {
-  savedProgress = {
-    completed: false,
-    submitted: false,
-    firstScore: 0,
-    currentScore: 0,
-    currentQuestionIndex: 0,
-    totalPossible: TOTAL_POSSIBLE_SCORE,
-    answerHistory: [],
-    completedAt: null,
-    submittedAt: null
-  };
+  savedProgress = createDefaultProgress();
   persistSavedProgress();
   setLeaderboardStatus("Saved game completion/submission state cleared for testing.");
   restartGame();
@@ -727,7 +745,6 @@ function normalize(str) {
 }
 
 function getCurrentQuestion() {
-  console.log('question length is', questions.length, 'current index is', questionIndex);
   return questions[questionIndex];
 }
 
@@ -1334,6 +1351,35 @@ function loadQuestion() {
   }, revealDurationMs + POST_REVEAL_TIMER_DELAY_MS[current.type]);
 }
 
+async function bootstrapGame() {
+  startButtonEl.disabled = true;
+  updateStartButtonText();
+  questionTextEl.textContent = "Loading today's quiz...";
+  feedbackTextEl.textContent = "";
+
+  try {
+    const remoteQuestionSet = await window.dailyQuizApi?.loadDailyQuizQuestionSet?.();
+
+    if (remoteQuestionSet) {
+      applyQuestionSet(remoteQuestionSet);
+    }
+  } catch (error) {
+    console.error("Failed to load daily quiz. Falling back to bundled questions.", error);
+  }
+
+  savedProgress = loadSavedProgress();
+  quizDataReady = true;
+  startButtonEl.disabled = false;
+  updateStartButtonText();
+
+  if (savedProgress.completed) {
+    restoreCompletedGameState();
+    return;
+  }
+
+  setCurrentView(VIEW_STATES.START);
+}
+
 document.addEventListener("keydown", (event) => {
   if (gameFinished) {
     if (event.key === "Enter" && document.activeElement === teamNameInputEl) {
@@ -1412,9 +1458,4 @@ leaderboardButtonEl.addEventListener("click", handleLeaderboard);
 
 bindTimerBarFullscreenHold();
 
-// Initialize view
-if (savedProgress.completed) {
-  restoreCompletedGameState();
-} else {
-  setCurrentView(VIEW_STATES.START);
-}
+bootstrapGame();
