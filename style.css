@@ -19,6 +19,7 @@
 }
 
 :root {
+  color-scheme: only light;
   --sq-cyan: #00cfff;
   --sq-red: #cf2718;
   --sq-dark: #000000;

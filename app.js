@@ -108,10 +108,8 @@ function setCurrentView(viewState) {
       break;
 
     case VIEW_STATES.GAME:
-      pregameHeaderEl.hidden = true;
       questionPanelEl.hidden = false;
       keypadEl.hidden = false;
-      numberAnswerDisplayEl.hidden = true;
       break;
 
     case VIEW_STATES.FINISH:
