@@ -10,23 +10,23 @@ import {
   POST_REVEAL_TIMER_DELAY_MS,
   LONG_PRESS_MS,
   TIMER_FULLSCREEN_HOLD_MS,
-  LAST_TEAM_NAME_STORAGE_KEY,
   PLAYER_UNID_STORAGE_KEY,
+  LAST_TEAM_NAME_STORAGE_KEY,
   IS_DEV_MODE,
-  questions,
-  getGameProgressStorageKey,
+  QUESTION_SET_SOURCE,
+  GAME_PROGRESS_STORAGE_KEY_PREFIX,
   POINTS_EMOJI,
-  TOTAL_POSSIBLE_SCORE,
   FAST_POINT_WINDOW_DURATIONS_MS,
   QUESTION_DURATION_MS,
   MAX_FAST_POINTS
 } from "./js/config.js";
+import { fetchDailyQuizQuestions } from "./js/daily-quiz-api.js";
 import {
   getOrCreatePlayerUnid,
   loadSavedTeamName,
+  persistTeamName,
   loadSavedProgress,
-  persistSavedProgress,
-  persistTeamName
+  persistSavedProgress
 } from "./js/storage.js";
 import {
   normalize,
@@ -40,9 +40,9 @@ import {
 
 // View state management
 let currentView = null;
-const GAME_PROGRESS_STORAGE_KEY = getGameProgressStorageKey();
-
-console.log("Total question duration (ms)", QUESTION_DURATION_MS);
+let questions = QUESTION_SET_SOURCE.questions;
+let TOTAL_POSSIBLE_SCORE = questions.length * MAX_FAST_POINTS;
+let GAME_PROGRESS_STORAGE_KEY = `${GAME_PROGRESS_STORAGE_KEY_PREFIX}:${QUESTION_SET_SOURCE.unid}`;
 
 const scoreValueEl = document.querySelector("#scoreValue");
 const fastPointsValueEl = document.querySelector("#fastPointsValue");
@@ -59,16 +59,13 @@ const howToPlayPanelEl = document.querySelector("#howToPlayPanel");
 const startButtonEl = document.querySelector("#startButton");
 const howToPlayButtonEl = document.querySelector("#howToPlayButton");
 const howToPlayBackButtonEl = document.querySelector("#howToPlayBackButton");
-const leaderboardButtonEl = document.querySelector("#leaderboardButton");
 const finishPanelEl = document.querySelector("#finishPanel");
 const finalScoreValueEl = document.querySelector("#finalScoreValue");
 const finalScoreTotalEl = document.querySelector("#finalScoreTotal");
 const teamNameInputEl = document.querySelector("#teamNameInput");
 const shareScoreButtonEl = document.querySelector("#shareScoreButton");
-const submitScoreButtonEl = document.querySelector("#submitScoreButton");
 const devResetProgressButtonEl = document.querySelector("#devResetProgressButton");
 const devResetProgressButtonIntroEl = document.querySelector("#devResetProgressButtonIntro");
-const leaderboardStatusEl = document.querySelector("#leaderboardStatus");
 const teamTrayNameEl = document.querySelector(".team-tray-name");
 
 // Hide dev buttons if not in development mode
@@ -135,12 +132,8 @@ let sequenceFinalizing = false;
 let savedProgress = loadSavedProgress(GAME_PROGRESS_STORAGE_KEY, TOTAL_POSSIBLE_SCORE);
 const playerUnid = getOrCreatePlayerUnid(PLAYER_UNID_STORAGE_KEY);
 
-let timerFullscreenHoldHandle = null;
 
-function syncTeamTrayName(name) {
-  const safeName = String(name || "").trim();
-  teamTrayNameEl.textContent = safeName || "Team Name";
-}
+let timerFullscreenHoldHandle = null;
 
 function updateStartButtonText() {
   if (savedProgress.completed || (savedProgress.currentQuestionIndex > 0)) {
@@ -170,14 +163,6 @@ function handleHowToPlayBack() {
   setCurrentView(VIEW_STATES.START);
 }
 
-function handleLeaderboard() {
-  alert("Leaderboard feature coming soon!");
-}
-
-function syncSubmitAvailability() {
-  submitScoreButtonEl.disabled = savedProgress.submitted || getTeamName() === "";
-}
-
 function clearSavedProgressForDevTesting() {
   savedProgress = {
     completed: false,
@@ -191,7 +176,6 @@ function clearSavedProgressForDevTesting() {
     submittedAt: null
   };
   persistSavedProgress(GAME_PROGRESS_STORAGE_KEY, savedProgress);
-  setLeaderboardStatus("Saved game completion/submission state cleared for testing.");
   restartGame();
 }
 
@@ -212,6 +196,7 @@ function persistCompletedProgressIfFirstRun() {
   };
 
   persistSavedProgress(GAME_PROGRESS_STORAGE_KEY, savedProgress);
+  submitResult();
 }
 
 function persistSubmittedProgress() {
@@ -226,6 +211,35 @@ function persistSubmittedProgress() {
   };
 
   persistSavedProgress(GAME_PROGRESS_STORAGE_KEY, savedProgress);
+}
+
+function submitResult() {
+  const teamName = String(teamNameInputEl?.value || "").trim();
+
+  const submission = {
+    packId: GAME_PROGRESS_STORAGE_KEY.split(":").slice(1).join(":"),
+    playerUnid,
+    name: teamName || null,
+    score,
+    totalPossible: TOTAL_POSSIBLE_SCORE,
+    results: answerHistory.map((entry) => ({
+      questionId: entry.questionId,
+      correct: entry.isCorrect,
+      points: entry.earnedPoints,
+      timedOut: entry.timedOut
+    })),
+    shareText: buildShareText(),
+    completedAt: savedProgress.completedAt || new Date().toISOString()
+  };
+
+  console.log("Leaderboard submission", submission);
+
+  if (!savedProgress.submitted) {
+    // TODO: send to leaderboard endpoint
+    // fetch("/api/leaderboard", { method: "POST", body: JSON.stringify(submission) });
+
+    persistSubmittedProgress();
+  }
 }
 
 function clampResumeQuestionIndex(rawIndex) {
@@ -256,15 +270,6 @@ function restoreInProgressGameState() {
   if (questionIndex >= questions.length) {
     completeGame();
   }
-}
-
-function getTeamName() {
-  return String(teamNameInputEl?.value || "").trim();
-}
-
-function setLeaderboardStatus(message, isError = false) {
-  leaderboardStatusEl.textContent = message;
-  leaderboardStatusEl.dataset.state = isError ? "error" : "default";
 }
 
 function getPointsEmoji(points) {
@@ -327,7 +332,6 @@ function recordAnswerResult(question, userAnswer, { isCorrect = false, earnedPoi
 function showFinishPanel() {
   finalScoreValueEl.textContent = String(score);
   finalScoreTotalEl.textContent = String(TOTAL_POSSIBLE_SCORE);
-  syncSubmitAvailability();
   setCurrentView(VIEW_STATES.FINISH);
 }
 
@@ -366,7 +370,6 @@ function restartGame() {
   answerHistory = [];
   scoreValueEl.textContent = "0";
   persistInProgressPosition();
-  setLeaderboardStatus("");
   setCurrentView(VIEW_STATES.GAME);
   loadQuestion();
 }
@@ -395,13 +398,6 @@ function restoreCompletedGameState() {
   renderNumberAnswerDisplay();
   renderKeypad();
   showFinishPanel();
-
-  if (savedProgress.submitted) {
-    setLeaderboardStatus("Score already submitted.");
-    return;
-  }
-
-  setLeaderboardStatus("Game already completed. You can still submit your score.");
 }
 
 async function handleShareScore() {
@@ -426,7 +422,6 @@ async function handleShareScore() {
           text: shareData.text
         });
       }
-      setLeaderboardStatus("Score shared.");
       return;
     } catch (error) {
       if (error?.name === "AbortError") {
@@ -437,53 +432,9 @@ async function handleShareScore() {
 
   try {
     await copyTextToClipboard(`${shareText}\nhttps://coolpat1993.github.io/`);
-    setLeaderboardStatus("Share text copied to the clipboard.");
-    return;
-  } catch (error) {
-    setLeaderboardStatus("Sharing is unavailable here.", true);
-    return;
+  } catch (_) {
+    // share unavailable, fail silently
   }
-}
-
-function handleSubmitScore() {
-  if (!gameFinished) {
-    return;
-  }
-
-  if (savedProgress.submitted) {
-    setLeaderboardStatus("Score already submitted.", true);
-    syncSubmitAvailability();
-    return;
-  }
-
-  const teamName = getTeamName();
-  if (!teamName) {
-    setLeaderboardStatus("Enter a team name before submitting.", true);
-    teamNameInputEl.focus();
-    return;
-  }
-
-  persistTeamName(LAST_TEAM_NAME_STORAGE_KEY, teamName);
-
-  const submission = {
-    playerUnid,
-    name: teamName,
-    score,
-    totalPossible: TOTAL_POSSIBLE_SCORE,
-    results: answerHistory.map((entry) => ({
-      questionId: entry.questionId,
-      correct: entry.isCorrect,
-      points: entry.earnedPoints,
-      timedOut: entry.timedOut
-    })),
-    shareText: buildShareText(),
-    completedAt: savedProgress.completedAt || new Date().toISOString()
-  };
-
-  console.log("Leaderboard submission", submission);
-  persistSubmittedProgress();
-  syncSubmitAvailability();
-  setLeaderboardStatus("Submission printed to the console. You cannot submit again.");
 }
 
 function clearTimerFullscreenHold() {
@@ -553,7 +504,6 @@ function bindTimerBarFullscreenHold() {
 }
 
 function getCurrentQuestion() {
-  console.log('question length is', questions.length, 'current index is', questionIndex);
   return questions[questionIndex];
 }
 
@@ -1237,9 +1187,6 @@ function loadQuestion() {
 
 document.addEventListener("keydown", (event) => {
   if (gameFinished) {
-    if (event.key === "Enter" && document.activeElement === teamNameInputEl) {
-      handleSubmitScore();
-    }
     return;
   }
 
@@ -1295,18 +1242,16 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
+shareScoreButtonEl.addEventListener("click", handleShareScore);
+
 teamNameInputEl.value = loadSavedTeamName(LAST_TEAM_NAME_STORAGE_KEY);
-syncTeamTrayName(teamNameInputEl.value);
+teamTrayNameEl.textContent = teamNameInputEl.value || "Team Name";
 teamNameInputEl.addEventListener("input", () => {
-  syncTeamTrayName(teamNameInputEl.value);
-  syncSubmitAvailability();
-  if (gameFinished && !savedProgress.submitted) {
-    setLeaderboardStatus("");
-  }
+  const name = String(teamNameInputEl.value || "").trim();
+  teamTrayNameEl.textContent = name || "Team Name";
+  persistTeamName(LAST_TEAM_NAME_STORAGE_KEY, name);
 });
 
-shareScoreButtonEl.addEventListener("click", handleShareScore);
-submitScoreButtonEl.addEventListener("click", handleSubmitScore);
 if (devResetProgressButtonEl) {
   devResetProgressButtonEl.addEventListener("click", clearSavedProgressForDevTesting);
 }
@@ -1319,13 +1264,31 @@ howToPlayButtonEl.addEventListener("click", handleHowToPlay);
 if (howToPlayBackButtonEl) {
   howToPlayBackButtonEl.addEventListener("click", handleHowToPlayBack);
 }
-leaderboardButtonEl.addEventListener("click", handleLeaderboard);
 
 bindTimerBarFullscreenHold();
 
-// Initialize view
-if (savedProgress.completed) {
-  restoreCompletedGameState();
-} else {
-  setCurrentView(VIEW_STATES.START);
-}
+// Fetch questions from API, then initialize view
+startButtonEl.disabled = true;
+startButtonEl.textContent = "Loading...";
+
+(async () => {
+  try {
+    const result = await fetchDailyQuizQuestions();
+    questions = result.questions;
+    GAME_PROGRESS_STORAGE_KEY = `${GAME_PROGRESS_STORAGE_KEY_PREFIX}:${result.packId}`;
+    TOTAL_POSSIBLE_SCORE = questions.length * MAX_FAST_POINTS;
+    savedProgress = loadSavedProgress(GAME_PROGRESS_STORAGE_KEY, TOTAL_POSSIBLE_SCORE);
+  } catch (err) {
+    console.error("Failed to load daily quiz from API, using fallback questions:", err);
+    // questions, GAME_PROGRESS_STORAGE_KEY, TOTAL_POSSIBLE_SCORE and savedProgress
+    // already hold the bundled fallback values set at module load time.
+  }
+
+  startButtonEl.disabled = false;
+
+  if (savedProgress.completed) {
+    restoreCompletedGameState();
+  } else {
+    setCurrentView(VIEW_STATES.START);
+  }
+})();
