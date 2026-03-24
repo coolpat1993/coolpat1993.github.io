@@ -132,6 +132,7 @@ body {
 }
 
 .question-panel {
+  position: relative;
   min-height: 72px;
   padding: 6px 8px;
   display: grid;
@@ -654,14 +655,28 @@ textarea {
   text-align: center;
 }
 
+@keyframes htp-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 .how-to-play-panel {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 0px 10px 10px;
-  background: rgba(0, 0, 0, 0.85);
-  z-index: 3;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0s;
+}
+
+.how-to-play-panel.is-open {
+  opacity: 1;
+  pointer-events: auto;
+  animation: htp-fade-in 0.25s ease forwards;
 }
 
 .how-to-play-panel[hidden] {
@@ -669,16 +684,44 @@ textarea {
 }
 
 .how-to-play-card {
-  width: min(100%, 350px);
-  max-height: min(100%, 680px);
-  overflow-y: auto;
-  border-radius: 18px;
-  background: rgba(8, 12, 18, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 20px 38px rgba(0, 0, 0, 0.45);
-  padding: 18px 16px;
-  display: grid;
-  gap: 8px;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.96);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.how-to-play-card-header {
+  text-align: center;
+}
+
+.how-to-play-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: color 0.15s;
+}
+
+.how-to-play-close:active {
+  color: #fff;
 }
 
 .how-to-play-title {
@@ -689,31 +732,80 @@ textarea {
   line-height: 1.2;
 }
 
-.how-to-play-heading {
-  margin: 10px 0 0;
-  font-family: "Montserrat", "Kumbh", sans-serif;
-  font-size: 1.02rem;
-  line-height: 1.2;
+.how-to-play-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 4px 4px;
 }
 
-.how-to-play-text {
+.how-to-play-slide-heading {
   margin: 0;
+  font-family: "Montserrat", "Kumbh", sans-serif;
+  font-size: 1.3rem;
+  color: var(--sq-cyan);
+  text-align: center;
+}
+
+.how-to-play-slide-text {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  text-align: center;
   color: var(--sq-text);
-  font-size: 0.95rem;
-  line-height: 1.35;
 }
 
 .how-to-play-list {
   margin: 0;
   padding-left: 20px;
   display: grid;
-  gap: 8px;
-  font-size: 0.92rem;
-  line-height: 1.35;
+  gap: 10px;
+  font-size: 1rem;
+  line-height: 1.45;
+  text-align: left;
 }
 
-.how-to-play-card .intro-button {
-  margin-top: 8px;
+.how-to-play-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.how-to-play-dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.how-to-play-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  transition: background 0.2s, width 0.2s, height 0.2s;
+}
+
+.how-to-play-dot.active {
+  width: 10px;
+  height: 10px;
+  background: var(--sq-cyan);
+}
+
+.how-to-play-keypad-image {
+  display: block;
+  width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  border-radius: 10px;
+  padding-top: 10px;
+}
+
+.how-to-play-next-btn {
+  width: 100%;
 }
 
 .pregame-header {
@@ -853,6 +945,46 @@ textarea {
   96.667% { filter: brightness(1); }
   96.668% { filter: brightness(0.82); }
   100% { filter: brightness(0.82); }
+}
+
+.mode-hint-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 10px 18px;
+  border-radius: 14px;
+  background: rgba(18, 18, 18, 0.93);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+  opacity: 1;
+}
+
+.mode-hint-overlay.hiding {
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.mode-hint-overlay[hidden] {
+  display: none;
+}
+
+.mode-hint-title {
+  margin: 0;
+  font-family: "Montserrat", "Kumbh", sans-serif;
+  font-size: clamp(1.7rem, 4.8vw, 2rem);
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+
+.mode-hint-text {
+  display: none;
 }
 
 @media (max-height: 760px) {

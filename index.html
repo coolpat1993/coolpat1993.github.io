@@ -23,9 +23,13 @@
           </div>
         </header>
 
-        <section id="questionPanel" class="question-panel">
+        <section id="questionPanel" hidden class="question-panel">
           <h1 id="questionText" class="question-text"></h1>
           <p id="feedbackText" class="feedback-text" aria-live="polite"></p>
+          <div id="modeHintOverlay" class="mode-hint-overlay" hidden aria-live="polite" aria-atomic="true">
+            <p class="mode-hint-title"></p>
+            <p class="mode-hint-text"></p>
+          </div>
         </section>
 
         <section class="answer-panel">
@@ -33,7 +37,7 @@
             <img src="./assets/images/sq-logo-2021.png" alt="SpeedQuizzing" class="pregame-logo" />
           </div>
           <div id="numberAnswerDisplay" class="number-answer-display" hidden aria-live="polite"></div>
-          <div id="keypad" class="keypad" aria-label="Answer keypad"></div>
+          <div id="keypad" class="keypad" hidden aria-label="Answer keypad"></div>
           <section id="introPanel" class="intro-panel" aria-live="polite">
             <div class="intro-card">
               <p class="intro-subtitle">The original smartphone pub quiz</p>
@@ -44,27 +48,45 @@
               </div>
             </div>
           </section>
-          <section id="howToPlayPanel" class="how-to-play-panel" hidden aria-live="polite">
+          <section id="howToPlayPanel" class="how-to-play-panel" hidden aria-modal="true" aria-label="How to Play">
             <div class="how-to-play-card">
-              <h2 class="how-to-play-title">How to Play</h2>
-              <p class="how-to-play-text">A question will appear on screen. Once it appears, the timer starts.</p>
-              <p class="how-to-play-text">There are three question formats:</p>
-              
-              <h3 class="how-to-play-heading">Letters</h3>
-              <p class="how-to-play-text">Input only the first letter of your answer.</p>
-              <ul class="how-to-play-list">
-                <li>If the answer is a person's name, input the first letter of their first name.</li>
-                <li>If the answer begins with "The", for example "The Lion King", answer "L" not "T".</li>
-              </ul>
-              
-              <h3 class="how-to-play-heading">Multiple Choice</h3>
-              <p class="how-to-play-text">Listen to the multiple choice options and input A, B, C, D, E, or F on the keypad.</p>
-
-              <h3 class="how-to-play-heading">Numbers</h3>
-              <p class="how-to-play-text">Type in a number and press Enter.</p>
-
-
-              <button id="howToPlayBackButton" class="intro-button intro-button-primary" type="button">Back</button>
+                <button id="howToPlayCloseButton" class="how-to-play-close" type="button" aria-label="Close">✕</button>
+                <div class="how-to-play-card-header">
+                  <h2 class="how-to-play-title">How to Play</h2>
+                </div>
+              <div id="howToPlayContent" class="how-to-play-content">
+                <div class="how-to-play-slide">
+                  <p class="how-to-play-slide-text">A question will appear on screen. Once it appears, the timer starts. Answer as quickly as possible to earn more points!</p>
+                </div>
+                <div class="how-to-play-slide" hidden>
+                  <h3 class="how-to-play-slide-heading">Letters</h3>
+                  <p class="how-to-play-slide-text">Input only the first letter of your answer.</p>
+                  <ul class="how-to-play-list">
+                    <li>If the answer is a person's name, use the first letter of their first name.</li>
+                    <li>If the answer begins with &ldquo;The&rdquo;, e.g. &ldquo;The Lion King&rdquo;, answer &ldquo;L&rdquo; not &ldquo;T&rdquo;.</li>
+                  </ul>
+                  <img src="./assets/images/letters.png" alt="" class="how-to-play-keypad-image" />
+                </div>
+                <div class="how-to-play-slide" hidden>
+                  <h3 class="how-to-play-slide-heading">Multiple Choice</h3>
+                  <p class="how-to-play-slide-text">Select the correct answer from the options.</p>
+                  <img src="./assets/images/multiple.png" alt="" class="how-to-play-keypad-image" />
+                </div>
+                <div class="how-to-play-slide" hidden>
+                  <h3 class="how-to-play-slide-heading">Numbers</h3>
+                  <p class="how-to-play-slide-text">Type in a number and press Enter.</p>
+                  <img src="./assets/images/numbers.png" alt="" class="how-to-play-keypad-image" />
+                </div>
+                <div class="how-to-play-slide" hidden>
+                  <h3 class="how-to-play-slide-heading">Sequence</h3>
+                  <p class="how-to-play-slide-text">Put the options in the correct order by tapping them in sequence.</p>
+                  <img src="./assets/images/sequence.png" alt="" class="how-to-play-keypad-image" />
+                </div>
+              </div>
+              <div class="how-to-play-footer">
+                <div id="howToPlayDots" class="how-to-play-dots"></div>
+                <button id="howToPlayNextButton" class="intro-button intro-button-primary how-to-play-next-btn" type="button">Next</button>
+              </div>
             </div>
           </section>
           <section id="finishPanel" class="finish-panel" hidden aria-live="polite">

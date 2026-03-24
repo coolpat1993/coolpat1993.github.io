@@ -8,6 +8,8 @@ import {
   COMMA_PAUSE_MS,
   PERIOD_PAUSE_MS,
   POST_REVEAL_TIMER_DELAY_MS,
+  QUESTION_TYPE_LABELS,
+  QUESTION_TYPE_LABEL_DURATION_MS,
   LONG_PRESS_MS,
   TIMER_FULLSCREEN_HOLD_MS,
   PLAYER_UNID_STORAGE_KEY,
@@ -37,6 +39,7 @@ import {
   getComparableAnswerOptions,
   isCurrentAnswerCorrect
 } from "./js/quiz-helpers.js";
+import { openHowToPlay, hasSeenHowToPlay } from "./js/how-to-play.js";
 
 // View state management
 let currentView = null;
@@ -55,10 +58,8 @@ const numberAnswerDisplayEl = document.querySelector("#numberAnswerDisplay");
 const keypadEl = document.querySelector("#keypad");
 const pregameHeaderEl = document.querySelector("#pregameHeader");
 const introPanelEl = document.querySelector("#introPanel");
-const howToPlayPanelEl = document.querySelector("#howToPlayPanel");
 const startButtonEl = document.querySelector("#startButton");
 const howToPlayButtonEl = document.querySelector("#howToPlayButton");
-const howToPlayBackButtonEl = document.querySelector("#howToPlayBackButton");
 const finishPanelEl = document.querySelector("#finishPanel");
 const finalScoreValueEl = document.querySelector("#finalScoreValue");
 const finalScoreTotalEl = document.querySelector("#finalScoreTotal");
@@ -67,6 +68,9 @@ const shareScoreButtonEl = document.querySelector("#shareScoreButton");
 const devResetProgressButtonEl = document.querySelector("#devResetProgressButton");
 const devResetProgressButtonIntroEl = document.querySelector("#devResetProgressButtonIntro");
 const teamTrayNameEl = document.querySelector(".team-tray-name");
+const modeHintOverlayEl = document.querySelector("#modeHintOverlay");
+const modeHintTitleEl = modeHintOverlayEl?.querySelector(".mode-hint-title");
+const modeHintTextEl = modeHintOverlayEl?.querySelector(".mode-hint-text");
 
 // Hide dev buttons if not in development mode
 if (!IS_DEV_MODE) {
@@ -84,7 +88,6 @@ function setCurrentView(viewState) {
 
   // Hide all panels
   introPanelEl.hidden = true;
-  howToPlayPanelEl.hidden = true;
   questionPanelEl.hidden = true;
   finishPanelEl.hidden = true;
   pregameHeaderEl.hidden = true;
@@ -97,11 +100,6 @@ function setCurrentView(viewState) {
       introPanelEl.hidden = false;
       pregameHeaderEl.hidden = false;
       updateStartButtonText();
-      break;
-
-    case VIEW_STATES.HOW_TO_PLAY:
-      howToPlayPanelEl.hidden = false;
-      pregameHeaderEl.hidden = false;
       break;
 
     case VIEW_STATES.GAME:
@@ -122,6 +120,7 @@ let remainingMs = QUESTION_DURATION_MS;
 let timerHandle = null;
 let autoNextHandle = null;
 let preTimerHandle = null;
+let modeHintHandle = null;
 let characterRevealHandles = [];
 let questionLocked = false;
 let gameFinished = false;
@@ -155,13 +154,7 @@ function handleStartGame() {
   }
 }
 
-function handleHowToPlay() {
-  setCurrentView(VIEW_STATES.HOW_TO_PLAY);
-}
 
-function handleHowToPlayBack() {
-  setCurrentView(VIEW_STATES.START);
-}
 
 function clearSavedProgressForDevTesting() {
   savedProgress = {
@@ -360,6 +353,8 @@ function restartGame() {
   clearAutoNextTimer();
   clearPreTimerDelay();
   clearCharacterRevealTimers();
+  clearModeHintTimer();
+  if (modeHintOverlayEl) { modeHintOverlayEl.hidden = true; modeHintOverlayEl.classList.remove("visible"); }
   stopTimer();
   score = 0;
   questionIndex = 0;
@@ -378,6 +373,8 @@ function restoreCompletedGameState() {
   clearAutoNextTimer();
   clearPreTimerDelay();
   clearCharacterRevealTimers();
+  clearModeHintTimer();
+  if (modeHintOverlayEl) { modeHintOverlayEl.hidden = true; modeHintOverlayEl.classList.remove("visible"); }
   stopTimer();
 
   score = savedProgress.firstScore;
@@ -559,6 +556,37 @@ function clearPreTimerDelay() {
   }
 }
 
+function clearModeHintTimer() {
+  if (modeHintHandle) {
+    window.clearTimeout(modeHintHandle);
+    modeHintHandle = null;
+  }
+}
+
+function hideModeHint() {
+  clearModeHintTimer();
+  if (!modeHintOverlayEl) return;
+  modeHintOverlayEl.classList.add("hiding");
+  modeHintHandle = window.setTimeout(() => {
+    modeHintOverlayEl.hidden = true;
+    modeHintOverlayEl.classList.remove("hiding");
+    modeHintHandle = null;
+  }, 260);
+}
+
+function showModeHint(type) {
+  clearModeHintTimer();
+  if (!modeHintOverlayEl || !modeHintTitleEl || !modeHintTextEl) return;
+  const hintTitle = QUESTION_TYPE_LABELS[type];
+  if (!hintTitle) return;
+  modeHintTitleEl.textContent = hintTitle;
+  modeHintTextEl.textContent = "";
+  modeHintOverlayEl.hidden = false;
+  modeHintHandle = window.setTimeout(() => {
+    hideModeHint();
+  }, QUESTION_TYPE_LABEL_DURATION_MS);
+}
+
 function clearCharacterRevealTimers() {
   if (characterRevealHandles.length === 0) {
     return;
@@ -688,6 +716,8 @@ function getExpandedLetterInputs() {
 
 function handleAnswerPick(answerCode) {
   if (questionLocked) return;
+
+  hideModeHint();
 
   const current = getCurrentQuestion();
 
@@ -1172,7 +1202,9 @@ function loadQuestion() {
   renderTimer();
   feedbackTextEl.textContent = "";
   renderNumberAnswerDisplay();
-  const revealDurationMs = renderQuestionCharacterReveal(current.question, PRE_REVEAL_DELAY_MS);
+  showModeHint(current.type);
+  const hintOffsetMs = QUESTION_TYPE_LABELS[current.type] ? QUESTION_TYPE_LABEL_DURATION_MS : 0;
+  const revealDurationMs = renderQuestionCharacterReveal(current.question, hintOffsetMs + PRE_REVEAL_DELAY_MS);
 
   renderKeypad();
   persistInProgressPosition({ indexOffset: 1 });
@@ -1260,10 +1292,7 @@ if (devResetProgressButtonIntroEl) {
 }
 
 startButtonEl.addEventListener("click", handleStartGame);
-howToPlayButtonEl.addEventListener("click", handleHowToPlay);
-if (howToPlayBackButtonEl) {
-  howToPlayBackButtonEl.addEventListener("click", handleHowToPlayBack);
-}
+howToPlayButtonEl.addEventListener("click", openHowToPlay);
 
 bindTimerBarFullscreenHold();
 
@@ -1290,5 +1319,10 @@ startButtonEl.textContent = "Loading...";
     restoreCompletedGameState();
   } else {
     setCurrentView(VIEW_STATES.START);
+    if (!hasSeenHowToPlay()) {
+      setTimeout(() => {
+      openHowToPlay();
+      }, 1000);
+    }
   }
 })();

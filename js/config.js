@@ -13,7 +13,7 @@ export const LETTER_KEYS = [
 export const NUMBER_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
 
 export const QUESTION_SET_SOURCE = {
-  unid: "aug-2025-easy-pack-10-v2",
+  unid: "back-up-quiz-pack-1",
   questions: [
     {
       id: "question1",
@@ -110,7 +110,7 @@ export const FAST_POINT_DURATION_STEP_SECONDS = 0.1;
 export const MAX_FAST_POINTS = 10;
 export const RESULT_DELAY_MS = 4500;
 export const PRE_REVEAL_DELAY_MS = 400;
-export const CHARACTER_REVEAL_INTERVAL_MS = 45;
+export const CHARACTER_REVEAL_INTERVAL_MS = 55;
 export const COMMA_PAUSE_MS = 400;
 export const PERIOD_PAUSE_MS = 500;
 export const POST_REVEAL_TIMER_DELAY_MS = {
@@ -119,6 +119,13 @@ export const POST_REVEAL_TIMER_DELAY_MS = {
   numbers: 1000,
   sequence: 3000
 };
+export const QUESTION_TYPE_LABELS = {
+  letters: "Letters",
+  multiple: "Multiple Choice",
+  numbers: "Numbers",
+  sequence: "Sequence"
+};
+export const QUESTION_TYPE_LABEL_DURATION_MS = 1000;
 export const LONG_PRESS_MS = 450;
 export const TIMER_FULLSCREEN_HOLD_MS = 500;
 export const LAST_TEAM_NAME_STORAGE_KEY = "speedQuizzingTeamName";
