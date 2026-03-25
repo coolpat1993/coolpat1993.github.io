@@ -171,6 +171,30 @@ async function fetchDailyQuizQuestions({ signal } = {}) {
   };
 }
 
+function getQuizParamPack() {
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get("quiz");
+  if (!raw) {
+    return null;
+  }
+
+  // Support both standard base64 and URL-safe base64 (- → +, _ → /)
+  const base64 = raw.replace(/-/g, "+").replace(/_/g, "/");
+  const payload = JSON.parse(decodeBase64Utf8(base64));
+
+  const questions = Array.isArray(payload.questions) ? payload.questions : [];
+
+  return {
+    packId: String(payload.pack_id || "url-param-quiz").trim(),
+    questions: questions.map((q, index) =>
+      // Raw API format (has short_answer) vs pre-normalized format
+      q.short_answer !== undefined
+        ? transformQuestion(q, index)
+        : normalizeQuestionRecord(q, index)
+    )
+  };
+}
+
 async function fetchWithTimeout(fetchFn, timeoutMs) {
   const controller = new AbortController();
   const timeoutHandle = window.setTimeout(() => {
@@ -196,6 +220,15 @@ export async function loadDailyQuizPack({
   maxAttempts = 2,
   retryDelayMs = 450
 } = {}) {
+  try {
+    const urlPack = getQuizParamPack();
+    if (urlPack) {
+      return { pack: urlPack, usedFallbackPack: false, lastError: null };
+    }
+  } catch {
+    // Malformed quiz param — fall through to normal API fetch
+  }
+
   let lastError = null;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
