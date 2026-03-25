@@ -1,3 +1,4 @@
+// Central configuration values and game constants.
 import {
   VIEW_STATES,
   LETTER_KEYS,
@@ -15,14 +16,20 @@ import {
   PLAYER_UNID_STORAGE_KEY,
   LAST_TEAM_NAME_STORAGE_KEY,
   IS_DEV_MODE,
-  QUESTION_SET_SOURCE,
   GAME_PROGRESS_STORAGE_KEY_PREFIX,
   POINTS_EMOJI,
   FAST_POINT_WINDOW_DURATIONS_MS,
   QUESTION_DURATION_MS,
   MAX_FAST_POINTS
 } from "./js/config.js";
-import { fetchDailyQuizQuestions } from "./js/daily-quiz-api.js";
+
+// Daily quiz API client for loading the remote question pack.
+import {
+  fetchDailyQuizQuestions,
+  getFallbackQuizPack
+} from "./js/daily-quiz-api.js";
+
+// Local storage helpers for player identity, team name, and persisted progress.
 import {
   getOrCreatePlayerUnid,
   loadSavedTeamName,
@@ -30,6 +37,8 @@ import {
   loadSavedProgress,
   persistSavedProgress
 } from "./js/storage.js";
+
+// Pure quiz helper utilities for normalization, answer checks, and result messaging.
 import {
   normalize,
   getQuestionAnswerCodes,
@@ -39,13 +48,36 @@ import {
   getComparableAnswerOptions,
   isCurrentAnswerCorrect
 } from "./js/quiz-helpers.js";
+
+// How-to-play modal controls and seen-state tracking.
 import { openHowToPlay, hasSeenHowToPlay } from "./js/how-to-play.js";
+
+// Startup loader with retry/timeout behavior for daily quiz fetches.
+import { fetchQuizPackWithRetry } from "./js/quiz-startup.js";
+
+// Progress-model helpers for result shaping, restore, merge, and resume reconciliation.
+import {
+  clampResumeQuestionIndex,
+  buildAnswerHistoryFromResults,
+  mergeResultsSnapshot,
+  restoreResultStateFromSavedProgress as restoreResultStateFromProgress,
+  reconcileSkippedQuestionsInSavedProgress as reconcileSkippedProgress
+} from "./js/progress-model.js";
+
+// Result persistence, submission payload shaping, and share text/copy helpers.
+import {
+  buildSubmissionPayload,
+  buildCompletedProgress,
+  buildSubmittedProgress,
+  postResultsToEndpoint,
+  shareResults
+} from "./js/results-share.js";
 
 // View state management
 let currentView = null;
-let questions = QUESTION_SET_SOURCE.questions;
-let TOTAL_POSSIBLE_SCORE = questions.length * MAX_FAST_POINTS;
-let GAME_PROGRESS_STORAGE_KEY = `${GAME_PROGRESS_STORAGE_KEY_PREFIX}:${QUESTION_SET_SOURCE.unid}`;
+let questions = [];
+let TOTAL_POSSIBLE_SCORE = 0;
+let GAME_PROGRESS_STORAGE_KEY = "";
 
 const scoreValueEl = document.querySelector("#scoreValue");
 const fastPointsValueEl = document.querySelector("#fastPointsValue");
@@ -60,6 +92,7 @@ const pregameHeaderEl = document.querySelector("#pregameHeader");
 const introPanelEl = document.querySelector("#introPanel");
 const startButtonEl = document.querySelector("#startButton");
 const howToPlayButtonEl = document.querySelector("#howToPlayButton");
+const startupStatusTextEl = document.querySelector("#startupStatusText");
 const finishPanelEl = document.querySelector("#finishPanel");
 const finalScoreValueEl = document.querySelector("#finalScoreValue");
 const finalScoreTotalEl = document.querySelector("#finalScoreTotal");
@@ -125,6 +158,7 @@ let characterRevealHandles = [];
 let questionLocked = false;
 let gameFinished = false;
 let answerHistory = [];
+let resultsByQuestionIndex = {};
 let sequenceOrderCodes = [];
 let sequenceFinalizing = false;
 
@@ -133,6 +167,78 @@ const playerUnid = getOrCreatePlayerUnid(PLAYER_UNID_STORAGE_KEY);
 
 
 let timerFullscreenHoldHandle = null;
+
+function setStartupStatus(message, { state = "info" } = {}) {
+  if (!startupStatusTextEl) {
+    return;
+  }
+
+  startupStatusTextEl.textContent = message;
+
+  if (state === "warning") {
+    startupStatusTextEl.dataset.state = "warning";
+  } else {
+    delete startupStatusTextEl.dataset.state;
+  }
+}
+
+async function initializeQuestionPack() {
+  const { result, usedFallbackPack, lastError } = await fetchQuizPackWithRetry({
+    fetchQuestions: fetchDailyQuizQuestions,
+    setStartupStatus,
+    timeoutMs: 8000,
+    maxAttempts: 2,
+    retryDelayMs: 450
+  });
+
+  if (result) {
+    questions = result.questions;
+    GAME_PROGRESS_STORAGE_KEY = `${GAME_PROGRESS_STORAGE_KEY_PREFIX}:${result.packId}`;
+  } else {
+    const fallbackQuizPack = getFallbackQuizPack();
+    questions = fallbackQuizPack.questions;
+    GAME_PROGRESS_STORAGE_KEY = `${GAME_PROGRESS_STORAGE_KEY_PREFIX}:${fallbackQuizPack.packId}`;
+  }
+  TOTAL_POSSIBLE_SCORE = questions.length * MAX_FAST_POINTS;
+
+  savedProgress = loadSavedProgress(GAME_PROGRESS_STORAGE_KEY, TOTAL_POSSIBLE_SCORE);
+  restoreResultStateFromSavedProgress();
+  reconcileSkippedQuestionsInSavedProgress();
+
+  if (Object.keys(resultsByQuestionIndex).length === 0) {
+    restoreResultStateFromSavedProgress();
+  }
+
+  return { usedFallbackPack };
+}
+
+async function initializeAppStartup() {
+  startButtonEl.disabled = true;
+  startButtonEl.textContent = "Loading...";
+  setStartupStatus("Loading daily quiz...");
+
+  const { usedFallbackPack } = await initializeQuestionPack();
+
+  startButtonEl.disabled = false;
+
+  if (usedFallbackPack) {
+    setStartupStatus("Using backup questions (offline mode).", { state: "warning" });
+  } else {
+    setStartupStatus("");
+  }
+
+  if (savedProgress.completed) {
+    restoreCompletedGameState();
+  } else {
+    setCurrentView(VIEW_STATES.START);
+    if (!hasSeenHowToPlay()) {
+      setTimeout(() => {
+        openHowToPlay();
+      }, 1000);
+    }
+  }
+}
+
 
 function updateStartButtonText() {
   if (savedProgress.completed || (savedProgress.currentQuestionIndex > 0)) {
@@ -164,6 +270,7 @@ function clearSavedProgressForDevTesting() {
     currentScore: 0,
     currentQuestionIndex: 0,
     totalPossible: TOTAL_POSSIBLE_SCORE,
+    results: {},
     answerHistory: [],
     completedAt: null,
     submittedAt: null
@@ -177,16 +284,15 @@ function persistCompletedProgressIfFirstRun() {
     return;
   }
 
-  savedProgress = {
-    ...savedProgress,
-    completed: true,
-    firstScore: score,
-    currentScore: score,
-    currentQuestionIndex: Math.max(0, questions.length - 1),
+  savedProgress = buildCompletedProgress({
+    savedProgress,
+    score,
+    questionCount: questions.length,
     totalPossible: TOTAL_POSSIBLE_SCORE,
-    answerHistory: answerHistory.map((entry) => ({ ...entry })),
+    resultsByQuestionIndex,
+    answerHistory,
     completedAt: new Date().toISOString()
-  };
+  });
 
   persistSavedProgress(GAME_PROGRESS_STORAGE_KEY, savedProgress);
   submitResult();
@@ -197,47 +303,66 @@ function persistSubmittedProgress() {
     return;
   }
 
-  savedProgress = {
-    ...savedProgress,
-    submitted: true,
+  savedProgress = buildSubmittedProgress({
+    savedProgress,
     submittedAt: new Date().toISOString()
-  };
+  });
 
   persistSavedProgress(GAME_PROGRESS_STORAGE_KEY, savedProgress);
 }
 
 function submitResult() {
   const teamName = String(teamNameInputEl?.value || "").trim();
+  const resultEntries = buildAnswerHistoryFromResults(getMergedResultsSnapshot());
 
-  const submission = {
-    packId: GAME_PROGRESS_STORAGE_KEY.split(":").slice(1).join(":"),
+  const submission = buildSubmissionPayload({
+    gameProgressStorageKey: GAME_PROGRESS_STORAGE_KEY,
     playerUnid,
-    name: teamName || null,
+    teamName,
     score,
     totalPossible: TOTAL_POSSIBLE_SCORE,
-    results: answerHistory.map((entry) => ({
-      questionId: entry.questionId,
-      correct: entry.isCorrect,
-      points: entry.earnedPoints,
-      timedOut: entry.timedOut
-    })),
-    shareText: buildShareText(),
-    completedAt: savedProgress.completedAt || new Date().toISOString()
-  };
+    resultEntries,
+    questions,
+    completedAt: savedProgress.completedAt || new Date().toISOString(),
+  });
 
   console.log("Leaderboard submission", submission);
 
-  if (!savedProgress.submitted) {
-    // TODO: send to leaderboard endpoint
-    // fetch("/api/leaderboard", { method: "POST", body: JSON.stringify(submission) });
-
+  postResultsToEndpoint(submission)
+    .then((e) => {
+      console.log("Results submission successful", e);
+    })
+    .catch((error) => {
+      console.error("Results submission failed", error);
+    });
     persistSubmittedProgress();
   }
+  if (!savedProgress.submitted) {
 }
 
-function clampResumeQuestionIndex(rawIndex) {
-  const parsedIndex = Number.isInteger(rawIndex) ? rawIndex : 0;
-  return Math.min(Math.max(parsedIndex, 0), questions.length);
+function getMergedResultsSnapshot() {
+  return mergeResultsSnapshot(savedProgress, resultsByQuestionIndex);
+}
+
+function reconcileSkippedQuestionsInSavedProgress() {
+  const { nextSavedProgress, didUpdate } = reconcileSkippedProgress({
+    savedProgress,
+    questions,
+    getRevealAnswerText
+  });
+
+  if (!didUpdate) {
+    return;
+  }
+
+  savedProgress = nextSavedProgress;
+  persistSavedProgress(GAME_PROGRESS_STORAGE_KEY, savedProgress);
+}
+
+function restoreResultStateFromSavedProgress() {
+  const restored = restoreResultStateFromProgress(savedProgress);
+  resultsByQuestionIndex = restored.resultsByQuestionIndex;
+  answerHistory = restored.answerHistory;
 }
 
 function persistInProgressPosition({ indexOffset = 0 } = {}) {
@@ -248,7 +373,8 @@ function persistInProgressPosition({ indexOffset = 0 } = {}) {
   savedProgress = {
     ...savedProgress,
     currentScore: score,
-    currentQuestionIndex: clampResumeQuestionIndex(questionIndex + indexOffset),
+    currentQuestionIndex: clampResumeQuestionIndex(questionIndex + indexOffset, questions.length),
+    results: { ...resultsByQuestionIndex },
     answerHistory: answerHistory.map((entry) => ({ ...entry }))
   };
 
@@ -256,8 +382,10 @@ function persistInProgressPosition({ indexOffset = 0 } = {}) {
 }
 
 function restoreInProgressGameState() {
+  reconcileSkippedQuestionsInSavedProgress();
   score = Number.isFinite(savedProgress.currentScore) ? savedProgress.currentScore : 0;
-  questionIndex = clampResumeQuestionIndex(savedProgress.currentQuestionIndex);
+  questionIndex = clampResumeQuestionIndex(savedProgress.currentQuestionIndex, questions.length);
+  restoreResultStateFromSavedProgress();
   scoreValueEl.textContent = String(score);
 
   if (questionIndex >= questions.length) {
@@ -265,61 +393,20 @@ function restoreInProgressGameState() {
   }
 }
 
-function getPointsEmoji(points) {
-  return POINTS_EMOJI[points] || "❌";
-}
-
-function getAnswerBreakdownText() {
-  return answerHistory.map((entry) => (
-    entry.isCorrect ? getPointsEmoji(entry.earnedPoints) : "❌"
-  )).join(" ");
-}
-
-function buildShareText() {
-  const heading = `I scored ${score}/${TOTAL_POSSIBLE_SCORE}`;
-  const breakdown = getAnswerBreakdownText();
-  return `${heading}\n${breakdown}`;
-}
-
-async function copyTextToClipboard(text) {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return true;
-  }
-
-  const fallbackInput = document.createElement("textarea");
-  fallbackInput.value = text;
-  fallbackInput.setAttribute("readonly", "readonly");
-  fallbackInput.style.position = "fixed";
-  fallbackInput.style.top = "-1000px";
-  fallbackInput.style.left = "-1000px";
-  document.body.appendChild(fallbackInput);
-  fallbackInput.focus();
-  fallbackInput.select();
-
-  let didCopy = false;
-  try {
-    didCopy = document.execCommand("copy");
-  } finally {
-    document.body.removeChild(fallbackInput);
-  }
-
-  if (!didCopy) {
-    throw new Error("Clipboard copy failed");
-  }
-
-  return true;
-}
-
 function recordAnswerResult(question, userAnswer, { isCorrect = false, earnedPoints = 0, timedOut = false } = {}) {
-  answerHistory.push({
+  const resultEntry = {
+    questionIndex,
     questionId: question.id,
+    typeCode: question.typeCode,
     userAnswer,
     correctAnswer: getRevealAnswerText(question),
     isCorrect,
     earnedPoints,
     timedOut
-  });
+  };
+
+  resultsByQuestionIndex[String(questionIndex)] = resultEntry;
+  answerHistory = buildAnswerHistoryFromResults(resultsByQuestionIndex);
 }
 
 function showFinishPanel() {
@@ -362,6 +449,7 @@ function restartGame() {
   remainingMs = QUESTION_DURATION_MS;
   questionLocked = false;
   gameFinished = false;
+  resultsByQuestionIndex = {};
   answerHistory = [];
   scoreValueEl.textContent = "0";
   persistInProgressPosition();
@@ -378,9 +466,7 @@ function restoreCompletedGameState() {
   stopTimer();
 
   score = savedProgress.firstScore;
-  answerHistory = Array.isArray(savedProgress.answerHistory)
-    ? savedProgress.answerHistory.map((entry) => ({ ...entry }))
-    : [];
+  restoreResultStateFromSavedProgress();
   questionIndex = Math.max(0, questions.length - 1);
   typedAnswer = "";
   gameFinished = true;
@@ -402,36 +488,18 @@ async function handleShareScore() {
     return;
   }
 
-  const shareText = buildShareText();
-  const shareData = {
-    title: "SpeedQuizzing score",
-    text: shareText,
-    url: window.location.href
-  };
-
-  if (navigator.share) {
-    try {
-      if (!navigator.canShare || navigator.canShare(shareData)) {
-        await navigator.share(shareData);
-      } else {
-        await navigator.share({
-          title: shareData.title,
-          text: shareData.text
-        });
-      }
-      return;
-    } catch (error) {
-      if (error?.name === "AbortError") {
-        return;
-      }
-    }
+  if (IS_DEV_MODE) {
+    submitResult();
   }
 
-  try {
-    await copyTextToClipboard(`${shareText}\nhttps://coolpat1993.github.io/`);
-  } catch (_) {
-    // share unavailable, fail silently
-  }
+  const resultEntries = buildAnswerHistoryFromResults(getMergedResultsSnapshot());
+  await shareResults({
+    score,
+    totalPossible: TOTAL_POSSIBLE_SCORE,
+    resultEntries,
+    pointsEmojiMap: POINTS_EMOJI,
+    shareUrl: window.location.href
+  });
 }
 
 function clearTimerFullscreenHold() {
@@ -721,12 +789,12 @@ function handleAnswerPick(answerCode) {
 
   const current = getCurrentQuestion();
 
-  if (current.type === "numbers") {
+  if (current.typeCode === "N") {
     appendNumberDigit(answerCode);
     return;
   }
 
-  if (current.type === "sequence") {
+  if (current.typeCode === "S") {
     if (sequenceFinalizing) {
       return;
     }
@@ -740,7 +808,7 @@ function handleAnswerPick(answerCode) {
 
 function pickSequenceAnswer(answerCode) {
   const current = getCurrentQuestion();
-  if (current.type !== "sequence") {
+  if (current.typeCode !== "S") {
     return;
   }
 
@@ -774,7 +842,7 @@ function pickSequenceAnswer(answerCode) {
 
 function renderNumberAnswerDisplay() {
   const current = getCurrentQuestion();
-  const isNumberQuestion = current?.type === "numbers";
+  const isNumberQuestion = current?.typeCode === "N";
 
   numberAnswerDisplayEl.hidden = !isNumberQuestion;
 
@@ -979,20 +1047,20 @@ function renderKeypad() {
 
   const current = getCurrentQuestion();
   let previousSequencePositions = null;
-  if (current.type === "sequence") {
+  if (current.typeCode === "S") {
     previousSequencePositions = new Map();
     keypadEl.querySelectorAll(".sequence-row[data-sequence-code]").forEach((rowEl) => {
       previousSequencePositions.set(rowEl.dataset.sequenceCode, rowEl.getBoundingClientRect().top);
     });
   }
   keypadEl.innerHTML = "";
-  keypadEl.hidden = current.type === "numbers" && questionLocked && typedAnswer.length > 0;
+  keypadEl.hidden = current.typeCode === "N" && questionLocked && typedAnswer.length > 0;
 
   if (keypadEl.hidden) {
     return;
   }
 
-  if (current.type === "letters") {
+  if (current.typeCode === "L") {
     keypadEl.style.gridTemplateRows = "";
     keypadEl.className = "keypad letters";
     const correctCode = getQuestionAnswerCodes(current)[0];
@@ -1023,7 +1091,7 @@ function renderKeypad() {
         })
       );
     });
-  } else if (current.type === "numbers") {
+  } else if (current.typeCode === "N") {
     keypadEl.style.gridTemplateRows = "";
     keypadEl.className = "keypad numbers";
     const shouldDimNumberKeypad = questionLocked && typedAnswer.length === 0;
@@ -1069,7 +1137,7 @@ function renderKeypad() {
         })
       );
     });
-  } else if (current.type === "sequence") {
+  } else if (current.typeCode === "S") {
     keypadEl.className = "keypad sequence";
     const choices = Array.isArray(current.choices) ? current.choices : [];
     const correctSequence = getQuestionAnswerCodes(current)[0] || "";
@@ -1202,8 +1270,8 @@ function loadQuestion() {
   renderTimer();
   feedbackTextEl.textContent = "";
   renderNumberAnswerDisplay();
-  showModeHint(current.type);
-  const hintOffsetMs = QUESTION_TYPE_LABELS[current.type] ? QUESTION_TYPE_LABEL_DURATION_MS : 0;
+  showModeHint(current.typeCode);
+  const hintOffsetMs = QUESTION_TYPE_LABELS[current.typeCode] ? QUESTION_TYPE_LABEL_DURATION_MS : 0;
   const revealDurationMs = renderQuestionCharacterReveal(current.question, hintOffsetMs + PRE_REVEAL_DELAY_MS);
 
   renderKeypad();
@@ -1214,7 +1282,7 @@ function loadQuestion() {
       return;
     }
     beginQuestionTimer();
-  }, revealDurationMs + POST_REVEAL_TIMER_DELAY_MS[current.type]);
+  }, revealDurationMs + POST_REVEAL_TIMER_DELAY_MS[current.typeCode]);
 }
 
 document.addEventListener("keydown", (event) => {
@@ -1225,7 +1293,7 @@ document.addEventListener("keydown", (event) => {
   const current = getCurrentQuestion();
   if (questionLocked) return;
 
-  if (current.type === "letters" && event.key.length === 1) {
+  if (current.typeCode === "L" && event.key.length === 1) {
     const key = event.key.toUpperCase();
     if (getExpandedLetterInputs().includes(key)) {
       if (key === "Q" || key === "V") {
@@ -1244,7 +1312,7 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
-  if (current.type === "sequence" && event.key.length === 1) {
+  if (current.typeCode === "S" && event.key.length === 1) {
     const key = event.key.toUpperCase();
     const choiceIndex = key.charCodeAt(0) - 65;
     const choices = Array.isArray(current.choices) ? current.choices : [];
@@ -1254,22 +1322,22 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
-  if (current.type === "numbers" && /^[0-9]$/.test(event.key)) {
+  if (current.typeCode === "N" && /^[0-9]$/.test(event.key)) {
     pressNumberDigit(event.key);
     return;
   }
 
-  if (current.type === "numbers" && event.key === "Backspace") {
+  if (current.typeCode === "N" && event.key === "Backspace") {
     pressNumberClear();
     return;
   }
 
-  if (current.type === "numbers" && event.key === "Escape") {
+  if (current.typeCode === "N" && event.key === "Escape") {
     pressNumberClearAll();
     return;
   }
 
-  if (current.type === "numbers" && event.key === "Enter") {
+  if (current.typeCode === "N" && event.key === "Enter") {
     submitCurrentNumberAnswer();
   }
 });
@@ -1296,33 +1364,4 @@ howToPlayButtonEl.addEventListener("click", openHowToPlay);
 
 bindTimerBarFullscreenHold();
 
-// Fetch questions from API, then initialize view
-startButtonEl.disabled = true;
-startButtonEl.textContent = "Loading...";
-
-(async () => {
-  try {
-    const result = await fetchDailyQuizQuestions();
-    questions = result.questions;
-    GAME_PROGRESS_STORAGE_KEY = `${GAME_PROGRESS_STORAGE_KEY_PREFIX}:${result.packId}`;
-    TOTAL_POSSIBLE_SCORE = questions.length * MAX_FAST_POINTS;
-    savedProgress = loadSavedProgress(GAME_PROGRESS_STORAGE_KEY, TOTAL_POSSIBLE_SCORE);
-  } catch (err) {
-    console.error("Failed to load daily quiz from API, using fallback questions:", err);
-    // questions, GAME_PROGRESS_STORAGE_KEY, TOTAL_POSSIBLE_SCORE and savedProgress
-    // already hold the bundled fallback values set at module load time.
-  }
-
-  startButtonEl.disabled = false;
-
-  if (savedProgress.completed) {
-    restoreCompletedGameState();
-  } else {
-    setCurrentView(VIEW_STATES.START);
-    if (!hasSeenHowToPlay()) {
-      setTimeout(() => {
-      openHowToPlay();
-      }, 1000);
-    }
-  }
-})();
+initializeAppStartup();

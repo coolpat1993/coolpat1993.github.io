@@ -67,6 +67,7 @@ export function loadSavedProgress(storageKey, totalPossibleScore) {
     currentScore: 0,
     currentQuestionIndex: 0,
     totalPossible: totalPossibleScore,
+    results: {},
     answerHistory: [],
     completedAt: null,
     submittedAt: null
@@ -90,6 +91,7 @@ export function loadSavedProgress(storageKey, totalPossibleScore) {
       currentScore: Number.isFinite(parsed.currentScore) ? parsed.currentScore : 0,
       currentQuestionIndex: Number.isInteger(parsed.currentQuestionIndex) ? parsed.currentQuestionIndex : 0,
       totalPossible: Number.isFinite(parsed.totalPossible) ? parsed.totalPossible : totalPossibleScore,
+      results: (parsed.results && typeof parsed.results === "object" && !Array.isArray(parsed.results)) ? parsed.results : {},
       answerHistory: Array.isArray(parsed.answerHistory) ? parsed.answerHistory : [],
       completedAt: parsed.completedAt || null,
       submittedAt: parsed.submittedAt || null

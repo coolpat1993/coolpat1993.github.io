@@ -15,7 +15,7 @@ export function getQuestionAnswerCodes(question) {
 }
 
 export function getRevealAnswerText(question) {
-  if (question.type === "sequence" && Array.isArray(question.choices)) {
+  if (question.typeCode === "S" && Array.isArray(question.choices)) {
     const answerCodes = getQuestionAnswerCodes(question);
     if (answerCodes.length > 0) {
       const sequenceLabel = answerCodes[0]
@@ -32,7 +32,7 @@ export function getRevealAnswerText(question) {
     }
   }
 
-  if (question.type === "multiple" && Array.isArray(question.choices)) {
+  if (question.typeCode === "M" && Array.isArray(question.choices)) {
     const answerCodes = getQuestionAnswerCodes(question);
     if (answerCodes.length > 0) {
       const labels = answerCodes.map((code) => {
@@ -76,7 +76,7 @@ export function expandAnswerChoices(answerCode) {
 export function getComparableAnswerOptions(question, answerValue) {
   const normalized = normalize(answerValue);
 
-  if (question?.type === "letters") {
+  if (question?.typeCode === "L") {
     return expandAnswerChoices(normalized);
   }
 
