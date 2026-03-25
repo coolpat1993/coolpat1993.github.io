@@ -1,5 +1,7 @@
-const DAILY_QUIZ_API_URL =
+const DAILY_QUIZ_API_BASE_URL =
   "https://www.speedquizzing.com/utils/dailyquiz/daily_quiz_get_questions";
+
+const QUIZ_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 const FALLBACK_QUIZ_PACK = {
   pack_id: "back-up-quiz-pack-1",
@@ -156,8 +158,8 @@ function transformQuestion(raw, index) {
   return normalizeQuestionRecord(question, index);
 }
 
-async function fetchDailyQuizQuestions({ signal } = {}) {
-  const response = await fetch(DAILY_QUIZ_API_URL, { signal });
+async function fetchDailyQuizQuestions({ signal, quizDate = null } = {}) {
+  const response = await fetch(getDailyQuizApiUrl(quizDate), { signal });
   if (!response.ok) {
     throw new Error(`Daily quiz fetch failed: HTTP ${response.status}`);
   }
@@ -171,15 +173,36 @@ async function fetchDailyQuizQuestions({ signal } = {}) {
   };
 }
 
-function getQuizParamPack() {
+function getRawQuizParam() {
   const params = new URLSearchParams(window.location.search);
-  const raw = params.get("quiz");
-  if (!raw) {
+  const rawQuizParam = params.get("quiz");
+  if (!rawQuizParam) {
     return null;
   }
 
+  return String(rawQuizParam).trim() || null;
+}
+
+function isQuizDateParam(value) {
+  return QUIZ_DATE_REGEX.test(String(value || "").trim());
+}
+
+function getDailyQuizApiUrl(quizDate = null) {
+  if (!quizDate) {
+    return DAILY_QUIZ_API_BASE_URL;
+  }
+
+  return `${DAILY_QUIZ_API_BASE_URL}/${quizDate}`;
+}
+
+function getQuizParamPack(rawQuizParam) {
+  if (!rawQuizParam) {
+    return null;
+  }
+
+
   // Support both standard base64 and URL-safe base64 (- → +, _ → /)
-  const base64 = raw.replace(/-/g, "+").replace(/_/g, "/");
+  const base64 = rawQuizParam.replace(/-/g, "+").replace(/_/g, "/");
   const payload = JSON.parse(decodeBase64Utf8(base64));
 
   const questions = Array.isArray(payload.questions) ? payload.questions : [];
@@ -220,16 +243,25 @@ export async function loadDailyQuizPack({
   maxAttempts = 2,
   retryDelayMs = 450
 } = {}) {
-  try {
-    const urlPack = getQuizParamPack();
-    if (urlPack) {
-      return { pack: urlPack, usedFallbackPack: false, lastError: null };
+  const rawQuizParam = getRawQuizParam();
+
+  if (rawQuizParam && !isQuizDateParam(rawQuizParam)) {
+    try {
+      const urlPack = getQuizParamPack(rawQuizParam);
+      if (urlPack) {
+        return { pack: urlPack, usedFallbackPack: false, lastError: null };
+      }
+    } catch (error) {
+      return {
+        pack: getFallbackQuizPack(),
+        usedFallbackPack: true,
+        lastError: error
+      };
     }
-  } catch {
-    // Malformed quiz param — fall through to normal API fetch
   }
 
   let lastError = null;
+  const quizDate = rawQuizParam && isQuizDateParam(rawQuizParam) ? rawQuizParam : null;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
@@ -237,7 +269,10 @@ export async function loadDailyQuizPack({
         setStartupStatus(`Retrying daily quiz (${attempt}/${maxAttempts})...`);
       }
 
-      const result = await fetchWithTimeout(fetchDailyQuizQuestions, timeoutMs);
+      const result = await fetchWithTimeout(
+        ({ signal }) => fetchDailyQuizQuestions({ signal, quizDate }),
+        timeoutMs
+      );
       return { pack: result, usedFallbackPack: false, lastError: null };
     } catch (error) {
       lastError = error;

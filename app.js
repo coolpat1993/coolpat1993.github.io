@@ -179,7 +179,7 @@ function setStartupStatus(message, { state = "info" } = {}) {
 }
 
 async function initializeQuestionPack() {
-  const { pack, usedFallbackPack } = await loadDailyQuizPack({
+  const { pack, usedFallbackPack, lastError } = await loadDailyQuizPack({
     setStartupStatus,
     timeoutMs: 8000,
     maxAttempts: 2,
@@ -1005,14 +1005,19 @@ function buildChoiceButton(choice, { placeholder = false } = {}) {
   });
 }
 
-function buildSequenceButton(choice, { showOrderNumber = true, cornerIcon = null } = {}) {
+function buildSequenceButton(choice, {
+  showOrderNumber = true,
+  orderNumber = null,
+  orderIsWrong = false,
+  cornerIcon = null
+} = {}) {
   const label = document.createElement("span");
   label.className = "choice-label sequence-label";
   label.textContent = choice.label;
 
   const selectedOrder = sequenceOrderCodes.indexOf(normalize(choice.code));
   const button = buildKeyButton({
-    className: `choice-row sequence-row ${selectedOrder >= 0 ? "selected" : ""}`,
+    className: `choice-row sequence-row ${selectedOrder >= 0 ? "selected" : ""} ${orderIsWrong ? "sequence-order-wrong" : ""}`.trim(),
     onClick: () => handleAnswerPick(choice.code),
     childNodes: [label],
     disabled: questionLocked,
@@ -1021,8 +1026,11 @@ function buildSequenceButton(choice, { showOrderNumber = true, cornerIcon = null
 
   button.dataset.sequenceCode = normalize(choice.code);
 
-  if (showOrderNumber && selectedOrder >= 0) {
-    button.dataset.sequenceOrder = String(selectedOrder + 1);
+  if (showOrderNumber) {
+    const displayOrder = Number.isInteger(orderNumber) ? orderNumber : selectedOrder + 1;
+    if (displayOrder > 0) {
+      button.dataset.sequenceOrder = String(displayOrder);
+    }
   }
 
   return button;
@@ -1147,13 +1155,16 @@ function renderKeypad() {
       keypadEl.style.gridTemplateRows = `repeat(${choices.length}, minmax(0, 1fr))`;
     }
 
-    renderedChoices.forEach((choice, renderedIndex) => {
-      const cornerIcon = hasFullSequence
-        ? (isFullSequenceCorrect ? "check" : "cross")
-        : null;
+    renderedChoices.forEach((choice) => {
+      const normalizedCode = normalize(choice.code);
+      const correctOrder = correctSequence.indexOf(normalizedCode) + 1;
+      const showCorrectOrderNumber = hasFullSequence && !isFullSequenceCorrect;
+      const cornerIcon = hasFullSequence && isFullSequenceCorrect ? "check" : null;
 
       keypadEl.appendChild(buildSequenceButton(choice, {
-        showOrderNumber: !hasFullSequence,
+        showOrderNumber: !hasFullSequence || showCorrectOrderNumber,
+        orderNumber: showCorrectOrderNumber ? correctOrder : null,
+        orderIsWrong: showCorrectOrderNumber,
         cornerIcon
       }));
     });

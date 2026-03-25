@@ -165,7 +165,7 @@ body {
   min-height: 1.25em;
   text-align: center;
   font-size: 0.84rem;
-  color: var(--sq-text-muted);
+  color: rgb(201, 201, 201);
 }
 
 .answer-panel {
@@ -477,6 +477,11 @@ textarea {
   color: var(--sq-cyan);
   opacity: 0.45;
   pointer-events: none;
+}
+
+.key-btn.choice-row.sequence-row.sequence-order-wrong[data-sequence-order]::before {
+  color: rgba(176, 31, 21, 0.56);
+  opacity: 1;
 }
 
 .key-btn.choice-row.sequence-row .choice-label.sequence-label {

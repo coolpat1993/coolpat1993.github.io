@@ -24,7 +24,7 @@ export function getRevealAnswerText(question) {
           const idx = code.charCodeAt(0) - 65;
           return question.choices[idx] || code;
         })
-        .join(" -> ");
+        .join(" | ");
 
       if (sequenceLabel) {
         return sequenceLabel;
@@ -56,16 +56,16 @@ export function getRevealAnswerText(question) {
 
 export function getResultMessage(question, { isCorrect = false, timedOut = false } = {}) {
   const answerText = getRevealAnswerText(question);
-
+  
   if (isCorrect) {
-    return `Correct, the answer is ${answerText}`;
+    return `${answerText} ✅`;
   }
 
   if (timedOut) {
-    return `Time's up, the correct answer is ${answerText}`;
+    return `${answerText} ⏳`;
   }
 
-  return `Incorrect, the correct answer is ${answerText}`;
+  return `${answerText} ❌`;
 }
 
 export function expandAnswerChoices(answerCode) {
