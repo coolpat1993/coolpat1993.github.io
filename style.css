@@ -153,7 +153,7 @@ body {
 }
 
 .question-character {
-  color: #000;
+  color: #00000000;
 }
 
 .question-character.revealed {

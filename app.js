@@ -25,8 +25,7 @@ import {
 
 // Daily quiz API client for loading the remote question pack.
 import {
-  fetchDailyQuizQuestions,
-  getFallbackQuizPack
+  loadDailyQuizPack
 } from "./js/daily-quiz-api.js";
 
 // Local storage helpers for player identity, team name, and persisted progress.
@@ -51,9 +50,6 @@ import {
 
 // How-to-play modal controls and seen-state tracking.
 import { openHowToPlay, hasSeenHowToPlay } from "./js/how-to-play.js";
-
-// Startup loader with retry/timeout behavior for daily quiz fetches.
-import { fetchQuizPackWithRetry } from "./js/quiz-startup.js";
 
 // Progress-model helpers for result shaping, restore, merge, and resume reconciliation.
 import {
@@ -183,22 +179,15 @@ function setStartupStatus(message, { state = "info" } = {}) {
 }
 
 async function initializeQuestionPack() {
-  const { result, usedFallbackPack, lastError } = await fetchQuizPackWithRetry({
-    fetchQuestions: fetchDailyQuizQuestions,
+  const { pack, usedFallbackPack } = await loadDailyQuizPack({
     setStartupStatus,
     timeoutMs: 8000,
     maxAttempts: 2,
     retryDelayMs: 450
   });
 
-  if (result) {
-    questions = result.questions;
-    GAME_PROGRESS_STORAGE_KEY = `${GAME_PROGRESS_STORAGE_KEY_PREFIX}:${result.packId}`;
-  } else {
-    const fallbackQuizPack = getFallbackQuizPack();
-    questions = fallbackQuizPack.questions;
-    GAME_PROGRESS_STORAGE_KEY = `${GAME_PROGRESS_STORAGE_KEY_PREFIX}:${fallbackQuizPack.packId}`;
-  }
+  questions = pack.questions;
+  GAME_PROGRESS_STORAGE_KEY = `${GAME_PROGRESS_STORAGE_KEY_PREFIX}:${pack.packId}`;
   TOTAL_POSSIBLE_SCORE = questions.length * MAX_FAST_POINTS;
 
   savedProgress = loadSavedProgress(GAME_PROGRESS_STORAGE_KEY, TOTAL_POSSIBLE_SCORE);

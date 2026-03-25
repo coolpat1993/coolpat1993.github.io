@@ -100,6 +100,12 @@ function decodeBase64Utf8(encoded) {
   return new TextDecoder().decode(bytes);
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
 export function normalizeQuestionRecord(question, index) {
   return {
     ...question,
@@ -150,7 +156,7 @@ function transformQuestion(raw, index) {
   return normalizeQuestionRecord(question, index);
 }
 
-export async function fetchDailyQuizQuestions({ signal } = {}) {
+async function fetchDailyQuizQuestions({ signal } = {}) {
   const response = await fetch(DAILY_QUIZ_API_URL, { signal });
   if (!response.ok) {
     throw new Error(`Daily quiz fetch failed: HTTP ${response.status}`);
@@ -162,5 +168,56 @@ export async function fetchDailyQuizQuestions({ signal } = {}) {
   return {
     packId: payload.pack_id,
     questions: payload.questions.map(transformQuestion)
+  };
+}
+
+async function fetchWithTimeout(fetchFn, timeoutMs) {
+  const controller = new AbortController();
+  const timeoutHandle = window.setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
+
+  try {
+    return await fetchFn({ signal: controller.signal });
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new Error(`Daily quiz request timed out after ${timeoutMs}ms`);
+    }
+
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutHandle);
+  }
+}
+
+export async function loadDailyQuizPack({
+  setStartupStatus,
+  timeoutMs = 8000,
+  maxAttempts = 2,
+  retryDelayMs = 450
+} = {}) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      if (attempt > 1 && typeof setStartupStatus === "function") {
+        setStartupStatus(`Retrying daily quiz (${attempt}/${maxAttempts})...`);
+      }
+
+      const result = await fetchWithTimeout(fetchDailyQuizQuestions, timeoutMs);
+      return { pack: result, usedFallbackPack: false, lastError: null };
+    } catch (error) {
+      lastError = error;
+
+      if (attempt < maxAttempts) {
+        await sleep(retryDelayMs);
+      }
+    }
+  }
+
+  return {
+    pack: getFallbackQuizPack(),
+    usedFallbackPack: true,
+    lastError
   };
 }
