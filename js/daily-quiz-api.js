@@ -4,7 +4,7 @@ const DAILY_QUIZ_API_BASE_URL =
 const QUIZ_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 const FALLBACK_QUIZ_PACK = {
-  pack_id: "back-up-quiz-pack-1",
+  pack_date: "back-up-quiz-pack-1",
   questions: [
     {
       id: "question1",
@@ -132,7 +132,7 @@ export function normalizeQuestionSet(records) {
 
 export function getFallbackQuizPack() {
   return {
-    packId: String(FALLBACK_QUIZ_PACK.pack_id || "").trim(),
+    packId: String(FALLBACK_QUIZ_PACK.pack_date || "").trim(),
     questions: normalizeQuestionSet(FALLBACK_QUIZ_PACK.questions)
   };
 }
@@ -168,7 +168,7 @@ async function fetchDailyQuizQuestions({ signal, quizDate = null } = {}) {
   const payload = JSON.parse(decodeBase64Utf8(json.data));
 
   return {
-    packId: payload.pack_id,
+    packId: payload.pack_date,
     questions: payload.questions.map(transformQuestion)
   };
 }
@@ -208,7 +208,7 @@ function getQuizParamPack(rawQuizParam) {
   const questions = Array.isArray(payload.questions) ? payload.questions : [];
 
   return {
-    packId: String(payload.pack_id || "url-param-quiz").trim(),
+    packId: String(payload.pack_date || "url-param-quiz").trim(),
     questions: questions.map((q, index) =>
       // Raw API format (has short_answer) vs pre-normalized format
       q.short_answer !== undefined

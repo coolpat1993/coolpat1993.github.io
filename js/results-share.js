@@ -76,16 +76,16 @@ export function buildSubmissionPayload({
   );
 
   return {
-    pack_id: gameProgressStorageKey.split(":").slice(1).join(":"),
+    pack_date: gameProgressStorageKey.split(":").slice(1).join(":").replace("sq-pack-id-", ""),
     player_unid: playerUnid,
-    name: teamName || null,
+    name: teamName || "",
     score,
     total_possible: totalPossible,
     results: resultEntries.map((entry) => {
       const id = entry.questionId;
 
       return {
-        id,
+        question_id: id,
         type_code: entry.typeCode || typeCodeById.get(String(id)) || null,
         points: entry.earnedPoints,
         timed_out: entry.timedOut
