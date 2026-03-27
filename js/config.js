@@ -42,7 +42,7 @@ export const GAME_PROGRESS_STORAGE_KEY_PREFIX = "speedQuizzingProgress";
 export const IS_DEV_MODE =
   window.location.hostname === "localhost" ||
   window.location.hostname === "127.0.0.1" ||
-  true;
+  window.location.hostname.startsWith("192.168.");
 
 export const POINTS_EMOJI = {
   1: "1️⃣",
