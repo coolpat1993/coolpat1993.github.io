@@ -8,6 +8,31 @@ export function buildShareText({ score, totalPossible, resultEntries, pointsEmoj
   return `${heading}\n${breakdown}`;
 }
 
+export function buildCanonicalQuizUrl() {
+  const currentUrl = new URL(window.location.href);
+  const canonicalUrl = new URL(currentUrl.pathname, currentUrl.origin);
+  const rawQuizParam = currentUrl.searchParams.get("quiz");
+  const quizParam = rawQuizParam ? String(rawQuizParam).trim() : "";
+
+  if (quizParam) {
+    canonicalUrl.searchParams.set("quiz", quizParam);
+  }
+
+  canonicalUrl.hash = currentUrl.hash;
+  return canonicalUrl.toString();
+}
+
+export function normalizeAddressBarUrl() {
+  if (!window.history?.replaceState) {
+    return;
+  }
+
+  const canonicalUrl = buildCanonicalQuizUrl();
+  if (canonicalUrl !== window.location.href) {
+    window.history.replaceState(window.history.state, "", canonicalUrl);
+  }
+}
+
 export async function shareResults({
   score,
   totalPossible,

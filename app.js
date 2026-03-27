@@ -66,7 +66,9 @@ import {
   buildCompletedProgress,
   buildSubmittedProgress,
   postResultsToEndpoint,
-  shareResults
+  shareResults,
+  buildCanonicalQuizUrl,
+  normalizeAddressBarUrl
 } from "./js/results-share.js";
 
 // View state management
@@ -510,7 +512,7 @@ async function handleShareScore() {
     totalPossible: TOTAL_POSSIBLE_SCORE,
     resultEntries,
     pointsEmojiMap: POINTS_EMOJI,
-    shareUrl: window.location.href
+    shareUrl: buildCanonicalQuizUrl()
   });
 }
 
@@ -1451,5 +1453,6 @@ startButtonEl.addEventListener("click", handleStartGame);
 howToPlayButtonEl.addEventListener("click", openHowToPlay);
 
 bindTimerBarFullscreenHold();
+normalizeAddressBarUrl();
 
 initializeAppStartup();
