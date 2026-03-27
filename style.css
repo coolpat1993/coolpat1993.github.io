@@ -68,7 +68,7 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   padding: 10px 8px;
 }
 
@@ -134,7 +134,7 @@ body {
 .question-panel {
   position: relative;
   min-height: 72px;
-  padding: 6px 8px;
+  padding: 0px 8px;
   display: grid;
   align-content: center;
 }
@@ -164,8 +164,12 @@ body {
   margin: 9px 0 0;
   min-height: 2em;
   text-align: center;
-  font-size: 0.84rem;
-  color: rgb(201, 201, 201);
+  font-size: 1.1rem;
+  color: rgb(255, 255, 255);
+}
+
+.question-panel.showing-answer .question-text {
+  opacity: 0.65;
 }
 
 .answer-panel {

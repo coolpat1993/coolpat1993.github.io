@@ -730,6 +730,7 @@ function lockQuestion(message) {
   clearCharacterRevealTimers();
   revealAllQuestionCharacters();
   questionLocked = true;
+  questionPanelEl.classList.add("showing-answer");
   stopTimer();
   feedbackTextEl.textContent = message;
   scheduleAutoNext();
@@ -1264,6 +1265,7 @@ function loadQuestion() {
   clearCharacterRevealTimers();
   stopTimer();
   questionLocked = false;
+  questionPanelEl.classList.remove("showing-answer");
   typedAnswer = "";
   sequenceOrderCodes = [];
   sequenceFinalizing = false;
