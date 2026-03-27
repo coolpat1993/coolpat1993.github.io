@@ -63,6 +63,7 @@ export function loadSavedProgress(storageKey, totalPossibleScore) {
   const defaultProgress = {
     completed: false,
     submitted: false,
+    replayed: false,
     firstScore: 0,
     currentScore: 0,
     currentQuestionIndex: 0,
@@ -87,6 +88,7 @@ export function loadSavedProgress(storageKey, totalPossibleScore) {
     return {
       completed: Boolean(parsed.completed),
       submitted: Boolean(parsed.submitted),
+      replayed: Boolean(parsed.replayed),
       firstScore: Number.isFinite(parsed.firstScore) ? parsed.firstScore : 0,
       currentScore: Number.isFinite(parsed.currentScore) ? parsed.currentScore : 0,
       currentQuestionIndex: Number.isInteger(parsed.currentQuestionIndex) ? parsed.currentQuestionIndex : 0,

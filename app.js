@@ -94,7 +94,7 @@ const finalScoreValueEl = document.querySelector("#finalScoreValue");
 const finalScoreTotalEl = document.querySelector("#finalScoreTotal");
 const teamNameInputEl = document.querySelector("#teamNameInput");
 const shareScoreButtonEl = document.querySelector("#shareScoreButton");
-const devResetProgressButtonEl = document.querySelector("#devResetProgressButton");
+const replayButtonEl = document.querySelector("#replayButton");
 const devResetProgressButtonIntroEl = document.querySelector("#devResetProgressButtonIntro");
 const teamTrayNameEl = document.querySelector(".team-tray-name");
 const modeHintOverlayEl = document.querySelector("#modeHintOverlay");
@@ -103,7 +103,6 @@ const modeHintTextEl = modeHintOverlayEl?.querySelector(".mode-hint-text");
 
 // Hide dev buttons if not in development mode
 if (!IS_DEV_MODE) {
-  if (devResetProgressButtonEl) devResetProgressButtonEl.hidden = true;
   if (devResetProgressButtonIntroEl) devResetProgressButtonIntroEl.hidden = true;
 }
 
@@ -256,6 +255,7 @@ function clearSavedProgressForDevTesting() {
   savedProgress = {
     completed: false,
     submitted: false,
+    replayed: false,
     firstScore: 0,
     currentScore: 0,
     currentQuestionIndex: 0,
@@ -265,8 +265,9 @@ function clearSavedProgressForDevTesting() {
     completedAt: null,
     submittedAt: null
   };
+  setCurrentView('');
+  setCurrentView(VIEW_STATES.START);
   persistSavedProgress(GAME_PROGRESS_STORAGE_KEY, savedProgress);
-  restartGame();
 }
 
 function persistCompletedProgressIfFirstRun() {
@@ -302,6 +303,11 @@ function persistSubmittedProgress() {
 }
 
 function submitResult() {
+// Don't allow sharing if this is a replay
+  if (savedProgress.replayed) {
+    return;
+  }
+
   const teamName = String(teamNameInputEl?.value || "").trim();
   const resultEntries = buildAnswerHistoryFromResults(getMergedResultsSnapshot());
 
@@ -402,6 +408,17 @@ function recordAnswerResult(question, userAnswer, { isCorrect = false, earnedPoi
 function showFinishPanel() {
   finalScoreValueEl.textContent = String(score);
   finalScoreTotalEl.textContent = String(TOTAL_POSSIBLE_SCORE);
+  
+  // Grey out share button if this is a replay
+  if (savedProgress.replayed) {
+    shareScoreButtonEl.disabled = true;
+    shareScoreButtonEl.style.opacity = "0.45";
+    shareScoreButtonEl.style.pointerEvents = "none";
+  } else {
+    shareScoreButtonEl.disabled = false;
+    shareScoreButtonEl.style.opacity = "";
+  }
+  
   setCurrentView(VIEW_STATES.FINISH);
 }
 
@@ -478,6 +495,11 @@ async function handleShareScore() {
     return;
   }
 
+  // Don't allow sharing if this is a replay
+  if (savedProgress.replayed) {
+    return;
+  }
+
   if (IS_DEV_MODE) {
     submitResult();
   }
@@ -490,6 +512,43 @@ async function handleShareScore() {
     pointsEmojiMap: POINTS_EMOJI,
     shareUrl: window.location.href
   });
+}
+
+function handleReplayGame() {
+  if (!gameFinished) {
+    return;
+  }
+
+  // Set the replayed flag to true to persist it
+  savedProgress.replayed = true;
+  persistSavedProgress(GAME_PROGRESS_STORAGE_KEY, savedProgress);
+
+  // Reset game state for a fresh game
+  clearAutoNextTimer();
+  clearPreTimerDelay();
+  clearCharacterRevealTimers();
+  clearModeHintTimer();
+  if (modeHintOverlayEl) { modeHintOverlayEl.hidden = true; modeHintOverlayEl.classList.remove("visible"); }
+  stopTimer();
+  score = 0;
+  questionIndex = 0;
+  typedAnswer = "";
+  remainingMs = QUESTION_DURATION_MS;
+  questionLocked = false;
+  gameFinished = false;
+  resultsByQuestionIndex = {};
+  answerHistory = [];
+  scoreValueEl.textContent = "0";
+
+  // Update first score to current score since this is a replay
+  savedProgress.firstScore = savedProgress.currentScore;
+  savedProgress.currentScore = 0;
+  savedProgress.currentQuestionIndex = 0;
+  savedProgress.completed = false;
+  persistSavedProgress(GAME_PROGRESS_STORAGE_KEY, savedProgress);
+
+  // Go back to start screen
+  setCurrentView(VIEW_STATES.START);
 }
 
 function clearTimerFullscreenHold() {
@@ -1372,6 +1431,10 @@ document.addEventListener("keydown", (event) => {
 
 shareScoreButtonEl.addEventListener("click", handleShareScore);
 
+if (replayButtonEl) {
+  replayButtonEl.addEventListener("click", handleReplayGame);
+}
+
 teamNameInputEl.value = loadSavedTeamName(LAST_TEAM_NAME_STORAGE_KEY);
 teamTrayNameEl.textContent = teamNameInputEl.value || "Team Name";
 teamNameInputEl.addEventListener("input", () => {
@@ -1380,9 +1443,6 @@ teamNameInputEl.addEventListener("input", () => {
   persistTeamName(LAST_TEAM_NAME_STORAGE_KEY, name);
 });
 
-if (devResetProgressButtonEl) {
-  devResetProgressButtonEl.addEventListener("click", clearSavedProgressForDevTesting);
-}
 if (devResetProgressButtonIntroEl) {
   devResetProgressButtonIntroEl.addEventListener("click", clearSavedProgressForDevTesting);
 }
