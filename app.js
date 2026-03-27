@@ -681,7 +681,27 @@ function getPostCharacterPauseMs(char) {
   return 0;
 }
 
-function renderQuestionCharacterReveal(questionText, startDelayMs = 0) {
+function getCharacterRevealIntervalMs() {
+  const completedQuestionCount = Math.max(0, questionIndex);
+  const possibleScoreSoFar = completedQuestionCount * MAX_FAST_POINTS;
+
+  if (possibleScoreSoFar <= 0) {
+    return CHARACTER_REVEAL_INTERVAL_MS;
+  }
+
+  const scoreRatio = score / possibleScoreSoFar;
+
+  console.log("Score ratio:", scoreRatio, "(score:", score, "possible:", possibleScoreSoFar, "completed questions:", completedQuestionCount, ")");
+  if (scoreRatio < 0.6) {
+    return CHARACTER_REVEAL_INTERVAL_MS + 10;
+  } else if (scoreRatio < 0.4) {
+    return CHARACTER_REVEAL_INTERVAL_MS + 25;
+  }
+
+  return CHARACTER_REVEAL_INTERVAL_MS;
+}
+
+function renderQuestionCharacterReveal(questionText, startDelayMs = 0, revealIntervalMs = CHARACTER_REVEAL_INTERVAL_MS) {
   clearCharacterRevealTimers();
   questionTextEl.innerHTML = "";
 
@@ -704,7 +724,7 @@ function renderQuestionCharacterReveal(questionText, startDelayMs = 0) {
     characterEl.textContent = char;
     fragment.appendChild(characterEl);
 
-    cumulativeRevealDelayMs += CHARACTER_REVEAL_INTERVAL_MS;
+    cumulativeRevealDelayMs += revealIntervalMs;
 
     const revealHandle = window.setTimeout(() => {
       characterEl.classList.add("revealed");
@@ -1275,7 +1295,12 @@ function loadQuestion() {
   renderNumberAnswerDisplay();
   showModeHint(current.typeCode);
   const hintOffsetMs = QUESTION_TYPE_LABELS[current.typeCode] ? QUESTION_TYPE_LABEL_DURATION_MS : 0;
-  const revealDurationMs = renderQuestionCharacterReveal(current.question, hintOffsetMs + PRE_REVEAL_DELAY_MS);
+  const revealIntervalMs = getCharacterRevealIntervalMs();
+  const revealDurationMs = renderQuestionCharacterReveal(
+    current.question,
+    hintOffsetMs + PRE_REVEAL_DELAY_MS,
+    revealIntervalMs
+  );
 
   renderKeypad();
   persistInProgressPosition({ indexOffset: 1 });
