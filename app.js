@@ -223,7 +223,7 @@ async function initializeAppStartup() {
     if (!hasSeenHowToPlay()) {
       setTimeout(() => {
         openHowToPlay();
-      }, 1000);
+      }, 800);
     }
   }
 }
@@ -238,6 +238,7 @@ function updateStartButtonText() {
 }
 
 function handleStartGame() {
+  if(!hasSeenHowToPlay()){return}
   if (savedProgress.completed) {
     restoreCompletedGameState();
   } else if (savedProgress.currentQuestionIndex > 0) {
