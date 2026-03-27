@@ -4,7 +4,7 @@ const DAILY_QUIZ_API_BASE_URL =
 const QUIZ_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 const FALLBACK_QUIZ_PACK = {
-  pack_date: "back-up-quiz-pack-1",
+  pack_date: "2026-01-01",
   questions: [
     {
       id: "question1",
