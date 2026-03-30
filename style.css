@@ -379,6 +379,10 @@ textarea {
   color: rgb(0, 0, 0);
 }
 
+.keypad.numbers .key-btn.number-enter.should-select {
+  box-shadow: inset 0 0 0 4px rgb(255, 255, 255);
+}
+
 .key-btn.choice-row {
   position: relative;
   display: flex;

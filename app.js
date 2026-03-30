@@ -1225,6 +1225,7 @@ function renderKeypad() {
     keypadEl.style.gridTemplateRows = "";
     keypadEl.className = "keypad numbers";
     const shouldDimNumberKeypad = questionLocked && typedAnswer.length === 0;
+    const shouldDimEnterButton = typedAnswer.length === 0;
     const keypadButtons = [
       ...getNumberKeys().slice(0, 9),
       "C",
@@ -1250,7 +1251,7 @@ function renderKeypad() {
         keypadEl.appendChild(
           buildKeyButton({
             label,
-            className: `number-control number-enter ${shouldDimNumberKeypad ? "dimmed" : ""}`.trim(),
+            className: `number-control number-enter ${(shouldDimNumberKeypad || shouldDimEnterButton) ? "dimmed" : "should-select"}`.trim(),
             onClick: () => submitCurrentNumberAnswer(),
             disabled: questionLocked || typedAnswer.length === 0
           })
