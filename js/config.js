@@ -43,19 +43,6 @@ export const IS_DEV_MODE =
   window.location.hostname === "127.0.0.1" ||
   window.location.hostname.startsWith("192.168.");
 
-export const POINTS_EMOJI = {
-  1: "1️⃣",
-  2: "2️⃣",
-  3: "3️⃣",
-  4: "4️⃣",
-  5: "5️⃣",
-  6: "6️⃣",
-  7: "7️⃣",
-  8: "8️⃣",
-  9: "9️⃣",
-  10: "🔟"
-};
-
 export const FAST_POINT_WINDOW_DURATIONS_MS = Array.from(
   { length: MAX_FAST_POINTS },
   (_, idx) => Math.round((FAST_POINT_INITIAL_DURATION_SECONDS + (idx * FAST_POINT_DURATION_STEP_SECONDS)) * 1000)

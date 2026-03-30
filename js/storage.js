@@ -51,13 +51,6 @@ export function getOrCreatePlayerUnid(storageKey) {
   return createdUnid;
 }
 
-export function loadSavedTeamName(storageKey) {
-  return safeGetStorage(storageKey) || "";
-}
-
-export function persistTeamName(storageKey, name) {
-  safeSetStorage(storageKey, String(name || "").trim());
-}
 
 export function loadSavedProgress(storageKey, totalPossibleScore) {
   const defaultProgress = {

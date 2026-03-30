@@ -16,7 +16,6 @@ import {
   PLAYER_UNID_STORAGE_KEY,
   IS_DEV_MODE,
   GAME_PROGRESS_STORAGE_KEY_PREFIX,
-  POINTS_EMOJI,
   FAST_POINT_WINDOW_DURATIONS_MS,
   QUESTION_DURATION_MS,
   MAX_FAST_POINTS
@@ -564,7 +563,6 @@ async function handleShareScore() {
     score,
     totalPossible: TOTAL_POSSIBLE_SCORE,
     resultEntries,
-    pointsEmojiMap: POINTS_EMOJI,
     shareUrl: buildCanonicalQuizUrl(activePackDate)
   });
 }

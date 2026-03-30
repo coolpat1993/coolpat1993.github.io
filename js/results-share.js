@@ -1,33 +1,41 @@
-export function getPointsEmoji(points, pointsEmojiMap) {
-  return pointsEmojiMap[points] || "❌";
+const POINTS_EMOJI = {
+  0: "❌",
+  1: "1️⃣",
+  2: "2️⃣",
+  3: "3️⃣",
+  4: "4️⃣",
+  5: "5️⃣",
+  6: "6️⃣",
+  7: "7️⃣",
+  8: "8️⃣",
+  9: "9️⃣",
+  10: "🔟"
+};
+
+export function getPointsEmoji(points) {
+  return POINTS_EMOJI[points] || "❌";
 }
 
-export function buildShareText({ score, totalPossible, resultEntries, pointsEmojiMap, shareUrl }) {
+export function buildShareText({
+  score,
+  totalPossible,
+  resultEntries,
+  shareUrl
+}) {
   const heading = `I scored ${score}/${totalPossible}`;
-  const breakdown = buildAnswerBreakdownText(resultEntries, pointsEmojiMap);
-  return `${heading}\n${breakdown}\n${shareUrl}`;
+  const breakdown = buildAnswerBreakdownText(resultEntries);
+  return `${heading}\n\n${breakdown}\n${shareUrl}`;
 }
 
 export function buildCanonicalQuizUrl(packDate = null) {
-  const shareUrl = new URL("https://coolpat1993.github.io/");
   const normalizedPackDate = String(packDate || "").trim();
+  const shareUrl = new URL("https://coolpat1993.github.io/");
 
   if (normalizedPackDate) {
     shareUrl.searchParams.set("quiz", normalizedPackDate);
-    return shareUrl.toString();
   }
 
-  const currentUrl = new URL(window.location.href);
-  const canonicalUrl = new URL(currentUrl.pathname, currentUrl.origin);
-  const rawQuizParam = currentUrl.searchParams.get("quiz");
-  const quizParam = rawQuizParam ? String(rawQuizParam).trim() : "";
-
-  if (quizParam) {
-    canonicalUrl.searchParams.set("quiz", quizParam);
-  }
-
-  canonicalUrl.hash = currentUrl.hash;
-  return canonicalUrl.toString();
+  return shareUrl.toString();
 }
 
 export function normalizeAddressBarUrl() {
@@ -45,7 +53,6 @@ export async function shareResults({
   score,
   totalPossible,
   resultEntries,
-  pointsEmojiMap,
   shareTitle = "SpeedQuizzing score",
   shareUrl = window.location.href
 }) {
@@ -53,13 +60,11 @@ export async function shareResults({
     score,
     totalPossible,
     resultEntries,
-    pointsEmojiMap,
     shareUrl
   });
   const shareData = {
     title: shareTitle,
-    text: shareText,
-    url: shareUrl
+    text: shareText
   };
 
   if (navigator.share) {
@@ -88,9 +93,9 @@ export async function shareResults({
   }
 }
 
-function buildAnswerBreakdownText(resultEntries, pointsEmojiMap) {
+function buildAnswerBreakdownText(resultEntries) {
   return resultEntries
-    .map((entry) => (entry.isCorrect ? getPointsEmoji(entry.earnedPoints, pointsEmojiMap) : "❌"))
+    .map((entry) => getPointsEmoji(entry.earnedPoints))
     .join(" ");
 }
 
