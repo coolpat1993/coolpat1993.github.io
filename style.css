@@ -878,6 +878,14 @@ textarea {
   margin-top: 16px;
 }
 
+.pack-date-display {
+  margin: 8px 0 6px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: rgb(255, 255, 255);
+  letter-spacing: 0.02em;
+}
+
 .intro-button {
   border: 0;
   border-radius: 12px;

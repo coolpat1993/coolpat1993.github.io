@@ -132,7 +132,7 @@ export function normalizeQuestionSet(records) {
 
 export function getFallbackQuizPack() {
   return {
-    packId: String(FALLBACK_QUIZ_PACK.pack_date || "").trim(),
+    packDate: String(FALLBACK_QUIZ_PACK.pack_date || "").trim(),
     questions: normalizeQuestionSet(FALLBACK_QUIZ_PACK.questions)
   };
 }
@@ -168,7 +168,7 @@ async function fetchDailyQuizQuestions({ signal, quizDate = null } = {}) {
   const payload = JSON.parse(decodeBase64Utf8(json.data));
 
   return {
-    packId: payload.pack_date,
+    packDate: payload.pack_date,
     questions: payload.questions.map(transformQuestion)
   };
 }
@@ -208,7 +208,7 @@ function getQuizParamPack(rawQuizParam) {
   const questions = Array.isArray(payload.questions) ? payload.questions : [];
 
   return {
-    packId: String(payload.pack_date || "url-param-quiz").trim(),
+    packDate: String(payload.pack_date || "url-param-quiz").trim(),
     questions: questions.map((q, index) =>
       // Raw API format (has short_answer) vs pre-normalized format
       q.short_answer !== undefined

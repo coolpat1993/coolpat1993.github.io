@@ -90,6 +90,7 @@ const pregameHeaderEl = document.querySelector("#pregameHeader");
 const introPanelEl = document.querySelector("#introPanel");
 const startButtonEl = document.querySelector("#startButton");
 const howToPlayButtonEl = document.querySelector("#howToPlayButton");
+const packDateDisplayEl = document.querySelector("#packDateDisplay");
 const startupStatusTextEl = document.querySelector("#startupStatusText");
 const finishPanelEl = document.querySelector("#finishPanel");
 const finalScoreValueEl = document.querySelector("#finalScoreValue");
@@ -123,12 +124,14 @@ function setCurrentView(viewState) {
   pregameHeaderEl.hidden = true;
   keypadEl.hidden = true;
   numberAnswerDisplayEl.hidden = true;
+  packDateDisplayEl.hidden = true;
 
   // Show relevant panels based on view state
   switch (viewState) {
     case VIEW_STATES.START:
       introPanelEl.hidden = false;
       pregameHeaderEl.hidden = false;
+      packDateDisplayEl.hidden = false;
       updateStartButtonText();
       break;
 
@@ -139,6 +142,8 @@ function setCurrentView(viewState) {
 
     case VIEW_STATES.FINISH:
       finishPanelEl.hidden = false;
+      pregameHeaderEl.hidden = false;
+      packDateDisplayEl.hidden = false;
       break;
   }
 }
@@ -179,6 +184,15 @@ function setStartupStatus(message, { state = "info" } = {}) {
   }
 }
 
+function formatPackDate(dateStr) {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const suffixes = ["th","st","nd","rd"];
+  const v = day % 100;
+  const suffix = suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0];
+  const monthName = new Date(year, month - 1, 1).toLocaleString("en-GB", { month: "long" });
+  return `${day}${suffix} ${monthName} ${year}`;
+}
+
 async function initializeQuestionPack() {
   const { pack, usedFallbackPack, lastError } = await loadDailyQuizPack({
     setStartupStatus,
@@ -188,7 +202,10 @@ async function initializeQuestionPack() {
   });
 
   questions = pack.questions;
-  GAME_PROGRESS_STORAGE_KEY = `${GAME_PROGRESS_STORAGE_KEY_PREFIX}:${pack.packId}`;
+  GAME_PROGRESS_STORAGE_KEY = `${GAME_PROGRESS_STORAGE_KEY_PREFIX}:${pack.packDate}`;
+  if (packDateDisplayEl && pack.packDate) {
+    packDateDisplayEl.textContent = formatPackDate(pack.packDate);
+  }
   TOTAL_POSSIBLE_SCORE = questions.length * MAX_FAST_POINTS;
 
   savedProgress = loadSavedProgress(GAME_PROGRESS_STORAGE_KEY, TOTAL_POSSIBLE_SCORE);
