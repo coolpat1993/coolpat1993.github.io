@@ -35,7 +35,6 @@ export const QUESTION_TYPE_LABELS = {
 export const QUESTION_TYPE_LABEL_DURATION_MS = 1000;
 export const LONG_PRESS_MS = 450;
 export const TIMER_FULLSCREEN_HOLD_MS = 500;
-export const LAST_TEAM_NAME_STORAGE_KEY = "speedQuizzingTeamName";
 export const PLAYER_UNID_STORAGE_KEY = "speedQuizzingPlayerUnid";
 export const GAME_PROGRESS_STORAGE_KEY_PREFIX = "speedQuizzingProgress";
 

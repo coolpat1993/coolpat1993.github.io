@@ -14,7 +14,6 @@ import {
   LONG_PRESS_MS,
   TIMER_FULLSCREEN_HOLD_MS,
   PLAYER_UNID_STORAGE_KEY,
-  LAST_TEAM_NAME_STORAGE_KEY,
   IS_DEV_MODE,
   GAME_PROGRESS_STORAGE_KEY_PREFIX,
   POINTS_EMOJI,
@@ -28,11 +27,9 @@ import {
   loadDailyQuizPack
 } from "./js/daily-quiz-api.js";
 
-// Local storage helpers for player identity, team name, and persisted progress.
+// Local storage helpers for player identity and persisted progress.
 import {
   getOrCreatePlayerUnid,
-  loadSavedTeamName,
-  persistTeamName,
   loadSavedProgress,
   persistSavedProgress
 } from "./js/storage.js";
@@ -101,11 +98,9 @@ const nextQuizButtonEl = document.querySelector("#nextQuizButton");
 const finishQuizNavEl = document.querySelector("#finishQuizNav");
 const finalScoreValueEl = document.querySelector("#finalScoreValue");
 const finalScoreTotalEl = document.querySelector("#finalScoreTotal");
-const teamNameInputEl = document.querySelector("#teamNameInput");
 const shareScoreButtonEl = document.querySelector("#shareScoreButton");
 const replayButtonEl = document.querySelector("#replayButton");
 const devResetProgressButtonIntroEl = document.querySelector("#devResetProgressButtonIntro");
-const teamTrayNameEl = document.querySelector(".team-tray-name");
 const modeHintOverlayEl = document.querySelector("#modeHintOverlay");
 const modeHintTitleEl = modeHintOverlayEl?.querySelector(".mode-hint-title");
 const modeHintTextEl = modeHintOverlayEl?.querySelector(".mode-hint-text");
@@ -370,13 +365,11 @@ function submitResult() {
     return;
   }
 
-  const teamName = String(teamNameInputEl?.value || "").trim();
   const resultEntries = buildAnswerHistoryFromResults(getMergedResultsSnapshot());
 
   const submission = buildSubmissionPayload({
     gameProgressStorageKey: GAME_PROGRESS_STORAGE_KEY,
     playerUnid,
-    teamName,
     score,
     totalPossible: TOTAL_POSSIBLE_SCORE,
     resultEntries,
@@ -572,7 +565,7 @@ async function handleShareScore() {
     totalPossible: TOTAL_POSSIBLE_SCORE,
     resultEntries,
     pointsEmojiMap: POINTS_EMOJI,
-    shareUrl: buildCanonicalQuizUrl()
+    shareUrl: buildCanonicalQuizUrl(activePackDate)
   });
 }
 
@@ -1510,14 +1503,6 @@ if (nextQuizButtonEl) {
 }
 
 updateQuizNavigationButtons();
-
-teamNameInputEl.value = loadSavedTeamName(LAST_TEAM_NAME_STORAGE_KEY);
-teamTrayNameEl.textContent = teamNameInputEl.value || "Team Name";
-teamNameInputEl.addEventListener("input", () => {
-  const name = String(teamNameInputEl.value || "").trim();
-  teamTrayNameEl.textContent = name || "Team Name";
-  persistTeamName(LAST_TEAM_NAME_STORAGE_KEY, name);
-});
 
 if (devResetProgressButtonIntroEl) {
   devResetProgressButtonIntroEl.addEventListener("click", clearSavedProgressForDevTesting);

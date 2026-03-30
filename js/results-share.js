@@ -2,13 +2,21 @@ export function getPointsEmoji(points, pointsEmojiMap) {
   return pointsEmojiMap[points] || "❌";
 }
 
-export function buildShareText({ score, totalPossible, resultEntries, pointsEmojiMap }) {
+export function buildShareText({ score, totalPossible, resultEntries, pointsEmojiMap, shareUrl }) {
   const heading = `I scored ${score}/${totalPossible}`;
   const breakdown = buildAnswerBreakdownText(resultEntries, pointsEmojiMap);
-  return `${heading}\n${breakdown}`;
+  return `${heading}\n${breakdown}\n${shareUrl}`;
 }
 
-export function buildCanonicalQuizUrl() {
+export function buildCanonicalQuizUrl(packDate = null) {
+  const shareUrl = new URL("https://coolpat1993.github.io/");
+  const normalizedPackDate = String(packDate || "").trim();
+
+  if (normalizedPackDate) {
+    shareUrl.searchParams.set("quiz", normalizedPackDate);
+    return shareUrl.toString();
+  }
+
   const currentUrl = new URL(window.location.href);
   const canonicalUrl = new URL(currentUrl.pathname, currentUrl.origin);
   const rawQuizParam = currentUrl.searchParams.get("quiz");
@@ -45,7 +53,8 @@ export async function shareResults({
     score,
     totalPossible,
     resultEntries,
-    pointsEmojiMap
+    pointsEmojiMap,
+    shareUrl
   });
   const shareData = {
     title: shareTitle,
@@ -72,7 +81,7 @@ export async function shareResults({
   }
 
   try {
-    await copyTextToClipboard(`${shareText}\n${shareUrl}`);
+    await copyTextToClipboard(shareText);
     return true;
   } catch (_) {
     return false;
@@ -89,7 +98,6 @@ function buildAnswerBreakdownText(resultEntries, pointsEmojiMap) {
 export function buildSubmissionPayload({
   gameProgressStorageKey,
   playerUnid,
-  teamName,
   score,
   totalPossible,
   resultEntries,
@@ -101,9 +109,9 @@ export function buildSubmissionPayload({
   );
 
   return {
-    pack_date: gameProgressStorageKey.split(":").slice(1).join(":").replace("sq-pack-id-", ""),
+    pack_date: gameProgressStorageKey.split(":").slice(1).join(":"),
     player_unid: playerUnid,
-    name: teamName || "",
+    name: "",
     score,
     total_possible: totalPossible,
     results: resultEntries.map((entry) => {
