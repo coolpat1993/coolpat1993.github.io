@@ -38,16 +38,6 @@ export function buildCanonicalQuizUrl(packDate = null) {
   return shareUrl.toString();
 }
 
-export function normalizeAddressBarUrl() {
-  if (!window.history?.replaceState) {
-    return;
-  }
-
-  const canonicalUrl = buildCanonicalQuizUrl();
-  if (canonicalUrl !== window.location.href) {
-    window.history.replaceState(window.history.state, "", canonicalUrl);
-  }
-}
 
 export async function shareResults({
   score,

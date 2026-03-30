@@ -67,7 +67,6 @@ import {
   postResultsToEndpoint,
   shareResults,
   buildCanonicalQuizUrl,
-  normalizeAddressBarUrl
 } from "./js/results-share.js";
 
 // View state management
@@ -1510,6 +1509,5 @@ startButtonEl.addEventListener("click", handleStartGame);
 howToPlayButtonEl.addEventListener("click", openHowToPlay);
 
 bindTimerBarFullscreenHold();
-normalizeAddressBarUrl();
 
 initializeAppStartup();
