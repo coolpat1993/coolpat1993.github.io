@@ -88,3 +88,39 @@ export function isCurrentAnswerCorrect(question, answerValue) {
   const userAnswerOptions = getComparableAnswerOptions(question, answerValue);
   return userAnswerOptions.some((option) => validAnswers.includes(option));
 }
+
+export function isQuizDateString(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || "").trim());
+}
+
+export function parseQuizDate(value) {
+  const quizDate = String(value || "").trim();
+  if (!isQuizDateString(quizDate)) {
+    return null;
+  }
+
+  const [year, month, day] = quizDate.split("-").map(Number);
+  const utcDate = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    utcDate.getUTCFullYear() !== year ||
+    utcDate.getUTCMonth() !== month - 1 ||
+    utcDate.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return utcDate;
+}
+
+export function formatQuizDateForQuery(date) {
+  const year = String(date.getUTCFullYear());
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function getTodayUtcDateOnly() {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}

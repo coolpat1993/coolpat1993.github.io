@@ -45,7 +45,10 @@ import {
   getResultMessage,
   expandAnswerChoices,
   getComparableAnswerOptions,
-  isCurrentAnswerCorrect
+  isCurrentAnswerCorrect,
+  parseQuizDate,
+  formatQuizDateForQuery,
+  getTodayUtcDateOnly
 } from "./js/quiz-helpers.js";
 
 // How-to-play modal controls and seen-state tracking.
@@ -98,6 +101,9 @@ const finalScoreTotalEl = document.querySelector("#finalScoreTotal");
 const teamNameInputEl = document.querySelector("#teamNameInput");
 const shareScoreButtonEl = document.querySelector("#shareScoreButton");
 const replayButtonEl = document.querySelector("#replayButton");
+const prevQuizButtonEl = document.querySelector("#prevQuizButton");
+const nextQuizButtonEl = document.querySelector("#nextQuizButton");
+const finishQuizNavEl = document.querySelector("#finishQuizNav");
 const devResetProgressButtonIntroEl = document.querySelector("#devResetProgressButtonIntro");
 const teamTrayNameEl = document.querySelector(".team-tray-name");
 const modeHintOverlayEl = document.querySelector("#modeHintOverlay");
@@ -121,6 +127,7 @@ function setCurrentView(viewState) {
   introPanelEl.hidden = true;
   questionPanelEl.hidden = true;
   finishPanelEl.hidden = true;
+  finishQuizNavEl.hidden = true;
   pregameHeaderEl.hidden = true;
   keypadEl.hidden = true;
   numberAnswerDisplayEl.hidden = true;
@@ -144,6 +151,7 @@ function setCurrentView(viewState) {
       finishPanelEl.hidden = false;
       pregameHeaderEl.hidden = false;
       packDateDisplayEl.hidden = false;
+      finishQuizNavEl.hidden = false;
       break;
   }
 }
@@ -163,6 +171,7 @@ let answerHistory = [];
 let resultsByQuestionIndex = {};
 let sequenceOrderCodes = [];
 let sequenceFinalizing = false;
+let activePackDate = null;
 
 let savedProgress = loadSavedProgress(GAME_PROGRESS_STORAGE_KEY, TOTAL_POSSIBLE_SCORE);
 const playerUnid = getOrCreatePlayerUnid(PLAYER_UNID_STORAGE_KEY);
@@ -193,6 +202,38 @@ function formatPackDate(dateStr) {
   return `${day}${suffix} ${monthName} ${year}`;
 }
 
+function updateQuizNavigationButtons() {
+  const baseDate = parseQuizDate(activePackDate);
+  const canNavigateByDate = Boolean(baseDate);
+  const canGoNext = canNavigateByDate && baseDate.getTime() < getTodayUtcDateOnly().getTime();
+
+  if (prevQuizButtonEl) {
+    prevQuizButtonEl.disabled = !canNavigateByDate;
+  }
+
+  if (nextQuizButtonEl) {
+    nextQuizButtonEl.disabled = !canGoNext;
+  }
+}
+
+function goToRelativeQuizDate(dayOffset) { 
+  const baseDate = parseQuizDate(activePackDate);
+  if (!baseDate) {
+    return;
+  }
+
+  const targetDate = new Date(baseDate.getTime());
+  targetDate.setUTCDate(targetDate.getUTCDate() + dayOffset);
+
+  if (dayOffset > 0 && targetDate.getTime() > getTodayUtcDateOnly().getTime()) {
+    return;
+  }
+
+  const targetUrl = new URL(window.location.href);
+  targetUrl.searchParams.set("quiz", formatQuizDateForQuery(targetDate));
+  window.location.assign(targetUrl.toString());
+}
+
 async function initializeQuestionPack() {
   const { pack, usedFallbackPack, lastError } = await loadDailyQuizPack({
     setStartupStatus,
@@ -203,6 +244,8 @@ async function initializeQuestionPack() {
 
   questions = pack.questions;
   GAME_PROGRESS_STORAGE_KEY = `${GAME_PROGRESS_STORAGE_KEY_PREFIX}:${pack.packDate}`;
+  activePackDate = String(pack.packDate || "").trim() || null;
+  updateQuizNavigationButtons();
   if (packDateDisplayEl && pack.packDate) {
     packDateDisplayEl.textContent = formatPackDate(pack.packDate);
   }
@@ -1453,6 +1496,20 @@ shareScoreButtonEl.addEventListener("click", handleShareScore);
 if (replayButtonEl) {
   replayButtonEl.addEventListener("click", handleReplayGame);
 }
+
+if (prevQuizButtonEl) {
+  prevQuizButtonEl.addEventListener("click", () => {
+    goToRelativeQuizDate(-1);
+  });
+}
+
+if (nextQuizButtonEl) {
+  nextQuizButtonEl.addEventListener("click", () => {
+    goToRelativeQuizDate(1);
+  });
+}
+
+updateQuizNavigationButtons();
 
 teamNameInputEl.value = loadSavedTeamName(LAST_TEAM_NAME_STORAGE_KEY);
 teamTrayNameEl.textContent = teamNameInputEl.value || "Team Name";
