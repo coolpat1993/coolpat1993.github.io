@@ -7,10 +7,10 @@ const FALLBACK_QUIZ_PACK = {
   pack_date: "2026-01-01",
   questions: [
     {
-      id: "question1",
+      question_id: "question1",
       type_code: "M",
       question: "Which of the following actors stars in the film 'Inception'?",
-      choices: [
+      options: [
         "Matt Damon",
         "Brad Pitt",
         "Keanu Reeves",
@@ -19,48 +19,48 @@ const FALLBACK_QUIZ_PACK = {
       answer: "D"
     },
     {
-      id: "question2",
+      question_id: "question2",
       type_code: "N",
       question: "How many lanes are there on an Olympic athletics track?",
       answer: "8",
       longAnswer: "8"
     },
     {
-      id: "question3",
+      question_id: "question3",
       type_code: "L",
       question: "In which city did the first 'Hard Rock Cafe' open?",
       answer: "L",
       longAnswer: "London"
     },
     {
-      id: "question4",
+      question_id: "question4",
       type_code: "N",
       question: "What is 102 x 5?",
       answer: "510",
       longAnswer: "510"
     },
     {
-      id: "question5",
+      question_id: "question5",
       type_code: "M",
       question: "At the start of a game of chess, who moves first?",
-      choices: [
+      options: [
         "White",
         "Black"
       ],
       answer: "A"
     },
     {
-      id: "question6",
+      question_id: "question6",
       type_code: "L",
       question: "In Greek mythology, who was the father and king of the gods?",
       answer: "Z",
       longAnswer: "Zeus"
     },
     {
-      id: "question7",
+      question_id: "question7",
       type_code: "M",
       question: "For how many years must Scotch whisky be aged in oak casks before it can legally be sold in the UK?",
-      choices: [
+      options: [
         "3",
         "6",
         "9"
@@ -68,17 +68,17 @@ const FALLBACK_QUIZ_PACK = {
       answer: "A"
     },
     {
-      id: "question8",
+      question_id: "question8",
       type_code: "L",
       question: "What is the capital city of Norway?",
       answer: "O",
       longAnswer: "Oslo"
     },
     {
-      id: "question9",
+      question_id: "question9",
       type_code: "M",
       question: "In which country was the composer Chopin born?",
-      choices: [
+      options: [
         "Poland",
         "Austria",
         "Italy",
@@ -87,7 +87,7 @@ const FALLBACK_QUIZ_PACK = {
       answer: "A"
     },
     {
-      id: "question10",
+      question_id: "question10",
       type_code: "L",
       question: "Which term for a hired detective is also the name of a popular satirical magazine?",
       answer: "P",
@@ -111,12 +111,10 @@ function sleep(ms) {
 export function normalizeQuestionRecord(question, index) {
   return {
     ...question,
-    id: String(question?.id || "").trim() || `question${index + 1}`,
+    question_id: String(question?.question_id || question?.questionId || question?.id || "").trim() || `question${index + 1}`,
     typeCode: String(question?.typeCode || question?.type_code || "L").trim().toUpperCase(),
     question: String(question?.question ?? question?.q ?? ""),
-    choices: Array.isArray(question?.choices)
-      ? question.choices
-      : Array.isArray(question?.options)
+    options: Array.isArray(question?.options)
       ? question.options
       : undefined
   };
@@ -141,7 +139,7 @@ function transformQuestion(raw, index) {
   const answer = decodeBase64Utf8(raw.short_answer);
   const longAnswer = raw.long_answer ? decodeBase64Utf8(raw.long_answer) : "";
   const question = {
-    id: raw.id,
+    question_id: raw.question_id || raw.id,
     type_code: raw.type_code || "L",
     question: raw.q,
     answer

@@ -100,7 +100,7 @@ export function buildSubmissionPayload({
   completedAt,
 }) {
   const typeCodeById = new Map(
-    questions.map((question) => [String(question.id), question.typeCode])
+    questions.map((question) => [String(question.question_id), question.typeCode])
   );
 
   return {

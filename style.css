@@ -446,15 +446,16 @@ textarea {
 .choice-label {
   position: relative;
   z-index: 1;
-  display: block;
+  display: -webkit-box;
   width: 100%;
   text-align: center;
   font-family: "Montserrat", "Kumbh", sans-serif;
   font-weight: 500;
-  font-size: 2rem;
+  font-size: clamp(0.5rem, 6.5vw, 1.5rem);
   line-height: 1.15;
   color: #000;
-  white-space: nowrap;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
 }

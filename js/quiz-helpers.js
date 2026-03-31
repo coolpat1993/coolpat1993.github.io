@@ -15,14 +15,14 @@ export function getQuestionAnswerCodes(question) {
 }
 
 export function getRevealAnswerText(question) {
-  if (question.typeCode === "S" && Array.isArray(question.choices)) {
+  if (question.typeCode === "S" && Array.isArray(question.options)) {
     const answerCodes = getQuestionAnswerCodes(question);
     if (answerCodes.length > 0) {
       const sequenceLabel = answerCodes[0]
         .split("")
         .map((code) => {
           const idx = code.charCodeAt(0) - 65;
-          return question.choices[idx] || code;
+          return question.options[idx] || code;
         })
         .join(" | ");
 
@@ -32,12 +32,12 @@ export function getRevealAnswerText(question) {
     }
   }
 
-  if (question.typeCode === "M" && Array.isArray(question.choices)) {
+  if (question.typeCode === "M" && Array.isArray(question.options)) {
     const answerCodes = getQuestionAnswerCodes(question);
     if (answerCodes.length > 0) {
       const labels = answerCodes.map((code) => {
         const idx = code.charCodeAt(0) - 65;
-        return question.choices[idx] || code;
+        return question.options[idx] || code;
       });
       return labels.join(" / ");
     }
@@ -68,7 +68,7 @@ export function getResultMessage(question, { isCorrect = false, timedOut = false
   return `${answerText} ❌`;
 }
 
-export function expandAnswerChoices(answerCode) {
+export function expandAnswerOptions(answerCode) {
   const normalized = normalize(answerCode);
   return Array.from(normalized);
 }
@@ -77,7 +77,7 @@ export function getComparableAnswerOptions(question, answerValue) {
   const normalized = normalize(answerValue);
 
   if (question?.typeCode === "L") {
-    return expandAnswerChoices(normalized);
+    return expandAnswerOptions(normalized);
   }
 
   return [normalized];

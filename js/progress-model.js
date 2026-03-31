@@ -98,7 +98,7 @@ export function reconcileSkippedQuestionsInSavedProgress({
 
     baseResults[entryKey] = {
       questionIndex: index,
-      questionId: question.id,
+      questionId: question.question_id,
       typeCode: question.typeCode,
       userAnswer: "",
       correctAnswer: getRevealAnswerText(question),

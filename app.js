@@ -39,7 +39,7 @@ import {
   getQuestionAnswerCodes,
   getRevealAnswerText,
   getResultMessage,
-  expandAnswerChoices,
+  expandAnswerOptions,
   getComparableAnswerOptions,
   isCurrentAnswerCorrect,
   parseQuizDate,
@@ -445,7 +445,7 @@ function restoreInProgressGameState() {
 function recordAnswerResult(question, userAnswer, { isCorrect = false, earnedPoints = 0, timedOut = false } = {}) {
   const resultEntry = {
     questionIndex,
-    questionId: question.id,
+    questionId: question.question_id,
     typeCode: question.typeCode,
     userAnswer,
     correctAnswer: getRevealAnswerText(question),
@@ -950,10 +950,10 @@ function pickSequenceAnswer(answerCode) {
   typedAnswer = sequenceOrderCodes.join("");
   renderKeypad();
 
-  const totalSequenceChoices = Array.isArray(current.choices) ? current.choices.length : 0;
-  if (totalSequenceChoices > 0 && sequenceOrderCodes.length === totalSequenceChoices) {
+  const totalSequenceOptions = Array.isArray(current.options) ? current.options.length : 0;
+  if (totalSequenceOptions > 0 && sequenceOrderCodes.length === totalSequenceOptions) {
     sequenceFinalizing = true;
-      if (getCurrentQuestion()?.id !== current.id) {
+      if (getCurrentQuestion()?.question_id !== current.question_id) {
         sequenceFinalizing = false;
         return;
       }
@@ -1198,7 +1198,7 @@ function renderKeypad() {
 
     getLetterKeys().forEach((key) => {
       const normalizedKey = normalize(key);
-      const keyOptions = expandAnswerChoices(normalizedKey);
+      const keyOptions = expandAnswerOptions(normalizedKey);
       const isSelected = normalize(typedAnswer) === normalizedKey;
       const keyIsCorrect = questionLocked && keyOptions.some(option => option === correctCode);
       const isCorrect = keyIsCorrect;
@@ -1270,26 +1270,26 @@ function renderKeypad() {
     });
   } else if (current.typeCode === "S") {
     keypadEl.className = "keypad sequence";
-    const choices = Array.isArray(current.choices) ? current.choices : [];
+    const options = Array.isArray(current.options) ? current.options : [];
     const correctSequence = getQuestionAnswerCodes(current)[0] || "";
-    const choiceEntries = choices.map((label, index) => ({
+    const choiceEntries = options.map((label, index) => ({
       code: String.fromCharCode(65 + index),
       label
     }));
-    const hasFullSequence = choices.length > 0 && sequenceOrderCodes.length === choices.length;
+    const hasFullSequence = options.length > 0 && sequenceOrderCodes.length === options.length;
     const isFullSequenceCorrect = hasFullSequence && sequenceOrderCodes.join("") === correctSequence;
 
-    const renderedChoices = hasFullSequence
+    const renderedOptions = hasFullSequence
       ? [...choiceEntries].sort((a, b) => (
           sequenceOrderCodes.indexOf(a.code) - sequenceOrderCodes.indexOf(b.code)
         ))
       : choiceEntries;
 
-    if (choices.length > 0) {
-      keypadEl.style.gridTemplateRows = `repeat(${choices.length}, minmax(0, 1fr))`;
+    if (options.length > 0) {
+      keypadEl.style.gridTemplateRows = `repeat(${options.length}, minmax(0, 1fr))`;
     }
 
-    renderedChoices.forEach((choice) => {
+    renderedOptions.forEach((choice) => {
       const normalizedCode = normalize(choice.code);
       const correctOrder = correctSequence.indexOf(normalizedCode) + 1;
       const showCorrectOrderNumber = hasFullSequence && !isFullSequenceCorrect;
@@ -1330,7 +1330,7 @@ function renderKeypad() {
     keypadEl.style.gridTemplateRows = "";
     keypadEl.className = "keypad multiple";
     const totalChoiceRows = 6;
-    const choiceLabels = Array.isArray(current.choices) ? current.choices : [];
+    const choiceLabels = Array.isArray(current.options) ? current.options : [];
 
     for (let index = 0; index < totalChoiceRows; index += 1) {
       const hasChoice = index < choiceLabels.length;
@@ -1455,8 +1455,8 @@ document.addEventListener("keydown", (event) => {
   if (current.typeCode === "S" && event.key.length === 1) {
     const key = event.key.toUpperCase();
     const choiceIndex = key.charCodeAt(0) - 65;
-    const choices = Array.isArray(current.choices) ? current.choices : [];
-    if (choiceIndex >= 0 && choiceIndex < choices.length) {
+    const options = Array.isArray(current.options) ? current.options : [];
+    if (choiceIndex >= 0 && choiceIndex < options.length) {
       handleAnswerPick(key);
     }
     return;
