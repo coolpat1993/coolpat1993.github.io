@@ -1043,3 +1043,19 @@ textarea {
     min-height: 44px;
   }
 }
+
+.copy-notification {
+  position: fixed;
+  background: rgba(70, 70, 70, 1);
+  color: #ffffff;
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  z-index: 10000;
+  opacity: 1;
+  transition: opacity 0.3s ease-out;
+  pointer-events: none;
+  white-space: nowrap;
+}

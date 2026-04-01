@@ -206,7 +206,7 @@ function getQuizParamPack(rawQuizParam) {
   const questions = Array.isArray(payload.questions) ? payload.questions : [];
 
   return {
-    packDate: String(payload.pack_date || "url-param-quiz").trim(),
+    packDate: String(payload.pack_date || "01-01-1970").trim(),
     questions: questions.map((q, index) =>
       // Raw API format (has short_answer) vs pre-normalized format
       q.short_answer !== undefined

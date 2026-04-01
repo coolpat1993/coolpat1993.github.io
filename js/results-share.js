@@ -43,7 +43,6 @@ export async function shareResults({
   score,
   totalPossible,
   resultEntries,
-  shareTitle = "SpeedQuizzing score",
   shareUrl = window.location.href
 }) {
   const shareText = buildShareText({
@@ -52,34 +51,12 @@ export async function shareResults({
     resultEntries,
     shareUrl
   });
-  const shareData = {
-    title: shareTitle,
-    text: shareText
-  };
-
-  if (navigator.share) {
-    try {
-      if (!navigator.canShare || navigator.canShare(shareData)) {
-        await navigator.share(shareData);
-      } else {
-        await navigator.share({
-          title: shareData.title,
-          text: shareData.text
-        });
-      }
-      return true;
-    } catch (error) {
-      if (error?.name === "AbortError") {
-        return false;
-      }
-    }
-  }
 
   try {
     await copyTextToClipboard(shareText);
-    return true;
+    return { success: true, text: shareText};
   } catch (_) {
-    return false;
+    return { success: false, text: shareText };
   }
 }
 
@@ -154,33 +131,36 @@ export function buildSubmittedProgress({ savedProgress, submittedAt }) {
 }
 
 export async function copyTextToClipboard(text) {
+  // Try modern Clipboard API first
   if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return true;
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (err) {
+      console.warn("Clipboard API failed, trying fallback:", err);
+    }
   }
 
-  const fallbackInput = document.createElement("textarea");
-  fallbackInput.value = text;
-  fallbackInput.setAttribute("readonly", "readonly");
-  fallbackInput.style.position = "fixed";
-  fallbackInput.style.top = "-1000px";
-  fallbackInput.style.left = "-1000px";
-  document.body.appendChild(fallbackInput);
-  fallbackInput.focus();
-  fallbackInput.select();
-
-  let didCopy = false;
+  // Fallback for older browsers and mobile devices
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  
   try {
-    didCopy = document.execCommand("copy");
+    textarea.select();
+    textarea.setSelectionRange(0, 99999); // For mobile devices
+    const success = document.execCommand("copy");
+    
+    if (!success) {
+      throw new Error("execCommand('copy') failed");
+    }
+    
+    return true;
   } finally {
-    document.body.removeChild(fallbackInput);
+    document.body.removeChild(textarea);
   }
-
-  if (!didCopy) {
-    throw new Error("Clipboard copy failed");
-  }
-
-  return true;
 }
 
 function encodeJsonPayloadForUrl(payload) {

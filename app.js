@@ -558,12 +558,40 @@ async function handleShareScore() {
   }
 
   const resultEntries = buildAnswerHistoryFromResults(getMergedResultsSnapshot());
-  await shareResults({
+  const result = await shareResults({
     score,
     totalPossible: TOTAL_POSSIBLE_SCORE,
     resultEntries,
     shareUrl: buildCanonicalQuizUrl(activePackDate)
   });
+
+  if (result.success) {
+    showCopyNotification(result.text);
+  }
+}
+
+function showCopyNotification() {
+  // Create notification element
+  const notification = document.createElement("div");
+  notification.className = "copy-notification";
+  notification.textContent = "Copied to clipboard";
+
+  document.body.appendChild(notification);
+
+  // Position over the share button
+  const buttonRect = shareScoreButtonEl.getBoundingClientRect();
+  notification.style.position = "fixed";
+  notification.style.left = (buttonRect.left + buttonRect.width / 2) + "px";
+  notification.style.top = (buttonRect.top - 10) + "px";
+  notification.style.transform = "translate(-50%, -100%)";
+
+  // Fade out after 2 seconds
+  setTimeout(() => {
+    notification.style.opacity = "0";
+    setTimeout(() => {
+      document.body.removeChild(notification);
+    }, 300);
+  }, 2000);
 }
 
 function handleReplayGame() {
