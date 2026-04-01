@@ -185,6 +185,15 @@ function isQuizDateParam(value) {
   return QUIZ_DATE_REGEX.test(String(value || "").trim());
 }
 
+function getLocalQuizDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 function getDailyQuizApiUrl(quizDate = null) {
   if (!quizDate) {
     return DAILY_QUIZ_API_BASE_URL;
@@ -259,7 +268,9 @@ export async function loadDailyQuizPack({
   }
 
   let lastError = null;
-  const quizDate = rawQuizParam && isQuizDateParam(rawQuizParam) ? rawQuizParam : null;
+  const quizDate = rawQuizParam && isQuizDateParam(rawQuizParam)
+    ? rawQuizParam
+    : getLocalQuizDate();
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
