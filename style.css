@@ -1013,7 +1013,7 @@ textarea {
   display: none;
 }
 
-@media (max-height: 760px) {
+/* @media (max-height: 760px) {
   .phone-frame {
     gap: 6px;
     padding: 8px 6px;
@@ -1041,6 +1041,25 @@ textarea {
 
   .finish-button {
     min-height: 44px;
+  }
+} */
+
+/* On actual mobile devices, fill the screen instead of showing the phone frame */
+@media (max-width: 480px) {
+  body {
+    padding: 0;
+    place-items: stretch;
+  }
+
+  .app-shell {
+    place-items: stretch;
+  }
+
+  .phone-frame {
+    width: 100%;
+    height: 100dvh;
+    border-radius: 0;
+    border: none;
   }
 }
 
