@@ -558,7 +558,6 @@ async function handleShareScore() {
   const resultEntries = buildAnswerHistoryFromResults(getMergedResultsSnapshot());
   const result = await shareResults({
     score,
-    totalPossible: TOTAL_POSSIBLE_SCORE,
     resultEntries,
     shareUrl: buildCanonicalQuizUrl(activePackDate)
   });

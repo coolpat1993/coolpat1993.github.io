@@ -18,11 +18,10 @@ export function getPointsEmoji(points) {
 
 export function buildShareText({
   score,
-  totalPossible,
   resultEntries,
   shareUrl
 }) {
-  const heading = `I scored ${score}/${totalPossible}`;
+  const heading = `I scored ${score} points!`;
   const breakdown = buildAnswerBreakdownText(resultEntries);
   return `${heading}\n\n${breakdown}\n${shareUrl}`;
 }
@@ -41,13 +40,11 @@ export function buildCanonicalQuizUrl(packDate = null) {
 
 export async function shareResults({
   score,
-  totalPossible,
   resultEntries,
   shareUrl = window.location.href
 }) {
   const shareText = buildShareText({
     score,
-    totalPossible,
     resultEntries,
     shareUrl
   });
