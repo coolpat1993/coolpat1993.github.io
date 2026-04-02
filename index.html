@@ -41,18 +41,19 @@
           <section id="introPanel" class="intro-panel" aria-live="polite" hidden>
             <div class="intro-card">
               <p class="intro-subtitle">The daily Speed Quiz</p>
+              <p class="intro-description">10 random trivia questions.</p>
               <p id="startupStatusText" class="intro-status" aria-live="polite"></p>
               <div class="intro-actions">
-                <button id="startButton" class="intro-button intro-button-primary" type="button">Start</button>
-                <button id="howToPlayButton" class="intro-button" type="button">How to Play</button>
-                <button id="devResetProgressButtonIntro" class="intro-button" type="button" style="font-size: 0.8rem; opacity: 0.6;">Dev: reset</button>
+                <button id="startButton" class="sq-button sq-button--primary sq-button--large-text" type="button">Start</button>
+                <button id="howToPlayButton" class="sq-button" type="button">How to Play</button>
+                <button id="devResetProgressButtonIntro" class="sq-button sq-button--small-text" type="button">Dev: reset</button>
                 <p id="packDateDisplay" class="pack-date-display" hidden></p>
               </div>
             </div>
           </section>
           <section id="howToPlayPanel" class="how-to-play-panel" hidden aria-modal="true" aria-label="How to Play">
             <div class="how-to-play-card">
-                <button id="howToPlayCloseButton" class="how-to-play-close" type="button" aria-label="Close">✕</button>
+                <button id="howToPlayCloseButton" class="sq-button sq-button--icon how-to-play-close" type="button" aria-label="Close">✕</button>
                 <div class="how-to-play-card-header">
                   <h2 class="how-to-play-title">How to Play</h2>
                 </div>
@@ -87,7 +88,7 @@
               </div>
               <div class="how-to-play-footer">
                 <div id="howToPlayDots" class="how-to-play-dots"></div>
-                <button id="howToPlayNextButton" class="intro-button intro-button-primary how-to-play-next-btn" type="button">Next</button>
+                <button id="howToPlayNextButton" class="sq-button sq-button--primary how-to-play-next-btn" type="button">Next</button>
               </div>
             </div>
           </section>
@@ -97,14 +98,14 @@
               <p class="finish-score"><span id="finalScoreValue">0</span><span class="finish-score-separator">/</span><span id="finalScoreTotal">100</span></p>
 
               <div class="finish-actions">
-                <button id="shareScoreButton" class="intro-button intro-button-primary" type="button">Share results</button>
-                <button id="replayButton" class="finish-button" type="button">Replay</button>
+                <button id="shareScoreButton" class="sq-button sq-button--primary" type="button">Share results</button>
+                <button id="replayButton" class="sq-button sq-button--compact" type="button">Replay</button>
               </div>
             </div>
           </section>
           <div id="finishQuizNav" class="finish-quiz-nav" hidden>
-            <button id="prevQuizButton" class="finish-button finish-quiz-nav-button" type="button" >&lt; Previous quiz</button>
-            <button id="nextQuizButton" class="finish-button finish-quiz-nav-button" type="button">Next quiz &gt;</button>
+            <button id="prevQuizButton" class="sq-button sq-button--compact finish-quiz-nav-button" type="button" >&lt; Previous quiz</button>
+            <button id="nextQuizButton" class="sq-button sq-button--compact finish-quiz-nav-button" type="button">Next quiz &gt;</button>
           </div>
         </section>
 
