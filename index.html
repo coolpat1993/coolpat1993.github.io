@@ -40,12 +40,13 @@
           <div id="keypad" class="keypad" hidden aria-label="Answer keypad"></div>
           <section id="introPanel" class="intro-panel" aria-live="polite" hidden>
             <div class="intro-card">
-              <p class="intro-subtitle">The original smartphone pub quiz</p>
+              <p class="intro-subtitle">The daily Speed Quiz</p>
               <p id="startupStatusText" class="intro-status" aria-live="polite"></p>
               <div class="intro-actions">
                 <button id="startButton" class="intro-button intro-button-primary" type="button">Start</button>
                 <button id="howToPlayButton" class="intro-button" type="button">How to Play</button>
                 <button id="devResetProgressButtonIntro" class="intro-button" type="button" style="font-size: 0.8rem; opacity: 0.6;">Dev: reset</button>
+                <p id="packDateDisplay" class="pack-date-display" hidden></p>
               </div>
             </div>
           </section>
@@ -101,7 +102,6 @@
               </div>
             </div>
           </section>
-          <p id="packDateDisplay" class="pack-date-display" hidden></p>
           <div id="finishQuizNav" class="finish-quiz-nav" hidden>
             <button id="prevQuizButton" class="finish-button finish-quiz-nav-button" type="button" >&lt; Previous quiz</button>
             <button id="nextQuizButton" class="finish-button finish-quiz-nav-button" type="button">Next quiz &gt;</button>

@@ -876,10 +876,11 @@ textarea {
 }
 
 .pack-date-display {
-  margin: 8px 0 6px;
+  margin: 60px 0 6px;
   text-align: center;
   font-size: 0.85rem;
   color: rgb(255, 255, 255);
+  opacity: 0.8;
   letter-spacing: 0.02em;
 }
 
@@ -910,6 +911,10 @@ textarea {
 
 .intro-button-primary:active {
   opacity: 0.9;
+}
+
+#startButton {
+  font-size: 1.4rem;
 }
 
 .key-btn.choice-row.selected .choice-code,
