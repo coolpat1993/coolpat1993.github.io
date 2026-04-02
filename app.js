@@ -95,7 +95,6 @@ const prevQuizButtonEl = document.querySelector("#prevQuizButton");
 const nextQuizButtonEl = document.querySelector("#nextQuizButton");
 const finishQuizNavEl = document.querySelector("#finishQuizNav");
 const finalScoreValueEl = document.querySelector("#finalScoreValue");
-const finalScoreTotalEl = document.querySelector("#finalScoreTotal");
 const shareScoreButtonEl = document.querySelector("#shareScoreButton");
 const replayButtonEl = document.querySelector("#replayButton");
 const devResetProgressButtonIntroEl = document.querySelector("#devResetProgressButtonIntro");
@@ -460,7 +459,6 @@ function recordAnswerResult(question, userAnswer, { isCorrect = false, earnedPoi
 
 function showFinishPanel() {
   finalScoreValueEl.textContent = String(score);
-  finalScoreTotalEl.textContent = String(TOTAL_POSSIBLE_SCORE);
   
   // Grey out share button if this is a replay
   if (savedProgress.replayed) {
