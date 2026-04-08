@@ -1,21 +1,22 @@
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap");
-
 @font-face {
   font-family: "Kumbh";
   src: url("../assets/fonts/KumbhSans-Regular.ttf") format("truetype");
   font-weight: 400;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "Kumbh";
   src: url("../assets/fonts/KumbhSans-Bold.ttf") format("truetype");
   font-weight: 700;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "LuckiestGuy";
   src: url("../assets/fonts/LuckiestGuy-Regular.ttf") format("truetype");
   font-weight: 400;
+  font-display: swap;
 }
 
 :root {
@@ -927,6 +928,7 @@ textarea {
 
 .pack-date-display {
   width: 88%;
+  height: 2%;
   margin: 8px auto;
   text-align: center;
   font-size: 0.85rem;

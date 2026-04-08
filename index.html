@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SpeedQuizzing Web Prototype</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" href="./assets/fonts/KumbhSans-Regular.ttf" as="font" type="font/ttf" crossorigin />
+    <link rel="preload" href="./assets/fonts/KumbhSans-Bold.ttf" as="font" type="font/ttf" crossorigin />
+    <link rel="preload" href="./assets/fonts/LuckiestGuy-Regular.ttf" as="font" type="font/ttf" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" />
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
@@ -44,7 +50,7 @@
               <p class="intro-description">10 random trivia questions.</p>
               <p id="startupStatusText" class="intro-status" aria-live="polite"></p>
               <div class="intro-actions">
-                <button id="startButton" class="sq-button sq-button--primary sq-button--large-text" disabled type="button">Loading...</button>
+                <button id="startButton" class="sq-button sq-button--primary sq-button--large-text" disabled type="button">Start</button>
                 <button id="howToPlayButton" class="sq-button" disabled type="button">How to Play</button>
                 <button id="devResetProgressButtonIntro" class="sq-button sq-button--small-text" type="button">Dev: reset</button>
               </div>
@@ -104,8 +110,8 @@
           </section>
           <p id="packDateDisplay" class="pack-date-display"></p>
           <div id="startFooterNav" class="start-footer-nav">
-            <button id="prevQuizButton" class="sq-button sq-button--compact start-footer-nav-button" type="button" disabled>&lt; Previous quiz</button>
-            <button id="nextQuizButton" class="sq-button sq-button--compact start-footer-nav-button" type="button" disabled>Latest quiz</button>
+            <button id="prevQuizButton" class="sq-button sq-button--compact start-footer-nav-button" type="button">&lt; Previous quiz</button>
+            <button id="nextQuizButton" class="sq-button sq-button--primary sq-button--compact start-footer-nav-button" type="button">Latest quiz</button>
           </div>
         </section>
 

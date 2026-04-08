@@ -264,8 +264,6 @@ async function initializeQuestionPack() {
 
 async function initializeAppStartup() {
   startButtonEl.disabled = true;
-  startButtonEl.textContent = "Loading...";
-  setStartupStatus("Loading daily quiz...");
 
   const { usedFallbackPack } = await initializeQuestionPack();
 
