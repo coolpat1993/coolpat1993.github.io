@@ -601,7 +601,7 @@ textarea {
   width: 82%;
 }
 
-.finish-quiz-nav:not([hidden]) {
+.start-footer-nav:not([hidden]) {
   width: 88%;
   margin: 0 auto;
   display: grid;
@@ -609,7 +609,7 @@ textarea {
   gap: 10px;
 }
 
-.finish-quiz-nav-button {
+.start-footer-nav-button {
   min-height: 44px;
   font-size: 0.95rem;
   padding: 0 10px;
@@ -926,7 +926,8 @@ textarea {
 }
 
 .pack-date-display {
-  margin: 14px 0 8px;
+  width: 88%;
+  margin: 8px auto;
   text-align: center;
   font-size: 0.85rem;
   color: rgb(255, 255, 255);

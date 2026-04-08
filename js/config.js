@@ -23,7 +23,7 @@ export const PERIOD_PAUSE_MS = 500;
 export const POST_REVEAL_TIMER_DELAY_MS = {
   L: 500,
   M: 500,
-  N: 1000,
+  N: 1500,
   S: 3000
 };
 export const QUESTION_TYPE_LABELS = {

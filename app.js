@@ -93,7 +93,7 @@ const startupStatusTextEl = document.querySelector("#startupStatusText");
 const finishPanelEl = document.querySelector("#finishPanel");
 const prevQuizButtonEl = document.querySelector("#prevQuizButton");
 const nextQuizButtonEl = document.querySelector("#nextQuizButton");
-const finishQuizNavEl = document.querySelector("#finishQuizNav");
+const startFooterNavEl = document.querySelector("#startFooterNav");
 const finalScoreValueEl = document.querySelector("#finalScoreValue");
 const shareScoreButtonEl = document.querySelector("#shareScoreButton");
 const replayButtonEl = document.querySelector("#replayButton");
@@ -119,7 +119,7 @@ function setCurrentView(viewState) {
   introPanelEl.hidden = true;
   questionPanelEl.hidden = true;
   finishPanelEl.hidden = true;
-  finishQuizNavEl.hidden = true;
+  startFooterNavEl.hidden = true;
   pregameHeaderEl.hidden = true;
   keypadEl.hidden = true;
   numberAnswerDisplayEl.hidden = true;
@@ -131,6 +131,7 @@ function setCurrentView(viewState) {
       introPanelEl.hidden = false;
       pregameHeaderEl.hidden = false;
       packDateDisplayEl.hidden = false;
+      startFooterNavEl.hidden = false;
       updateStartButtonText();
       break;
 
@@ -143,7 +144,7 @@ function setCurrentView(viewState) {
       finishPanelEl.hidden = false;
       pregameHeaderEl.hidden = false;
       packDateDisplayEl.hidden = false;
-      finishQuizNavEl.hidden = false;
+      startFooterNavEl.hidden = false;
       break;
   }
 }
@@ -197,15 +198,22 @@ function formatPackDate(dateStr) {
 function updateQuizNavigationButtons() {
   const baseDate = parseQuizDate(activePackDate);
   const canNavigateByDate = Boolean(baseDate);
-  const canGoNext = canNavigateByDate && baseDate.getTime() < getTodayUtcDateOnly().getTime();
+  const isLatestQuiz = canNavigateByDate && baseDate.getTime() >= getTodayUtcDateOnly().getTime();
 
   if (prevQuizButtonEl) {
     prevQuizButtonEl.disabled = !canNavigateByDate;
   }
-
   if (nextQuizButtonEl) {
-    nextQuizButtonEl.disabled = !canGoNext;
+    nextQuizButtonEl.disabled = isLatestQuiz;
   }
+
+}
+
+function goToLatestQuiz() {
+  const latestUrl = new URL(window.location.href);
+  latestUrl.searchParams.delete("quiz");
+  latestUrl.hash = "";
+  window.location.assign(latestUrl.toString());
 }
 
 function goToRelativeQuizDate(dayOffset) { 
@@ -262,6 +270,7 @@ async function initializeAppStartup() {
   const { usedFallbackPack } = await initializeQuestionPack();
 
   startButtonEl.disabled = false;
+  howToPlayButtonEl.disabled = false;
 
   if (usedFallbackPack) {
     setStartupStatus("Using backup questions (offline mode).", { state: "warning" });
@@ -1521,11 +1530,11 @@ if (prevQuizButtonEl) {
 
 if (nextQuizButtonEl) {
   nextQuizButtonEl.addEventListener("click", () => {
-    goToRelativeQuizDate(1);
+    goToLatestQuiz();
   });
 }
 
-updateQuizNavigationButtons();
+
 
 if (devResetProgressButtonIntroEl) {
   devResetProgressButtonIntroEl.addEventListener("click", clearSavedProgressForDevTesting);
