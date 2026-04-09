@@ -978,6 +978,8 @@ function pickSequenceAnswer(answerCode) {
 }
 
 function renderNumberAnswerDisplay() {
+
+  console.log("Rendering number answer display. Typed answer:", typedAnswer, "question locked:", questionLocked, "game finished:", gameFinished, "current view:", currentView);
   if (gameFinished || currentView !== VIEW_STATES.GAME) {
     numberAnswerDisplayEl.hidden = true;
     return;
