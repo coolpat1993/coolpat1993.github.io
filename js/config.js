@@ -18,13 +18,13 @@ export const MAX_FAST_POINTS = 10;
 export const RESULT_DELAY_MS = 4500;
 export const PRE_REVEAL_DELAY_MS = 400;
 export const CHARACTER_REVEAL_INTERVAL_MS = 45;
-export const COMMA_PAUSE_MS = 400;
-export const PERIOD_PAUSE_MS = 500;
+export const COMMA_PAUSE_MS = 300;
+export const PERIOD_PAUSE_MS = 400;
 export const POST_REVEAL_TIMER_DELAY_MS = {
   L: 500,
   M: 500,
-  N: 1500,
-  S: 3000
+  N: 1200,
+  S: 2500
 };
 export const QUESTION_TYPE_LABELS = {
   L: "Letters",

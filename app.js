@@ -795,12 +795,12 @@ function revealAllQuestionCharacters() {
   });
 }
 
-function getPostCharacterPauseMs(char) {
-  if (char === ",") {
+function getPostCharacterPauseMs(char, nextChar) {
+  if (char === "," || char === ";") {
     return COMMA_PAUSE_MS;
   }
 
-  if (char === ".") {
+  if (char === "." && (nextChar === " " || nextChar === undefined)) {
     return PERIOD_PAUSE_MS;
   }
 
@@ -835,7 +835,7 @@ function renderQuestionCharacterReveal(questionText, startDelayMs = 0, revealInt
   const fragment = document.createDocumentFragment();
   let cumulativeRevealDelayMs = Math.max(0, startDelayMs);
 
-  chars.forEach((char) => {
+  chars.forEach((char, index) => {
     if (char === "") {
       return;
     }
@@ -857,7 +857,7 @@ function renderQuestionCharacterReveal(questionText, startDelayMs = 0, revealInt
     }, cumulativeRevealDelayMs);
 
     characterRevealHandles.push(revealHandle);
-    cumulativeRevealDelayMs += getPostCharacterPauseMs(char);
+    cumulativeRevealDelayMs += getPostCharacterPauseMs(char, chars[index + 1]);
   });
 
   questionTextEl.appendChild(fragment);
