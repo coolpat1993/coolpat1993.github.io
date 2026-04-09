@@ -263,8 +263,6 @@ async function initializeQuestionPack() {
 }
 
 async function initializeAppStartup() {
-  startButtonEl.disabled = true;
-
   const { usedFallbackPack } = await initializeQuestionPack();
 
   startButtonEl.disabled = false;
