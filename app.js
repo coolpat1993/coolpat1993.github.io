@@ -978,7 +978,7 @@ function pickSequenceAnswer(answerCode) {
 }
 
 function renderNumberAnswerDisplay() {
-  if (gameFinished) {
+  if (gameFinished || currentView !== VIEW_STATES.GAME) {
     numberAnswerDisplayEl.hidden = true;
     return;
   }
