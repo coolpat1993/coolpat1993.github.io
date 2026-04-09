@@ -449,17 +449,6 @@ function recordAnswerResult(question, userAnswer, { isCorrect = false, earnedPoi
 
 function showFinishPanel() {
   finalScoreValueEl.textContent = String(score);
-  
-  // Grey out share button if this is a replay
-  if (savedProgress.replayed) {
-    shareScoreButtonEl.disabled = true;
-    shareScoreButtonEl.style.opacity = "0.45";
-    shareScoreButtonEl.style.pointerEvents = "none";
-  } else {
-    shareScoreButtonEl.disabled = false;
-    shareScoreButtonEl.style.opacity = "";
-  }
-  
   setCurrentView(VIEW_STATES.FINISH);
 }
 
@@ -533,11 +522,6 @@ function restoreCompletedGameState() {
 
 async function handleShareScore() {
   if (!gameFinished) {
-    return;
-  }
-
-  // Don't allow sharing if this is a replay
-  if (savedProgress.replayed) {
     return;
   }
 
