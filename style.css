@@ -657,6 +657,7 @@ textarea {
 .sq-button:disabled {
   opacity: 0.45;
   cursor: default;
+  pointer-events: none;
 }
 
 .sq-button--primary {
@@ -664,7 +665,11 @@ textarea {
   color: #000;
 }
 
-.sq-button--primary:active {
+.sq-button--primary:not(:disabled):active {
+  opacity: 0.9;
+}
+
+.sq-button:not(.sq-button--primary):not(.sq-button--icon):not(:disabled):active {
   opacity: 0.9;
 }
 

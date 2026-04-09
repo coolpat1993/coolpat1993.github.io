@@ -41,11 +41,10 @@ import {
   getResultMessage,
   expandAnswerOptions,
   getComparableAnswerOptions,
-  isCurrentAnswerCorrect,
-  parseQuizDate,
-  formatQuizDateForQuery,
-  getTodayUtcDateOnly
+  isCurrentAnswerCorrect
 } from "./js/quiz-helpers.js";
+
+import { createQuizNavigationController } from "./js/quiz-navigation.js";
 
 // How-to-play modal controls and seen-state tracking.
 import { openHowToPlay, hasSeenHowToPlay } from "./js/how-to-play.js";
@@ -195,44 +194,29 @@ function formatPackDate(dateStr) {
   return `${day}${suffix} ${monthName} ${year}`;
 }
 
-function updateQuizNavigationButtons() {
-  const baseDate = parseQuizDate(activePackDate);
-  const canNavigateByDate = Boolean(baseDate);
-  const isLatestQuiz = canNavigateByDate && baseDate.getTime() >= getTodayUtcDateOnly().getTime();
-
-  if (prevQuizButtonEl) {
-    prevQuizButtonEl.disabled = !canNavigateByDate;
+function prepareForQuizNavigation() {
+  clearAutoNextTimer();
+  clearPreTimerDelay();
+  clearCharacterRevealTimers();
+  clearModeHintTimer();
+  if (modeHintOverlayEl) {
+    modeHintOverlayEl.hidden = true;
+    modeHintOverlayEl.classList.remove("visible");
   }
-  if (nextQuizButtonEl) {
-    nextQuizButtonEl.disabled = isLatestQuiz;
-  }
-
+  stopTimer();
+  questionLocked = true;
 }
 
-function goToLatestQuiz() {
-  const latestUrl = new URL(window.location.href);
-  latestUrl.searchParams.delete("quiz");
-  latestUrl.hash = "";
-  window.location.assign(latestUrl.toString());
-}
-
-function goToRelativeQuizDate(dayOffset) { 
-  const baseDate = parseQuizDate(activePackDate);
-  if (!baseDate) {
-    return;
-  }
-
-  const targetDate = new Date(baseDate.getTime());
-  targetDate.setUTCDate(targetDate.getUTCDate() + dayOffset);
-
-  if (dayOffset > 0 && targetDate.getTime() > getTodayUtcDateOnly().getTime()) {
-    return;
-  }
-
-  const targetUrl = new URL(window.location.href);
-  targetUrl.searchParams.set("quiz", formatQuizDateForQuery(targetDate));
-  window.location.assign(targetUrl.toString());
-}
+const quizNavigation = createQuizNavigationController({
+  getActivePackDate: () => activePackDate,
+  onBeforeNavigate: prepareForQuizNavigation,
+  onLoadQuiz: initializeAppStartup,
+  setStartupStatus,
+  startButtonEl,
+  howToPlayButtonEl,
+  prevQuizButtonEl,
+  nextQuizButtonEl
+});
 
 async function initializeQuestionPack() {
   const { pack, usedFallbackPack, lastError } = await loadDailyQuizPack({
@@ -245,7 +229,7 @@ async function initializeQuestionPack() {
   questions = pack.questions;
   GAME_PROGRESS_STORAGE_KEY = `${GAME_PROGRESS_STORAGE_KEY_PREFIX}:${pack.packDate}`;
   activePackDate = String(pack.packDate || "").trim() || null;
-  updateQuizNavigationButtons();
+  quizNavigation.updateButtons();
   if (packDateDisplayEl && pack.packDate) {
     packDateDisplayEl.textContent = formatPackDate(pack.packDate);
   }
@@ -267,6 +251,7 @@ async function initializeAppStartup() {
 
   startButtonEl.disabled = false;
   howToPlayButtonEl.disabled = false;
+  updateStartButtonText();
 
   if (usedFallbackPack) {
     setStartupStatus("Using backup questions (offline mode).", { state: "warning" });
@@ -1520,15 +1505,19 @@ if (replayButtonEl) {
 
 if (prevQuizButtonEl) {
   prevQuizButtonEl.addEventListener("click", () => {
-    goToRelativeQuizDate(-1);
+    void quizNavigation.goToRelativeQuizDate(-1);
   });
 }
 
 if (nextQuizButtonEl) {
   nextQuizButtonEl.addEventListener("click", () => {
-    goToLatestQuiz();
+    void quizNavigation.goToLatestQuiz();
   });
 }
+
+window.addEventListener("popstate", () => {
+  void quizNavigation.handlePopStateQuizNavigation();
+});
 
 
 
