@@ -978,6 +978,10 @@ function pickSequenceAnswer(answerCode) {
 }
 
 function renderNumberAnswerDisplay() {
+  if (gameFinished) {
+    numberAnswerDisplayEl.hidden = true;
+    return;
+  }
   const current = getCurrentQuestion();
   const isNumberQuestion = current?.typeCode === "N";
 
