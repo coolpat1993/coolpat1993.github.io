@@ -4,12 +4,13 @@
   const DAILY_QUIZ_UPLOAD_BASE_URL =
     "https://www.speedquizzing.com/utils/dailyquiz/daily_quiz_upload_question_pack";
   const DAILY_QUIZ_PATH_SUFFIX = "d/o";
-  const DAILY_QUIZ_UPLOAD_API_KEY = "cRf7UOIEayNlGtKCFvUq76tmhcWHiqZW";
+  const UPLOAD_API_KEY_STORAGE_KEY = "quiz-pack-editor.upload-api-key";
   const QUIZ_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
   const TYPE_CODES = ["L", "M", "N", "S"];
 
   const elements = {
     quizDateInput: document.getElementById("quizDateInput"),
+    uploadApiKeyInput: document.getElementById("uploadApiKeyInput"),
     loadButton: document.getElementById("loadButton"),
     uploadPackButton: document.getElementById("uploadPackButton"),
     statusMessage: document.getElementById("statusMessage"),
@@ -28,10 +29,37 @@
   const state = {
     packDate: "",
     questions: [],
+    uploadApiKey: "",
     hasLoadedPack: false,
     dragIndex: -1,
     lastDragEndedAt: 0
   };
+
+  function setUploadApiKey(nextApiKey) {
+    const safeApiKey = String(nextApiKey || "");
+    state.uploadApiKey = safeApiKey;
+
+    try {
+      localStorage.setItem(UPLOAD_API_KEY_STORAGE_KEY, safeApiKey);
+    } catch {
+      // Ignore storage failures (private mode, storage limits, etc.).
+    }
+  }
+
+  function hydrateUploadApiKey() {
+    let savedApiKey = "";
+
+    try {
+      savedApiKey = String(localStorage.getItem(UPLOAD_API_KEY_STORAGE_KEY) || "");
+    } catch {
+      savedApiKey = "";
+    }
+
+    state.uploadApiKey = savedApiKey;
+    if (elements.uploadApiKeyInput) {
+      elements.uploadApiKeyInput.value = savedApiKey;
+    }
+  }
 
   function getTodayDateString() {
     const now = new Date();
@@ -85,13 +113,18 @@
     return `${DAILY_QUIZ_API_BASE_URL}/${dateStamp}/${DAILY_QUIZ_PATH_SUFFIX}`;
   }
 
-  function buildUploadEndpointUrl(packDate) {
+  function buildUploadEndpointUrl(packDate, apiKey) {
     const safeDate = String(packDate || "").trim();
+    const safeApiKey = String(apiKey || "").trim();
     if (!QUIZ_DATE_REGEX.test(safeDate)) {
       return "";
     }
 
-    return `${DAILY_QUIZ_UPLOAD_BASE_URL}/${safeDate}?api_key=${encodeURIComponent(DAILY_QUIZ_UPLOAD_API_KEY)}`;
+    if (!safeApiKey) {
+      return "";
+    }
+
+    return `${DAILY_QUIZ_UPLOAD_BASE_URL}/${safeDate}?api_key=${encodeURIComponent(safeApiKey)}`;
   }
 
   function setStatus(message, isWarning) {
@@ -428,13 +461,20 @@
   async function uploadPack() {
     const pack = getCurrentPack();
     const dateToken = (pack.pack_date || elements.quizDateInput.value || "").trim();
+    const uploadApiKey = String(state.uploadApiKey || elements.uploadApiKeyInput?.value || "").trim();
+
+    if (!uploadApiKey) {
+      setStatus("Upload failed: please enter the upload API key.", true);
+      elements.uploadApiKeyInput?.focus();
+      return;
+    }
 
     if (!QUIZ_DATE_REGEX.test(dateToken)) {
       setStatus("Upload failed: pack date must be a valid YYYY-MM-DD value.", true);
       return;
     }
 
-    const uploadUrl = buildUploadEndpointUrl(dateToken);
+    const uploadUrl = buildUploadEndpointUrl(dateToken, uploadApiKey);
     if (!uploadUrl) {
       setStatus("Upload failed: could not build upload URL.", true);
       return;
@@ -460,7 +500,7 @@
       const file = new File([jsonContent], filename, { type: "application/json" });
       const formData = new FormData();
 
-      formData.append("api_key", DAILY_QUIZ_UPLOAD_API_KEY);
+      formData.append("api_key", uploadApiKey);
       formData.append("file", file, filename);
 
       const response = await fetch(uploadUrl, {
@@ -514,6 +554,7 @@
 
   function initialize() {
     elements.quizDateInput.value = getTomorrowDateString();
+    hydrateUploadApiKey();
 
     const openDatePicker = () => {
       if (typeof elements.quizDateInput.showPicker === "function") {
@@ -529,6 +570,13 @@
     elements.uploadPackButton.addEventListener("click", uploadPack);
     elements.quizDateInput.addEventListener("pointerdown", openDatePicker);
     elements.quizDateInput.addEventListener("click", openDatePicker);
+    elements.uploadApiKeyInput?.addEventListener("input", (event) => {
+      if (!(event.target instanceof HTMLInputElement)) {
+        return;
+      }
+
+      setUploadApiKey(event.target.value);
+    });
     elements.closeModalButton.addEventListener("click", closeQuestionModal);
     elements.closeModalFooterButton.addEventListener("click", closeQuestionModal);
     elements.deleteModalButton.addEventListener("click", deleteCurrentQuestion);
