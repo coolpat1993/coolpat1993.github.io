@@ -554,6 +554,7 @@
     });
 
     renderQuestions();
+    loadPack();
   }
 
   initialize();
