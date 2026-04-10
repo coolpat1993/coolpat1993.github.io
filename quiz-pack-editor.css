@@ -1,0 +1,401 @@
+:root {
+  --bg: #f5f4ef;
+  --ink: #101418;
+  --surface: #fffdf8;
+  --surface-border: #d6d0c2;
+  --accent: #0e6b4d;
+  --accent-strong: #074736;
+  --warning: #b35f00;
+  --shadow: 0 12px 30px rgba(16, 20, 24, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 5% 0%, #e6f0de 0%, transparent 36%),
+    radial-gradient(circle at 100% 20%, #f8e6c4 0%, transparent 28%),
+    var(--bg);
+}
+
+#quizDateInput {
+    width: 250px;
+}
+
+.editor-shell {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+}
+
+.hero h1 {
+  margin: 0;
+  letter-spacing: 0.02em;
+  font-size: clamp(1.9rem, 4vw, 2.8rem);
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+  color: #35594a;
+}
+
+.subtitle {
+  margin: 10px 0 0;
+  max-width: 72ch;
+  line-height: 1.5;
+}
+
+.controls,
+.pack-meta,
+.question-card {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+
+.controls {
+  margin-top: 14px;
+  padding: 14px;
+  position: sticky;
+  top: 8px;
+  z-index: 15;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.control-group {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.control-group label {
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid #b8b09c;
+  background: #fffeff;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+textarea {
+  min-height: 58px;
+  resize: vertical;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+button {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #f8fffb;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.14s ease, background-color 0.14s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  background: var(--accent-strong);
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--accent-strong);
+}
+
+.endpoint-preview,
+.status {
+  margin: 10px 0 0;
+  font-size: 0.92rem;
+  word-break: break-all;
+}
+
+.status.warn {
+  color: var(--warning);
+}
+
+.pack-meta {
+  margin-top: 10px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.questions {
+  --question-gap: 10px;
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--question-gap);
+}
+
+.question-card {
+  padding: 12px;
+  cursor: pointer;
+  animation: cardIn 220ms ease both;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+  overflow: visible;
+}
+
+.question-card[draggable="true"] {
+  cursor: grab;
+}
+
+.question-card[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.question-card.dragging {
+  opacity: 0.55;
+  transform: scale(0.98);
+}
+
+.question-card.drop-target {
+  outline: 2px dashed var(--accent);
+  outline-offset: 2px;
+}
+
+.question-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 38px rgba(16, 20, 24, 0.13);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.question-index {
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: #1d3b2f;
+}
+
+.question-meta {
+  font-size: 0.77rem;
+  color: #486254;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #e8f0e9;
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.card-question {
+  margin: 0 0 6px;
+  font-size: 0.86rem;
+  color: #1a2520;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-answer {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #486254;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Modal ── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 14, 18, 0.55);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-overlay[hidden] {
+  display: none;
+}
+
+.modal-dialog {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 16px;
+  box-shadow: 0 28px 64px rgba(16, 20, 24, 0.22);
+  max-width: 640px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 0;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: #486254;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.modal-close:hover {
+  background: #e8f0e9;
+  transform: none;
+}
+
+.modal-body {
+  padding: 16px 20px;
+}
+
+.modal-footer {
+  padding: 0 20px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.grid-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.card-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.card-field label {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+/* ── Add question card ── */
+
+.add-card {
+  border: 2px dashed var(--surface-border);
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 90px;
+  gap: 8px;
+  color: #486254;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.add-card:hover {
+  transform: none;
+  box-shadow: none;
+  background: #f0f8f2;
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.add-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  font-weight: 400;
+}
+
+/* ── Danger button ── */
+
+button.danger {
+  background: transparent;
+  border-color: #c0392b;
+  color: #c0392b;
+}
+
+button.danger:hover {
+  background: #c0392b;
+  color: #fff;
+  transform: none;
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 760px) {
+  .row,
+  .grid-two,
+  .pack-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .controls {
+    position: static;
+  }
+
+  .editor-shell {
+    padding: 16px 12px 28px;
+  }
+
+  .modal-dialog {
+    max-height: 95vh;
+  }
+}

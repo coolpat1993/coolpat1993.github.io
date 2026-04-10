@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quiz Pack Editor</title>
+    <link rel="stylesheet" href="./quiz-pack-editor.css" />
+  </head>
+  <body>
+    <main class="editor-shell">
+      <header class="hero">
+        <h1>Quiz Pack Editor</h1>
+      </header>
+
+      <section class="controls" aria-label="Pack loading controls">
+        <div class="control-group">
+          <label for="quizDateInput">Date</label>
+          <input id="quizDateInput" type="date" />
+        </div>
+
+        <div class="action-row">
+          <button id="loadButton" type="button">Load Pack</button>
+          <button id="uploadPackButton" type="button" class="secondary">Upload Pack</button>
+        </div>
+
+        <p id="statusMessage" class="status" aria-live="polite"></p>
+      </section>
+
+      <section id="packMeta" class="pack-meta" hidden>
+        <div>
+          <strong>Pack date:</strong> <span id="packDateValue"></span>
+        </div>
+        <div>
+          <strong>Total questions:</strong> <span id="questionCountValue">0</span>
+        </div>
+      </section>
+
+      <section id="questionsContainer" class="questions" aria-label="Editable questions"></section>
+    </main>
+
+    <div id="questionModal" class="modal-overlay" hidden>
+      <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-header">
+          <h2 class="modal-title" id="modalTitle">Question <span id="modalQIndex"></span></h2>
+          <button class="modal-close" id="closeModalButton" type="button" aria-label="Close">&#x2715;</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-footer">
+          <button type="button" id="deleteModalButton" class="danger">Delete Question</button>
+          <button type="button" id="closeModalFooterButton">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="./quiz-pack-editor.js"></script>
+  </body>
+</html>
