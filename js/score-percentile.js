@@ -108,5 +108,5 @@ export function buildBetterThanText(score, stats) {
     return "";
   }
 
-  return `You scored better than ${formatPercentValue(percent)}% of people`;
+  return `You scored better than ${formatPercentValue(percent)}% of players`;
 }

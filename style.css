@@ -571,6 +571,7 @@ textarea {
   font-family: "Montserrat", "Kumbh", sans-serif;
   font-size: clamp(0.95rem, 4vw, 1.1rem);
   color: var(--sq-text);
+  width: 80%;
 }
 
 .finish-score-separator {
