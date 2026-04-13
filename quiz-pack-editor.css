@@ -206,8 +206,15 @@ button.secondary {
 .card-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   margin-bottom: 8px;
+}
+
+.card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .question-index {
@@ -224,6 +231,11 @@ button.secondary {
   background: #e8f0e9;
   border-radius: 4px;
   padding: 1px 5px;
+}
+
+.difficulty-meta {
+  background: #f4e8cf;
+  color: #6c4e20;
 }
 
 .card-question {

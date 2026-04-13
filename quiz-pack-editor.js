@@ -145,11 +145,16 @@
 
     const answerText = String(question.short_answer || "").trim();
     const answerSnippet = answerText.length > 60 ? `${answerText.slice(0, 57)}...` : answerText;
+    const typeCodeText = String(question.type_code || "").trim().toUpperCase();
+    const difficultyCode = String(question.difficulty || "").trim().charAt(0).toUpperCase();
 
     card.innerHTML = `
       <div class="card-header">
         <span class="question-index">Q${index + 1}</span>
-        <span class="question-meta">${escapeHtml(question.type_code)}</span>
+        <div class="card-meta">
+          <span class="question-meta">${escapeHtml(typeCodeText)}</span>
+          ${difficultyCode ? `<span class="question-meta difficulty-meta">${escapeHtml(difficultyCode)}</span>` : ""}
+        </div>
       </div>
       <p class="card-question">${escapeHtml(snippet || "No question text")}</p>
       <p class="card-answer">${escapeHtml(answerSnippet || "\u2014")}</p>
@@ -280,7 +285,7 @@
           <input data-field="id" data-index="${index}" type="text" value="${escapeAttr(question.id)}" />
         </div>
         <div class="card-field">
-          <label>Type Code</label>
+          <label>Type Code E M H</label>
           <select data-field="type_code" data-index="${index}">
             ${TYPE_CODES.map((code) => `<option value="${code}" ${question.type_code === code ? "selected" : ""}>${code}</option>`).join("")}
           </select>
