@@ -12,6 +12,7 @@ export const LETTER_KEYS = [
 
 export const NUMBER_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
 
+export const FAST_POINT_FIRST_DURATION_SECONDS = 0.2;
 export const FAST_POINT_INITIAL_DURATION_SECONDS = 1;
 export const FAST_POINT_DURATION_STEP_SECONDS = 0.1;
 export const MAX_FAST_POINTS = 10;
@@ -23,9 +24,16 @@ export const PERIOD_PAUSE_MS = 400;
 export const POST_REVEAL_TIMER_DELAY_MS = {
   L: 500,
   M: 500,
-  N: 1200,
-  S: 2500
+  N: 500,
+  S: 500
 };
+
+// export const POST_REVEAL_TIMER_DELAY_MS = {
+//   L: 0,
+//   M: 0,
+//   N: 0,
+//   S: 0
+// };
 export const QUESTION_TYPE_LABELS = {
   L: "Letters",
   M: "Multiple Choice",
@@ -45,7 +53,9 @@ export const IS_DEV_MODE =
 
 export const FAST_POINT_WINDOW_DURATIONS_MS = Array.from(
   { length: MAX_FAST_POINTS },
-  (_, idx) => Math.round((FAST_POINT_INITIAL_DURATION_SECONDS + (idx * FAST_POINT_DURATION_STEP_SECONDS)) * 1000)
+  (_, idx) => Math.round(((idx === 0
+    ? FAST_POINT_FIRST_DURATION_SECONDS
+    : FAST_POINT_INITIAL_DURATION_SECONDS + (idx * FAST_POINT_DURATION_STEP_SECONDS))) * 1000)
 );
 
 export const QUESTION_DURATION_MS = FAST_POINT_WINDOW_DURATIONS_MS.reduce(
