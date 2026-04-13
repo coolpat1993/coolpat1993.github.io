@@ -69,7 +69,7 @@ import {
 } from "./js/results-share.js";
 
 import {
-  fetchDailyQuizResultStatsByDate,
+  normalizeDailyQuizResultStatsFromPack,
   buildBetterThanText
 } from "./js/score-percentile.js";
 
@@ -250,22 +250,13 @@ async function initializeQuestionPack() {
     restoreResultStateFromSavedProgress();
   }
 
-  void preloadPackScoreStats(pack.packDate);
+  preloadPackScoreStats(pack);
 
   return { usedFallbackPack };
 }
 
-async function preloadPackScoreStats(packDate) {
-  packScoreStats = null;
-  updateScorePercentileText();
-
-  try {
-    packScoreStats = await fetchDailyQuizResultStatsByDate(packDate);
-  } catch (error) {
-    console.warn("Daily quiz result stats unavailable", error);
-    packScoreStats = null;
-  }
-
+function preloadPackScoreStats(pack) {
+  packScoreStats = normalizeDailyQuizResultStatsFromPack(pack);
   updateScorePercentileText();
 }
 

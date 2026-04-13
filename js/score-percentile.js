@@ -1,6 +1,3 @@
-const DAILY_QUIZ_RESULT_STATS_BASE_URL =
-  "https://www.speedquizzing.com/utils/dailyquiz/daily_quiz_result_stats_by_date";
-
 function toValidDateString(dateValue) {
   const normalized = String(dateValue || "").trim();
   return /^\d{4}-\d{2}-\d{2}$/.test(normalized) ? normalized : "";
@@ -49,6 +46,29 @@ function toNormalizedStats(rawStats, fallbackDate) {
   };
 }
 
+export function normalizeDailyQuizResultStatsFromPack(pack) {
+  if (!pack || typeof pack !== "object") {
+    return null;
+  }
+
+  const packDate = toValidDateString(pack.packDate || pack.pack_date);
+  const results = pack.results && typeof pack.results === "object"
+    ? pack.results
+    : null;
+
+  if (!results) {
+    return null;
+  }
+
+  return toNormalizedStats(
+    {
+      ...results,
+      pack_date: packDate || results.pack_date
+    },
+    packDate
+  );
+}
+
 function formatPercentValue(percent) {
   if (!Number.isFinite(percent)) {
     return "0";
@@ -60,22 +80,6 @@ function formatPercentValue(percent) {
   return isWholeNumber
     ? String(Math.round(roundedToOneDecimal))
     : roundedToOneDecimal.toFixed(1);
-}
-
-export async function fetchDailyQuizResultStatsByDate(packDate) {
-  const date = toValidDateString(packDate);
-
-  if (!date) {
-    return null;
-  }
-
-  const response = await fetch(`${DAILY_QUIZ_RESULT_STATS_BASE_URL}/${date}`);
-  if (!response.ok) {
-    throw new Error(`Daily quiz result stats fetch failed: HTTP ${response.status}`);
-  }
-
-  const json = await response.json();
-  return toNormalizedStats(json, date);
 }
 
 export function calculateBetterThanPercentage(score, stats) {
