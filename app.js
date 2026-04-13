@@ -679,7 +679,8 @@ function getFastPoints() {
   for (let idx = 0; idx < FAST_POINT_WINDOW_DURATIONS_MS.length; idx += 1) {
     cumulativeDurationMs += FAST_POINT_WINDOW_DURATIONS_MS[idx];
     if (elapsedMs < cumulativeDurationMs) {
-      return MAX_FAST_POINTS - idx;
+      const points = MAX_FAST_POINTS - idx;
+      return timerHandle ? Math.max(0, points - 1) : points;
     }
   }
 
@@ -869,7 +870,6 @@ function lockQuestion(message) {
 function beginQuestionTimer() {
   stopTimer();
   remainingMs = QUESTION_DURATION_MS;
-  renderTimer();
 
   const tickMs = 100;
   timerHandle = window.setInterval(() => {
@@ -882,6 +882,7 @@ function beginQuestionTimer() {
     renderTimer();
 
     if (remainingMs <= 0) {
+      fastPointsValueEl.textContent = "0";
       const current = getCurrentQuestion();
       recordAnswerResult(current, normalize(typedAnswer), { timedOut: true });
       persistInProgressPosition({ indexOffset: 1 });
@@ -889,6 +890,8 @@ function beginQuestionTimer() {
       renderKeypad();
     }
   }, tickMs);
+
+  renderTimer();
 }
 
 function getLetterKeys() {
