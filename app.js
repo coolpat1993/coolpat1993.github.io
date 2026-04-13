@@ -812,11 +812,13 @@ function revealAllQuestionCharacters() {
 }
 
 function getPostCharacterPauseMs(char, nextChar) {
-  if (char === "," || char === ";") {
+  const isPauseBoundary = nextChar === " " || nextChar === undefined;
+
+  if (isPauseBoundary && (char === "," || char === ";")) {
     return COMMA_PAUSE_MS;
   }
 
-  if (char === "." && (nextChar === " " || nextChar === undefined)) {
+  if (isPauseBoundary && char === ".") {
     return PERIOD_PAUSE_MS;
   }
 
