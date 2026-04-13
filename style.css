@@ -566,6 +566,13 @@ textarea {
   color: var(--sq-cyan);
 }
 
+.finish-percentile {
+  margin: -10px 0 0;
+  font-family: "Montserrat", "Kumbh", sans-serif;
+  font-size: clamp(0.95rem, 4vw, 1.1rem);
+  color: var(--sq-text);
+}
+
 .finish-score-separator {
   margin: 0 0.2em;
   color: rgba(255, 255, 255, 0.4);

@@ -68,6 +68,11 @@ import {
   buildCanonicalQuizUrl,
 } from "./js/results-share.js";
 
+import {
+  fetchDailyQuizResultStatsByDate,
+  buildBetterThanText
+} from "./js/score-percentile.js";
+
 // View state management
 let currentView = null;
 let questions = [];
@@ -94,6 +99,7 @@ const prevQuizButtonEl = document.querySelector("#prevQuizButton");
 const nextQuizButtonEl = document.querySelector("#nextQuizButton");
 const startFooterNavEl = document.querySelector("#startFooterNav");
 const finalScoreValueEl = document.querySelector("#finalScoreValue");
+const scorePercentileTextEl = document.querySelector("#scorePercentileText");
 const shareScoreButtonEl = document.querySelector("#shareScoreButton");
 const replayButtonEl = document.querySelector("#replayButton");
 const devResetProgressButtonIntroEl = document.querySelector("#devResetProgressButtonIntro");
@@ -164,6 +170,7 @@ let resultsByQuestionIndex = {};
 let sequenceOrderCodes = [];
 let sequenceFinalizing = false;
 let activePackDate = null;
+let packScoreStats = null;
 
 let savedProgress = loadSavedProgress(GAME_PROGRESS_STORAGE_KEY, TOTAL_POSSIBLE_SCORE);
 const playerUnid = getOrCreatePlayerUnid(PLAYER_UNID_STORAGE_KEY);
@@ -243,7 +250,23 @@ async function initializeQuestionPack() {
     restoreResultStateFromSavedProgress();
   }
 
+  void preloadPackScoreStats(pack.packDate);
+
   return { usedFallbackPack };
+}
+
+async function preloadPackScoreStats(packDate) {
+  packScoreStats = null;
+  updateScorePercentileText();
+
+  try {
+    packScoreStats = await fetchDailyQuizResultStatsByDate(packDate);
+  } catch (error) {
+    console.warn("Daily quiz result stats unavailable", error);
+    packScoreStats = null;
+  }
+
+  updateScorePercentileText();
 }
 
 async function initializeAppStartup() {
@@ -449,7 +472,25 @@ function recordAnswerResult(question, userAnswer, { isCorrect = false, earnedPoi
 
 function showFinishPanel() {
   finalScoreValueEl.textContent = String(score);
+  updateScorePercentileText();
   setCurrentView(VIEW_STATES.FINISH);
+}
+
+function updateScorePercentileText() {
+  if (!scorePercentileTextEl) {
+    return;
+  }
+
+  const text = buildBetterThanText(score, packScoreStats);
+
+  if (!text) {
+    scorePercentileTextEl.hidden = true;
+    scorePercentileTextEl.textContent = "";
+    return;
+  }
+
+  scorePercentileTextEl.hidden = false;
+  scorePercentileTextEl.textContent = text;
 }
 
 function completeGame() {
