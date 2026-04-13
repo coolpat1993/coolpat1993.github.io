@@ -466,7 +466,7 @@ textarea {
   text-align: center;
   font-family: "Montserrat", "Kumbh", sans-serif;
   font-weight: 500;
-  font-size: clamp(0.5rem, 6.5vw, 1.5rem);
+  font-size: clamp(1rem, 6.5vw, 1.5rem);
   line-height: 1.15;
   color: #000;
   line-clamp: 2;
