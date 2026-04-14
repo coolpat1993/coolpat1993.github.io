@@ -16,6 +16,7 @@ import {
   PLAYER_UNID_STORAGE_KEY,
   IS_DEV_MODE,
   GAME_PROGRESS_STORAGE_KEY_PREFIX,
+  FAST_POINT_FIRST_DURATION_SECONDS,
   FAST_POINT_WINDOW_DURATIONS_MS,
   QUESTION_DURATION_MS,
   MAX_FAST_POINTS
@@ -158,6 +159,8 @@ let score = 0;
 let questionIndex = 0;
 let typedAnswer = "";
 let remainingMs = QUESTION_DURATION_MS;
+let activeFastPointWindowDurationsMs = [...FAST_POINT_WINDOW_DURATIONS_MS];
+let activeQuestionDurationMs = QUESTION_DURATION_MS;
 let timerHandle = null;
 let autoNextHandle = null;
 let preTimerHandle = null;
@@ -171,6 +174,11 @@ let sequenceOrderCodes = [];
 let sequenceFinalizing = false;
 let activePackDate = null;
 let packScoreStats = null;
+
+const SCORE_SPEEDUP_START_RATIO = 0.5;
+const SCORE_SPEEDUP_PEAK_RATIO = 0.85;
+const POST_REVEAL_TIMER_MIN_MULTIPLIER = 0.1;
+const FAST_POINT_FIRST_DURATION_MIN_SECONDS = 0.5;
 
 let savedProgress = loadSavedProgress(GAME_PROGRESS_STORAGE_KEY, TOTAL_POSSIBLE_SCORE);
 const playerUnid = getOrCreatePlayerUnid(PLAYER_UNID_STORAGE_KEY);
@@ -515,7 +523,9 @@ function restartGame() {
   score = 0;
   questionIndex = 0;
   typedAnswer = "";
-  remainingMs = QUESTION_DURATION_MS;
+  activeFastPointWindowDurationsMs = [...FAST_POINT_WINDOW_DURATIONS_MS];
+  activeQuestionDurationMs = QUESTION_DURATION_MS;
+  remainingMs = activeQuestionDurationMs;
   questionLocked = false;
   gameFinished = false;
   resultsByQuestionIndex = {};
@@ -616,7 +626,9 @@ function handleReplayGame() {
   score = 0;
   questionIndex = 0;
   typedAnswer = "";
-  remainingMs = QUESTION_DURATION_MS;
+  activeFastPointWindowDurationsMs = [...FAST_POINT_WINDOW_DURATIONS_MS];
+  activeQuestionDurationMs = QUESTION_DURATION_MS;
+  remainingMs = activeQuestionDurationMs;
   questionLocked = false;
   gameFinished = false;
   resultsByQuestionIndex = {};
@@ -704,12 +716,71 @@ function getCurrentQuestion() {
   return questions[questionIndex];
 }
 
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function getScoreTimingScale() {
+  const possibleScoreByCurrentQuestion = Math.max(
+    MAX_FAST_POINTS,
+    (Math.max(0, questionIndex) + 1) * MAX_FAST_POINTS
+  );
+
+  if (possibleScoreByCurrentQuestion <= 0) {
+    return {
+      postRevealMultiplier: 1,
+      fastPointFirstDurationSeconds: FAST_POINT_FIRST_DURATION_SECONDS
+    };
+  }
+
+  const scoreRatio = clamp(score / possibleScoreByCurrentQuestion, 0, 1);
+  if (scoreRatio < SCORE_SPEEDUP_START_RATIO) {
+    return {
+      postRevealMultiplier: 1,
+      fastPointFirstDurationSeconds: FAST_POINT_FIRST_DURATION_SECONDS
+    };
+  }
+
+  const normalizedProgress = clamp(
+    (scoreRatio - SCORE_SPEEDUP_START_RATIO) / (SCORE_SPEEDUP_PEAK_RATIO - SCORE_SPEEDUP_START_RATIO),
+    0,
+    1
+  );
+
+  return {
+    postRevealMultiplier: clamp(
+      1 - ((1 - POST_REVEAL_TIMER_MIN_MULTIPLIER) * normalizedProgress),
+      POST_REVEAL_TIMER_MIN_MULTIPLIER,
+      1
+    ),
+    fastPointFirstDurationSeconds: clamp(
+      FAST_POINT_FIRST_DURATION_SECONDS - ((FAST_POINT_FIRST_DURATION_SECONDS - FAST_POINT_FIRST_DURATION_MIN_SECONDS) * normalizedProgress),
+      FAST_POINT_FIRST_DURATION_MIN_SECONDS,
+      FAST_POINT_FIRST_DURATION_SECONDS
+    )
+  };
+}
+
+function getScaledFastPointWindowDurationsMs(fastPointFirstDurationSeconds) {
+  if (FAST_POINT_WINDOW_DURATIONS_MS.length === 0) {
+    return [];
+  }
+
+  const scaledDurations = [...FAST_POINT_WINDOW_DURATIONS_MS];
+  scaledDurations[0] = Math.round(fastPointFirstDurationSeconds * 1000);
+  return scaledDurations;
+}
+
+function getQuestionDurationFromDurationsMs(durationsMs) {
+  return durationsMs.reduce((sum, durationMs) => sum + durationMs, 0);
+}
+
 function getFastPoints() {
-  const elapsedMs = Math.max(0, QUESTION_DURATION_MS - remainingMs);
+  const elapsedMs = Math.max(0, activeQuestionDurationMs - remainingMs);
   let cumulativeDurationMs = 0;
 
-  for (let idx = 0; idx < FAST_POINT_WINDOW_DURATIONS_MS.length; idx += 1) {
-    cumulativeDurationMs += FAST_POINT_WINDOW_DURATIONS_MS[idx];
+  for (let idx = 0; idx < activeFastPointWindowDurationsMs.length; idx += 1) {
+    cumulativeDurationMs += activeFastPointWindowDurationsMs[idx];
     if (elapsedMs < cumulativeDurationMs) {
       return MAX_FAST_POINTS - idx;
     }
@@ -725,7 +796,7 @@ function getTimerColor(progress) {
 }
 
 function renderTimer() {
-  const progress = remainingMs / QUESTION_DURATION_MS;
+  const progress = activeQuestionDurationMs > 0 ? (remainingMs / activeQuestionDurationMs) : 0;
   const pct = Math.max(0, Math.min(100, progress * 100));
   timerFillEl.style.width = `${pct}%`;
   timerFillEl.style.background = getTimerColor(progress);
@@ -902,7 +973,7 @@ function lockQuestion(message) {
 
 function beginQuestionTimer() {
   stopTimer();
-  remainingMs = QUESTION_DURATION_MS;
+  remainingMs = activeQuestionDurationMs;
   renderTimer();
 
   const tickMs = 100;
@@ -1438,7 +1509,12 @@ function loadQuestion() {
   typedAnswer = "";
   sequenceOrderCodes = [];
   sequenceFinalizing = false;
-  remainingMs = QUESTION_DURATION_MS;
+  const timingScale = getScoreTimingScale();
+  activeFastPointWindowDurationsMs = getScaledFastPointWindowDurationsMs(
+    timingScale.fastPointFirstDurationSeconds
+  );
+  activeQuestionDurationMs = getQuestionDurationFromDurationsMs(activeFastPointWindowDurationsMs);
+  remainingMs = activeQuestionDurationMs;
   renderTimer();
   feedbackTextEl.textContent = "";
   renderNumberAnswerDisplay();
@@ -1450,6 +1526,14 @@ function loadQuestion() {
     hintOffsetMs + PRE_REVEAL_DELAY_MS,
     revealIntervalMs
   );
+  const scaledPostRevealDelayMs = Math.round(
+    POST_REVEAL_TIMER_DELAY_MS[current.typeCode] * timingScale.postRevealMultiplier
+  );
+
+  console.log("Question timing", {
+    postRevealScaledDelayMs: scaledPostRevealDelayMs,
+    fastPointFirstDurationMs: activeFastPointWindowDurationsMs[0],
+  });
 
   renderKeypad();
   persistInProgressPosition({ indexOffset: 1 });
@@ -1459,7 +1543,7 @@ function loadQuestion() {
       return;
     }
     beginQuestionTimer();
-  }, revealDurationMs + POST_REVEAL_TIMER_DELAY_MS[current.typeCode]);
+  }, revealDurationMs + scaledPostRevealDelayMs);
 }
 
 document.addEventListener("keydown", (event) => {
