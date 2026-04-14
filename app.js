@@ -861,7 +861,6 @@ function getCharacterRevealIntervalMs() {
 
   const scoreRatio = score / possibleScoreSoFar;
 
-  console.log("Score ratio:", scoreRatio, "(score:", score, "possible:", possibleScoreSoFar, "completed questions:", completedQuestionCount, ")");
   if (scoreRatio < 0.6) {
     return CHARACTER_REVEAL_INTERVAL_MS + 10;
   } else if (scoreRatio < 0.4) {
@@ -1467,12 +1466,6 @@ function loadQuestion() {
   const timerProfile = buildTimerProfileForQuestionType(current.typeCode);
   activeFastPointWindowDurationsMs = timerProfile.durationsMs;
   activeQuestionDurationMs = timerProfile.totalDurationMs;
-  console.log("Question timer length:", {
-    questionIndex,
-    typeCode: current.typeCode,
-    durationMs: activeQuestionDurationMs,
-    durationSeconds: Number((activeQuestionDurationMs / 1000).toFixed(2))
-  });
   remainingMs = activeQuestionDurationMs;
   renderTimer();
   feedbackTextEl.textContent = "";

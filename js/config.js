@@ -22,10 +22,10 @@ export const CHARACTER_REVEAL_INTERVAL_MS = 45;
 export const COMMA_PAUSE_MS = 300;
 export const PERIOD_PAUSE_MS = 400;
 export const QUESTION_TIMER_BONUS_TIMER = {
-  L: 500,
-  M: 500,
-  N: 1500,
-  S: 2600,
+  L: 1000,
+  M: 1000,
+  N: 2000,
+  S: 3000,
 };
 
 export const QUESTION_TYPE_LABELS = {
