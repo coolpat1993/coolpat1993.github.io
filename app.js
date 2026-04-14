@@ -16,9 +16,10 @@ import {
   PLAYER_UNID_STORAGE_KEY,
   IS_DEV_MODE,
   GAME_PROGRESS_STORAGE_KEY_PREFIX,
-  FAST_POINT_WINDOW_DURATIONS_MS,
   QUESTION_DURATION_MS,
-  MAX_FAST_POINTS
+  MAX_FAST_POINTS,
+  getQuestionTimingProfile,
+  DEFAULT_QUESTION_TIMING_PROFILE
 } from "./js/config.js";
 
 // Daily quiz API client for loading the remote question pack.
@@ -158,6 +159,7 @@ let score = 0;
 let questionIndex = 0;
 let typedAnswer = "";
 let remainingMs = QUESTION_DURATION_MS;
+let currentTimingProfile = DEFAULT_QUESTION_TIMING_PROFILE;
 let timerHandle = null;
 let autoNextHandle = null;
 let preTimerHandle = null;
@@ -515,7 +517,8 @@ function restartGame() {
   score = 0;
   questionIndex = 0;
   typedAnswer = "";
-  remainingMs = QUESTION_DURATION_MS;
+  currentTimingProfile = DEFAULT_QUESTION_TIMING_PROFILE;
+  remainingMs = currentTimingProfile.questionDurationMs;
   questionLocked = false;
   gameFinished = false;
   resultsByQuestionIndex = {};
@@ -616,7 +619,8 @@ function handleReplayGame() {
   score = 0;
   questionIndex = 0;
   typedAnswer = "";
-  remainingMs = QUESTION_DURATION_MS;
+  currentTimingProfile = DEFAULT_QUESTION_TIMING_PROFILE;
+  remainingMs = currentTimingProfile.questionDurationMs;
   questionLocked = false;
   gameFinished = false;
   resultsByQuestionIndex = {};
@@ -704,12 +708,18 @@ function getCurrentQuestion() {
   return questions[questionIndex];
 }
 
+function getScoreRatioForCurrentRun() {
+  const completedQuestionCount = Math.max(0, questionIndex);
+  const possibleScoreSoFar = completedQuestionCount * MAX_FAST_POINTS;
+  return possibleScoreSoFar > 0 ? (score / possibleScoreSoFar) : 0;
+}
+
 function getFastPoints() {
-  const elapsedMs = Math.max(0, QUESTION_DURATION_MS - remainingMs);
+  const elapsedMs = Math.max(0, currentTimingProfile.questionDurationMs - remainingMs);
   let cumulativeDurationMs = 0;
 
-  for (let idx = 0; idx < FAST_POINT_WINDOW_DURATIONS_MS.length; idx += 1) {
-    cumulativeDurationMs += FAST_POINT_WINDOW_DURATIONS_MS[idx];
+  for (let idx = 0; idx < currentTimingProfile.fastPointWindowDurationsMs.length; idx += 1) {
+    cumulativeDurationMs += currentTimingProfile.fastPointWindowDurationsMs[idx];
     if (elapsedMs < cumulativeDurationMs) {
       return MAX_FAST_POINTS - idx;
     }
@@ -725,7 +735,9 @@ function getTimerColor(progress) {
 }
 
 function renderTimer() {
-  const progress = remainingMs / QUESTION_DURATION_MS;
+  const progress = currentTimingProfile.questionDurationMs > 0
+    ? (remainingMs / currentTimingProfile.questionDurationMs)
+    : 0;
   const pct = Math.max(0, Math.min(100, progress * 100));
   timerFillEl.style.width = `${pct}%`;
   timerFillEl.style.background = getTimerColor(progress);
@@ -902,7 +914,7 @@ function lockQuestion(message) {
 
 function beginQuestionTimer() {
   stopTimer();
-  remainingMs = QUESTION_DURATION_MS;
+  remainingMs = currentTimingProfile.questionDurationMs;
   renderTimer();
 
   const tickMs = 100;
@@ -1436,9 +1448,13 @@ function loadQuestion() {
   questionLocked = false;
   questionPanelEl.classList.remove("showing-answer");
   typedAnswer = "";
+  currentTimingProfile = getQuestionTimingProfile({
+    questionNumber: questionIndex + 1,
+    scoreRatio: getScoreRatioForCurrentRun()
+  });
   sequenceOrderCodes = [];
   sequenceFinalizing = false;
-  remainingMs = QUESTION_DURATION_MS;
+  remainingMs = currentTimingProfile.questionDurationMs;
   renderTimer();
   feedbackTextEl.textContent = "";
   renderNumberAnswerDisplay();
@@ -1459,7 +1475,11 @@ function loadQuestion() {
       return;
     }
     beginQuestionTimer();
-  }, revealDurationMs + POST_REVEAL_TIMER_DELAY_MS[current.typeCode]);
+  }, revealDurationMs + Math.max(
+    0,
+    (POST_REVEAL_TIMER_DELAY_MS[current.typeCode] ?? 0) -
+      currentTimingProfile.postRevealDelayReductionMs
+  ));
 }
 
 document.addEventListener("keydown", (event) => {

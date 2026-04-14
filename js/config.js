@@ -12,20 +12,34 @@ export const LETTER_KEYS = [
 
 export const NUMBER_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
 
-export const FAST_POINT_FIRST_DURATION_SECONDS = 0.7;
+export const FAST_POINT_FIRST_DURATION_SECONDS = 1;
 export const FAST_POINT_INITIAL_DURATION_SECONDS = 1;
 export const FAST_POINT_DURATION_STEP_SECONDS = 0.1;
 export const MAX_FAST_POINTS = 10;
+export const PERFORMANCE_TIMER_ADJUSTMENTS = [
+  {
+    minQuestionNumber: 6,
+    minScoreRatio: 0.7,
+    fastPointFirstDurationSeconds: 0.5,
+    postRevealDelayReductionMs: 500
+  },
+  {
+    minQuestionNumber: 3,
+    minScoreRatio: 0.7,
+    fastPointFirstDurationSeconds: 0.7,
+    postRevealDelayReductionMs: 300
+  }
+];
 export const RESULT_DELAY_MS = 4500;
 export const PRE_REVEAL_DELAY_MS = 400;
 export const CHARACTER_REVEAL_INTERVAL_MS = 45;
 export const COMMA_PAUSE_MS = 300;
 export const PERIOD_PAUSE_MS = 400;
 export const POST_REVEAL_TIMER_DELAY_MS = {
-  L: 0,
-  M: 0,
-  N: 0,
-  S: 0
+  L: 500,
+  M: 500,
+  N: 1200,
+  S: 2000
 };
 
 // export const POST_REVEAL_TIMER_DELAY_MS = {
@@ -62,3 +76,29 @@ export const QUESTION_DURATION_MS = FAST_POINT_WINDOW_DURATIONS_MS.reduce(
   (sum, durationMs) => sum + durationMs,
   0
 );
+
+export function getQuestionTimingProfile({ questionNumber = 1, scoreRatio = 0 } = {}) {
+  const safeQuestionNumber = Number.isFinite(questionNumber) ? questionNumber : 1;
+  const safeScoreRatio = Number.isFinite(scoreRatio) ? scoreRatio : 0;
+  const timingAdjustment = PERFORMANCE_TIMER_ADJUSTMENTS.find((adjustment) => (
+    safeQuestionNumber >= adjustment.minQuestionNumber &&
+    safeScoreRatio >= adjustment.minScoreRatio
+  ));
+  const firstDurationSeconds =
+    timingAdjustment?.fastPointFirstDurationSeconds ?? FAST_POINT_FIRST_DURATION_SECONDS;
+  const fastPointWindowDurationsMs = FAST_POINT_WINDOW_DURATIONS_MS.map((durationMs, index) => (
+    index === 0 ? Math.round(firstDurationSeconds * 1000) : durationMs
+  ));
+  const questionDurationMs = fastPointWindowDurationsMs.reduce(
+    (sum, durationMs) => sum + durationMs,
+    0
+  );
+
+  return {
+    fastPointWindowDurationsMs,
+    questionDurationMs,
+    postRevealDelayReductionMs: timingAdjustment?.postRevealDelayReductionMs ?? 0
+  };
+}
+
+export const DEFAULT_QUESTION_TIMING_PROFILE = getQuestionTimingProfile();
