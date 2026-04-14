@@ -8,7 +8,7 @@ import {
   CHARACTER_REVEAL_INTERVAL_MS,
   COMMA_PAUSE_MS,
   PERIOD_PAUSE_MS,
-  POST_REVEAL_TIMER_DELAY_MS,
+  QUESTION_TIMER_BONUS_TIMER,
   QUESTION_TYPE_LABELS,
   QUESTION_TYPE_LABEL_DURATION_MS,
   LONG_PRESS_MS,
@@ -158,6 +158,8 @@ let score = 0;
 let questionIndex = 0;
 let typedAnswer = "";
 let remainingMs = QUESTION_DURATION_MS;
+let activeFastPointWindowDurationsMs = [...FAST_POINT_WINDOW_DURATIONS_MS];
+let activeQuestionDurationMs = QUESTION_DURATION_MS;
 let timerHandle = null;
 let autoNextHandle = null;
 let preTimerHandle = null;
@@ -704,12 +706,36 @@ function getCurrentQuestion() {
   return questions[questionIndex];
 }
 
+function buildTimerProfileForQuestionType(typeCode) {
+  const baseDurations = [...FAST_POINT_WINDOW_DURATIONS_MS];
+  const extraTotalMs = Math.max(0, Number(QUESTION_TIMER_BONUS_TIMER[typeCode] || 0));
+
+  if (extraTotalMs <= 0 || baseDurations.length === 0) {
+    return {
+      durationsMs: baseDurations,
+      totalDurationMs: QUESTION_DURATION_MS
+    };
+  }
+
+  const extraPerWindowMs = Math.floor(extraTotalMs / baseDurations.length);
+  const remainderMs = extraTotalMs % baseDurations.length;
+
+  const durationsMs = baseDurations.map((durationMs, idx) => (
+    durationMs + extraPerWindowMs + (idx < remainderMs ? 1 : 0)
+  ));
+
+  return {
+    durationsMs,
+    totalDurationMs: durationsMs.reduce((sum, durationMs) => sum + durationMs, 0)
+  };
+}
+
 function getFastPoints() {
-  const elapsedMs = Math.max(0, QUESTION_DURATION_MS - remainingMs);
+  const elapsedMs = Math.max(0, activeQuestionDurationMs - remainingMs);
   let cumulativeDurationMs = 0;
 
-  for (let idx = 0; idx < FAST_POINT_WINDOW_DURATIONS_MS.length; idx += 1) {
-    cumulativeDurationMs += FAST_POINT_WINDOW_DURATIONS_MS[idx];
+  for (let idx = 0; idx < activeFastPointWindowDurationsMs.length; idx += 1) {
+    cumulativeDurationMs += activeFastPointWindowDurationsMs[idx];
     if (elapsedMs < cumulativeDurationMs) {
       return MAX_FAST_POINTS - idx;
     }
@@ -725,7 +751,7 @@ function getTimerColor(progress) {
 }
 
 function renderTimer() {
-  const progress = remainingMs / QUESTION_DURATION_MS;
+  const progress = remainingMs / activeQuestionDurationMs;
   const pct = Math.max(0, Math.min(100, progress * 100));
   timerFillEl.style.width = `${pct}%`;
   timerFillEl.style.background = getTimerColor(progress);
@@ -902,7 +928,7 @@ function lockQuestion(message) {
 
 function beginQuestionTimer() {
   stopTimer();
-  remainingMs = QUESTION_DURATION_MS;
+  remainingMs = activeQuestionDurationMs;
   renderTimer();
 
   const tickMs = 100;
@@ -1438,7 +1464,16 @@ function loadQuestion() {
   typedAnswer = "";
   sequenceOrderCodes = [];
   sequenceFinalizing = false;
-  remainingMs = QUESTION_DURATION_MS;
+  const timerProfile = buildTimerProfileForQuestionType(current.typeCode);
+  activeFastPointWindowDurationsMs = timerProfile.durationsMs;
+  activeQuestionDurationMs = timerProfile.totalDurationMs;
+  console.log("Question timer length:", {
+    questionIndex,
+    typeCode: current.typeCode,
+    durationMs: activeQuestionDurationMs,
+    durationSeconds: Number((activeQuestionDurationMs / 1000).toFixed(2))
+  });
+  remainingMs = activeQuestionDurationMs;
   renderTimer();
   feedbackTextEl.textContent = "";
   renderNumberAnswerDisplay();
@@ -1459,7 +1494,7 @@ function loadQuestion() {
       return;
     }
     beginQuestionTimer();
-  }, revealDurationMs + POST_REVEAL_TIMER_DELAY_MS[current.typeCode]);
+  }, revealDurationMs);
 }
 
 document.addEventListener("keydown", (event) => {
