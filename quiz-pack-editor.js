@@ -32,7 +32,8 @@
     uploadApiKey: "",
     hasLoadedPack: false,
     dragIndex: -1,
-    lastDragEndedAt: 0
+    lastDragEndedAt: 0,
+    dropIndicator: null
   };
 
   function setUploadApiKey(nextApiKey) {
@@ -150,7 +151,6 @@
 
     card.innerHTML = `
       <div class="card-header">
-        <span class="question-index">Q${index + 1}</span>
         <div class="card-meta">
           <span class="question-meta">${escapeHtml(typeCodeText)}</span>
           ${difficultyCode ? `<span class="question-meta difficulty-meta">${escapeHtml(difficultyCode)}</span>` : ""}
@@ -171,41 +171,21 @@
 
     card.addEventListener("dragstart", (event) => {
       state.dragIndex = index;
-      card.classList.add("dragging");
 
       if (event.dataTransfer) {
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.setData("text/plain", String(index));
       }
-    });
 
-    card.addEventListener("dragover", (event) => {
-      if (state.dragIndex < 0 || state.dragIndex === index) {
-        return;
-      }
-
-      event.preventDefault();
-      card.classList.add("drop-target");
-    });
-
-    card.addEventListener("dragleave", () => {
-      card.classList.remove("drop-target");
-    });
-
-    card.addEventListener("drop", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      card.classList.remove("drop-target");
-
-      const fromIndex = getDragSourceIndex(event);
-      moveQuestion(fromIndex, index);
+      // Defer so the browser captures the drag image before we hide the element.
+      requestAnimationFrame(() => card.classList.add("dragging"));
     });
 
     card.addEventListener("dragend", () => {
       state.dragIndex = -1;
       state.lastDragEndedAt = Date.now();
-      card.classList.remove("dragging", "drop-target");
-      clearDropTargets();
+      card.classList.remove("dragging");
+      removeDropIndicator();
     });
 
     return card;
@@ -225,10 +205,39 @@
     return Number.isInteger(parsed) ? parsed : -1;
   }
 
-  function clearDropTargets() {
-    elements.questionsContainer
-      .querySelectorAll(".question-card.drop-target")
-      .forEach((card) => card.classList.remove("drop-target"));
+  function removeDropIndicator() {
+    if (state.dropIndicator && state.dropIndicator.parentNode) {
+      state.dropIndicator.parentNode.removeChild(state.dropIndicator);
+    }
+  }
+
+  function getDropBeforeElement(clientX, clientY) {
+    const cards = [
+      ...elements.questionsContainer.querySelectorAll(".question-card:not(.dragging):not(.add-card)")
+    ];
+
+    // Reading-order detection: a cursor is "before" a card if it is above the card's
+    // top edge (i.e. in a previous row), or within the card's row but left of its centre.
+    return (
+      cards.find((card) => {
+        const rect = card.getBoundingClientRect();
+        if (clientY < rect.top) return true;
+        if (clientY < rect.bottom && clientX < rect.left + rect.width / 2) return true;
+        return false;
+      }) ?? null
+    );
+  }
+
+  function getDropIndicatorTargetIndex() {
+    let next = state.dropIndicator ? state.dropIndicator.nextElementSibling : null;
+    while (next) {
+      if (next.classList.contains("question-card") && !next.classList.contains("add-card")) {
+        return parseInt(next.dataset.index, 10);
+      }
+      next = next.nextElementSibling;
+    }
+    // Indicator is after the last card — append at end.
+    return state.questions.length;
   }
 
   function moveQuestion(fromIndex, toIndex) {
@@ -244,7 +253,8 @@
       return;
     }
 
-    if (fromIndex >= state.questions.length || toIndex >= state.questions.length) {
+    // toIndex === state.questions.length means "append at end", which is valid.
+    if (fromIndex >= state.questions.length || toIndex > state.questions.length) {
       return;
     }
 
@@ -330,34 +340,6 @@
     const card = document.createElement("div");
     card.className = "question-card add-card";
     card.innerHTML = `<span class="add-icon">+</span><span>Add Question</span>`;
-
-    card.addEventListener("dragover", (event) => {
-      if (state.dragIndex < 0) {
-        return;
-      }
-
-      event.preventDefault();
-      card.classList.add("drop-target");
-    });
-
-    card.addEventListener("dragleave", () => {
-      card.classList.remove("drop-target");
-    });
-
-    card.addEventListener("drop", (event) => {
-      event.preventDefault();
-      card.classList.remove("drop-target");
-
-      const fromIndex = getDragSourceIndex(event);
-      if (!Number.isInteger(fromIndex) || fromIndex < 0 || fromIndex >= state.questions.length) {
-        return;
-      }
-
-      const [moved] = state.questions.splice(fromIndex, 1);
-      state.questions.push(moved);
-      renderQuestions();
-    });
-
     card.addEventListener("click", addQuestion);
     return card;
   }
@@ -570,6 +552,41 @@
         }
       }
     };
+
+    state.dropIndicator = document.createElement("div");
+    state.dropIndicator.className = "drop-indicator";
+    state.dropIndicator.setAttribute("aria-hidden", "true");
+
+    elements.questionsContainer.addEventListener("dragover", (event) => {
+      if (state.dragIndex < 0) return;
+      event.preventDefault();
+
+      const beforeElement = getDropBeforeElement(event.clientX, event.clientY);
+      if (beforeElement === null) {
+        const addCard = elements.questionsContainer.querySelector(".add-card");
+        if (addCard) {
+          elements.questionsContainer.insertBefore(state.dropIndicator, addCard);
+        } else {
+          elements.questionsContainer.appendChild(state.dropIndicator);
+        }
+      } else {
+        elements.questionsContainer.insertBefore(state.dropIndicator, beforeElement);
+      }
+    });
+
+    elements.questionsContainer.addEventListener("dragleave", (event) => {
+      if (!elements.questionsContainer.contains(event.relatedTarget)) {
+        removeDropIndicator();
+      }
+    });
+
+    elements.questionsContainer.addEventListener("drop", (event) => {
+      event.preventDefault();
+      const fromIndex = getDragSourceIndex(event);
+      const toIndex = getDropIndicatorTargetIndex();
+      removeDropIndicator();
+      moveQuestion(fromIndex, toIndex);
+    });
 
     elements.loadButton.addEventListener("click", loadPack);
     elements.uploadPackButton.addEventListener("click", uploadPack);
