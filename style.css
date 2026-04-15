@@ -163,7 +163,7 @@ body {
   margin: 0;
   text-align: center;
   font-family: "Montserrat", "Kumbh", sans-serif;
-  font-size: clamp(1.1rem, 3.1vw, 1.45rem);
+  font-size: clamp(1.35rem, 3.1vw, 1.55rem);
   line-height: 1.1;
   font-weight: 500;
 }
@@ -180,7 +180,7 @@ body {
   margin: 9px 0 0;
   min-height: 2em;
   text-align: center;
-  font-size: clamp(1.1rem, 3.1vw, 1.45rem);
+  font-size: clamp(1.35rem, 3.1vw, 1.55rem);
   color: rgb(255, 255, 255);
 }
 
@@ -212,7 +212,7 @@ textarea {
   color: #ffffff;
   text-align: right;
   font-family: "Kumbh", sans-serif;
-  font-size: clamp(2rem, 7vw, 3.2rem);
+  font-size: 2.5rem;
   font-weight: 700;
   letter-spacing: -0.06em;
   line-height: 1;
@@ -283,7 +283,8 @@ textarea {
 }
 
 .keypad.letters .key-btn {
-  font-size: clamp(1.4rem, 4.5vw, 1.8rem);
+  font-size: 2.2rem;
+  font-weight: 600;
 }
 
 .keypad.numbers {
@@ -293,11 +294,14 @@ textarea {
 }
 
 .keypad.numbers .key-btn {
-  font-size: clamp(1.6rem, 5vw, 2rem);
+  font-size: 2.5rem;
+  font-weight: 700;
+
 }
 
 .keypad.numbers .key-btn.number-control {
-  font-size: clamp(1rem, 3.6vw, 1.3rem);
+  font-size: 2.5rem;
+  font-weight: 700;
   letter-spacing: 0.01em;
 }
 
@@ -466,7 +470,7 @@ textarea {
   text-align: center;
   font-family: "Montserrat", "Kumbh", sans-serif;
   font-weight: 500;
-  font-size: clamp(1rem, 6.5vw, 1.5rem);
+  font-size: clamp(1.5rem, 8.5vw, 1.8rem);
   line-height: 1.15;
   color: #000;
   line-clamp: 2;
@@ -487,7 +491,7 @@ textarea {
   white-space: normal;
   overflow: visible;
   text-overflow: clip;
-  font-size: clamp(1.2rem, 4.2vw, 1.8rem);
+  font-size: clamp(1.5rem, 8.5vw, 1.8rem);
 }
 
 .key-btn.choice-row.sequence-row[data-sequence-order]::before {
@@ -1064,37 +1068,6 @@ textarea {
 .mode-hint-text {
   display: none;
 }
-
-/* @media (max-height: 760px) {
-  .phone-frame {
-    gap: 6px;
-    padding: 8px 6px;
-  }
-
-  .key-btn {
-    min-height: 52px;
-  }
-
-  .question-text {
-    font-size: 1.04rem;
-  }
-
-  .hud-value {
-    font-size: 1.7rem;
-  }
-
-  .timer-track {
-    height: 26px;
-  }
-
-  .finish-card {
-    gap: 10px;
-  }
-
-  .sq-button--compact {
-    min-height: 44px;
-  }
-} */
 
 /* On actual mobile devices, fill the screen instead of showing the phone frame */
 @media (max-width: 480px) {
