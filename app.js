@@ -710,13 +710,6 @@ function buildTimerProfileForQuestionType(typeCode) {
   const baseDurations = [...FAST_POINT_WINDOW_DURATIONS_MS];
   const extraTotalMs = Math.max(0, Number(QUESTION_TIMER_BONUS_TIMER[typeCode] || 0));
 
-  if (extraTotalMs <= 0 || baseDurations.length === 0) {
-    return {
-      durationsMs: baseDurations,
-      totalDurationMs: QUESTION_DURATION_MS
-    };
-  }
-
   const extraPerWindowMs = Math.floor(extraTotalMs / baseDurations.length);
   const remainderMs = extraTotalMs % baseDurations.length;
 
@@ -724,9 +717,10 @@ function buildTimerProfileForQuestionType(typeCode) {
     durationMs + extraPerWindowMs + (idx < remainderMs ? 1 : 0)
   ));
 
+  const totalDurationMs = durationsMs.reduce((sum, durationMs) => sum + durationMs, 0);
   return {
     durationsMs,
-    totalDurationMs: durationsMs.reduce((sum, durationMs) => sum + durationMs, 0)
+    totalDurationMs
   };
 }
 
@@ -837,10 +831,10 @@ function revealAllQuestionCharacters() {
   });
 }
 
-function getPostCharacterPauseMs(char, nextChar) {
+function getPunctuationPauseMs(char, nextChar) {
   const isPauseBoundary = nextChar === " " || nextChar === undefined;
 
-  if (isPauseBoundary && (char === "," || char === ";")) {
+  if (isPauseBoundary && (char === "," || char === ";" || char === ":" || char === "?" || char === "!")) {
     return COMMA_PAUSE_MS;
   }
 
@@ -855,16 +849,16 @@ function getCharacterRevealIntervalMs() {
   const completedQuestionCount = Math.max(0, questionIndex);
   const possibleScoreSoFar = completedQuestionCount * MAX_FAST_POINTS;
 
-  if (possibleScoreSoFar <= 0) {
+  if (possibleScoreSoFar <= 20) {
     return CHARACTER_REVEAL_INTERVAL_MS;
   }
 
   const scoreRatio = score / possibleScoreSoFar;
 
-  if (scoreRatio < 0.6) {
-    return CHARACTER_REVEAL_INTERVAL_MS + 10;
-  } else if (scoreRatio < 0.4) {
+  if (scoreRatio < 0.4) {
     return CHARACTER_REVEAL_INTERVAL_MS + 25;
+  } else if (scoreRatio < 0.6) {
+    return CHARACTER_REVEAL_INTERVAL_MS + 10;
   }
 
   return CHARACTER_REVEAL_INTERVAL_MS;
@@ -900,7 +894,7 @@ function renderQuestionCharacterReveal(questionText, startDelayMs = 0, revealInt
     }, cumulativeRevealDelayMs);
 
     characterRevealHandles.push(revealHandle);
-    cumulativeRevealDelayMs += getPostCharacterPauseMs(char, chars[index + 1]);
+    cumulativeRevealDelayMs += getPunctuationPauseMs(char, chars[index + 1]);
   });
 
   questionTextEl.appendChild(fragment);

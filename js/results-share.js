@@ -176,8 +176,6 @@ export async function postResultsToEndpoint(payload) {
   const encodedPayload = encodeJsonPayloadForUrl(payload);
   const submissionUrl = `https://www.speedquizzing.com/utils/dailyquiz/daily_quiz_submit_results/${encodedPayload}`;
 
-  console.log("Submitting results to", submissionUrl);
-
   await fetch(submissionUrl, {
     method: "POST"
   });

@@ -12,9 +12,15 @@ export const LETTER_KEYS = [
 
 export const NUMBER_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
 
-export const FAST_POINT_FIRST_DURATION_SECONDS = 0.7;
-export const FAST_POINT_INITIAL_DURATION_SECONDS = 1;
-export const FAST_POINT_DURATION_STEP_SECONDS = 0.1;
+
+export const FAST_POINT_WINDOW_DURATIONS_MS = [
+  900, 1105, 1280, 1325, 1330, 1330, 1325, 1280, 1105, 900
+];
+export const QUESTION_DURATION_MS = FAST_POINT_WINDOW_DURATIONS_MS.reduce(
+  (sum, durationMs) => sum + durationMs,
+  0
+);
+
 export const MAX_FAST_POINTS = 10;
 export const RESULT_DELAY_MS = 4500;
 export const PRE_REVEAL_DELAY_MS = 400;
@@ -45,14 +51,3 @@ export const IS_DEV_MODE =
   window.location.hostname === "127.0.0.1" ||
   window.location.hostname.startsWith("192.168.");
 
-export const FAST_POINT_WINDOW_DURATIONS_MS = Array.from(
-  { length: MAX_FAST_POINTS },
-  (_, idx) => Math.round(((idx === 0
-    ? FAST_POINT_FIRST_DURATION_SECONDS
-    : FAST_POINT_INITIAL_DURATION_SECONDS + (idx * FAST_POINT_DURATION_STEP_SECONDS))) * 1000)
-);
-
-export const QUESTION_DURATION_MS = FAST_POINT_WINDOW_DURATIONS_MS.reduce(
-  (sum, durationMs) => sum + durationMs,
-  0
-);
