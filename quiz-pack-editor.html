@@ -40,6 +40,12 @@
         <div>
           <strong>Total questions:</strong> <span id="questionCountValue">0</span>
         </div>
+        <div>
+          <strong>Total players:</strong> <span id="totalPlayersValue">-</span>
+        </div>
+        <div>
+          <strong>Average score:</strong> <span id="averageScoreValue">-</span>
+        </div>
       </section>
 
       <section id="questionsContainer" class="questions" aria-label="Editable questions"></section>
@@ -53,6 +59,8 @@
         </div>
         <div class="modal-body" id="modalBody"></div>
         <div class="modal-footer">
+          <button type="button" id="prevQuestionButton" class="secondary">Prev</button>
+          <button type="button" id="nextQuestionButton" class="secondary">Next</button>
           <button type="button" id="deleteModalButton" class="danger">Delete Question</button>
           <button type="button" id="closeModalFooterButton">Done</button>
         </div>

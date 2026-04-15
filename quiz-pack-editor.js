@@ -17,18 +17,23 @@
     packMeta: document.getElementById("packMeta"),
     packDateValue: document.getElementById("packDateValue"),
     questionCountValue: document.getElementById("questionCountValue"),
+    totalPlayersValue: document.getElementById("totalPlayersValue"),
+    averageScoreValue: document.getElementById("averageScoreValue"),
     questionsContainer: document.getElementById("questionsContainer"),
     questionModal: document.getElementById("questionModal"),
     modalQIndex: document.getElementById("modalQIndex"),
     modalBody: document.getElementById("modalBody"),
     closeModalButton: document.getElementById("closeModalButton"),
     closeModalFooterButton: document.getElementById("closeModalFooterButton"),
+    prevQuestionButton: document.getElementById("prevQuestionButton"),
+    nextQuestionButton: document.getElementById("nextQuestionButton"),
     deleteModalButton: document.getElementById("deleteModalButton")
   };
 
   const state = {
     packDate: "",
     questions: [],
+    results: null,
     uploadApiKey: "",
     hasLoadedPack: false,
     dragIndex: -1,
@@ -97,11 +102,34 @@
 
   function normalizePack(payload) {
     const questions = Array.isArray(payload?.questions) ? payload.questions : [];
+    const results = payload?.results && typeof payload.results === "object" ? payload.results : null;
 
     return {
       pack_date: String(payload?.pack_date || payload?.packDate || elements.quizDateInput.value || ""),
-      questions: questions.map((question, index) => normalizeQuestion(question, index))
+      questions: questions.map((question, index) => normalizeQuestion(question, index)),
+      results
     };
+  }
+
+  function formatResultMetric(value) {
+    if (value === null || value === undefined || value === "") {
+      return "-";
+    }
+
+    return String(value);
+  }
+
+  function formatAdjustedTotalPlayers(value) {
+    if (value === null || value === undefined || value === "") {
+      return "-";
+    }
+
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+      return String(value);
+    }
+
+    return String(numericValue - 25);
   }
 
   function buildEndpointUrl() {
@@ -326,6 +354,34 @@
     `;
 
     elements.questionModal.hidden = false;
+    updateModalNavigationButtons();
+  }
+
+  function updateModalNavigationButtons() {
+    const hasCurrent = currentModalIndex >= 0 && currentModalIndex < state.questions.length;
+    const canGoPrev = hasCurrent && currentModalIndex > 0;
+    const canGoNext = hasCurrent && currentModalIndex < state.questions.length - 1;
+
+    if (elements.prevQuestionButton) {
+      elements.prevQuestionButton.disabled = !canGoPrev;
+    }
+
+    if (elements.nextQuestionButton) {
+      elements.nextQuestionButton.disabled = !canGoNext;
+    }
+  }
+
+  function navigateModalQuestion(delta) {
+    if (!Number.isInteger(delta) || currentModalIndex < 0) {
+      return;
+    }
+
+    const targetIndex = currentModalIndex + delta;
+    if (targetIndex < 0 || targetIndex >= state.questions.length) {
+      return;
+    }
+
+    openQuestionModal(targetIndex);
   }
 
   function closeQuestionModal() {
@@ -334,6 +390,7 @@
       refreshCard(currentModalIndex);
     }
     currentModalIndex = -1;
+    updateModalNavigationButtons();
   }
 
   function renderAddCard() {
@@ -383,6 +440,8 @@
     if (state.questions.length) {
       elements.packDateValue.textContent = state.packDate;
       elements.questionCountValue.textContent = String(state.questions.length);
+      elements.totalPlayersValue.textContent = formatAdjustedTotalPlayers(state.results?.total_players);
+      elements.averageScoreValue.textContent = formatResultMetric(state.results?.average_score);
       elements.packMeta.hidden = false;
     } else {
       elements.packMeta.hidden = true;
@@ -429,8 +488,14 @@
 
       state.packDate = normalized.pack_date;
       state.questions = normalized.questions;
+      state.results = normalized.results;
       state.hasLoadedPack = true;
       renderQuestions();
+
+      console.log("Daily quiz results:", {
+        total_players: normalized.results?.total_players,
+        average_score: normalized.results?.average_score
+      });
 
       setStatus("", false);
     } catch (error) {
@@ -441,7 +506,8 @@
   function getCurrentPack() {
     return {
       pack_date: state.packDate || elements.quizDateInput.value || "",
-      questions: state.questions
+      questions: state.questions,
+      results: state.results
     };
   }
 
@@ -601,6 +667,8 @@
     });
     elements.closeModalButton.addEventListener("click", closeQuestionModal);
     elements.closeModalFooterButton.addEventListener("click", closeQuestionModal);
+    elements.prevQuestionButton?.addEventListener("click", () => navigateModalQuestion(-1));
+    elements.nextQuestionButton?.addEventListener("click", () => navigateModalQuestion(1));
     elements.deleteModalButton.addEventListener("click", deleteCurrentQuestion);
 
     elements.questionModal.addEventListener("click", (event) => {
@@ -624,6 +692,7 @@
     });
 
     renderQuestions();
+    updateModalNavigationButtons();
     loadPack();
   }
 
