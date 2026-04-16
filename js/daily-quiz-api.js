@@ -7,93 +7,120 @@ const FALLBACK_QUIZ_PACK = {
   pack_date: "2026-01-01",
   questions: [
     {
-      question_id: "question1",
+      id: "47172",
+      q: "Which American actor played Ike Turner in the film 'What's Love Got to Do with It' and Morpheus in 'The Matrix'?",
+      short_answer: "L",
+      long_answer: "Laurence Fishburne",
+      type_code: "L"
+    },
+    {
+      id: "881720",
+      q: "What type of product is Calgon?",
+      short_answer: "B",
+      long_answer: "",
       type_code: "M",
-      question: "Which of the following actors stars in the film 'Inception'?",
       options: [
-        "Matt Damon",
-        "Brad Pitt",
-        "Keanu Reeves",
-        "Leonardo DiCaprio"
-      ],
-      answer: "D"
+        "Disinfectant",
+        "Water softener",
+        "Multi-surface cleaner",
+        "Mouthwash"
+      ]
     },
     {
-      question_id: "question2",
-      type_code: "N",
-      question: "How many lanes are there on an Olympic athletics track?",
-      answer: "8",
-      longAnswer: "8"
+      id: "432885",
+      q: "What name is given to the second full moon in a month?",
+      short_answer: "B",
+      long_answer: "Blue Moon",
+      type_code: "L"
     },
     {
-      question_id: "question3",
-      type_code: "L",
-      question: "In which city did the first 'Hard Rock Cafe' open?",
-      answer: "L",
-      longAnswer: "London"
-    },
-    {
-      question_id: "question4",
-      type_code: "N",
-      question: "What is 102 x 5?",
-      answer: "510",
-      longAnswer: "510"
-    },
-    {
-      question_id: "question5",
+      id: "895959",
+      q: "Sheer, Satin, Matte or Glossy are all finish types of which make-up item?",
+      short_answer: "D",
+      long_answer: "",
       type_code: "M",
-      question: "At the start of a game of chess, who moves first?",
       options: [
-        "White",
-        "Black"
-      ],
-      answer: "A"
+        "Blush",
+        "Mascara",
+        "Concealer",
+        "Lipstick"
+      ]
     },
     {
-      question_id: "question6",
-      type_code: "L",
-      question: "In Greek mythology, who was the father and king of the gods?",
-      answer: "Z",
-      longAnswer: "Zeus"
+      id: "767046",
+      q: "How many of the world's top ten highest mountains are located at least partially in Nepal?",
+      short_answer: "8",
+      long_answer: "8",
+      type_code: "N"
     },
     {
-      question_id: "question7",
-      type_code: "M",
-      question: "For how many years must Scotch whisky be aged in oak casks before it can legally be sold in the UK?",
+      id: "885985",
+      q: "Overworld, the Nether and the End are different dimensions in what video game?",
+      short_answer: "M",
+      long_answer: "Minecraft",
+      type_code: "L"
+    },
+    {
+      id: "357572",
+      q: "What was the name of the '90s Transformers animated TV series where all the characters could morph into animals?",
+      short_answer: "B",
+      long_answer: "Beast Wars",
+      type_code: "L"
+    },
+    {
+      id: "853264",
+      q: "Starting with the earliest, put these Katy Perry albums in order of when they were released.",
+      short_answer: "BADC",
+      long_answer: "One of the Boys 2008, Teenage Dream 2010, Witness 2017, Smile 2020",
+      type_code: "S",
       options: [
-        "3",
-        "6",
-        "9"
-      ],
-      answer: "A"
+        "Teenage Dream",
+        "One of the Boys",
+        "Smile",
+        "Witness"
+      ]
     },
     {
-      question_id: "question8",
-      type_code: "L",
-      question: "What is the capital city of Norway?",
-      answer: "O",
-      longAnswer: "Oslo"
+      id: "120128",
+      q: "When Christianity was banned or persecuted, Christians identified each other without being caught by using the ichthus symbol, which resembles the profile of what creature?",
+      short_answer: "F",
+      long_answer: "Fish",
+      type_code: "L"
     },
     {
-      question_id: "question9",
-      type_code: "M",
-      question: "In which country was the composer Chopin born?",
-      options: [
-        "Poland",
-        "Austria",
-        "Italy",
-        "Denmark"
-      ],
-      answer: "A"
-    },
-    {
-      question_id: "question10",
-      type_code: "L",
-      question: "Which term for a hired detective is also the name of a popular satirical magazine?",
-      answer: "P",
-      longAnswer: "Private Eye"
+      id: "927016",
+      q: "Released at Christmas 2024, the latest Wallace & Gromit movie 'Vengeance Most Fowl' featured the return of which villain who first appeared in 'The Wrong Trousers'?",
+      short_answer: "F",
+      long_answer: "Feathers McGraw",
+      type_code: "L"
     }
-  ]
+  ],
+  results: {
+    total_players: 3,
+    average_score: 34,
+    score_bands: [
+      [6, 1],
+      [9, 1],
+      [13, 2],
+      [15, 1],
+      [16, 2],
+      [19, 1],
+      [20, 1],
+      [25, 1],
+      [28, 2],
+      [31, 1],
+      [34, 2],
+      [39, 2],
+      [40, 1],
+      [43, 1],
+      [44, 1],
+      [49, 2],
+      [54, 3],
+      [59, 1],
+      [63, 1],
+      [70, 1]
+    ]
+  }
 };
 
 function decodeBase64Utf8(encoded) {
@@ -111,9 +138,9 @@ function sleep(ms) {
 export function normalizeQuestionRecord(question, index) {
   return {
     ...question,
-    question_id: String(question?.question_id || question?.questionId || question?.id || "").trim() || `question${index + 1}`,
-    typeCode: String(question?.typeCode || question?.type_code || "L").trim().toUpperCase(),
-    question: String(question?.question ?? question?.q ?? ""),
+    question_id: String(question?.question_id || question?.id || "").trim() || `question${index + 1}`,
+    typeCode: String(question?.type_code || "L").trim().toUpperCase(),
+    question: String(question?.q ?? ""),
     options: Array.isArray(question?.options)
       ? question.options
       : undefined
@@ -129,10 +156,29 @@ export function normalizeQuestionSet(records) {
 }
 
 export function getFallbackQuizPack() {
+  const questions = FALLBACK_QUIZ_PACK.questions.map((rawQuestion, index) => {
+    const question = {
+      question_id: rawQuestion.id,
+      type_code: rawQuestion.type_code,
+      q: rawQuestion.q,
+      answer: String(rawQuestion.short_answer)
+    };
+
+    if (rawQuestion.long_answer) {
+      question.longAnswer = String(rawQuestion.long_answer);
+    }
+
+    if (rawQuestion.options) {
+      question.options = rawQuestion.options;
+    }
+
+    return normalizeQuestionRecord(question, index);
+  });
+
   return {
-    packDate: String(FALLBACK_QUIZ_PACK.pack_date || "").trim(),
-    questions: normalizeQuestionSet(FALLBACK_QUIZ_PACK.questions),
-    results: null
+    packDate: String(FALLBACK_QUIZ_PACK.pack_date).trim(),
+    questions,
+    results: FALLBACK_QUIZ_PACK.results
   };
 }
 
@@ -142,7 +188,7 @@ function transformQuestion(raw, index) {
   const question = {
     question_id: raw.question_id || raw.id,
     type_code: raw.type_code || "L",
-    question: raw.q,
+    q: raw.q,
     answer
   };
 
