@@ -658,6 +658,7 @@
     elements.uploadPackButton.addEventListener("click", uploadPack);
     elements.quizDateInput.addEventListener("pointerdown", openDatePicker);
     elements.quizDateInput.addEventListener("click", openDatePicker);
+    elements.quizDateInput.addEventListener("change", loadPack);
     elements.uploadApiKeyInput?.addEventListener("input", (event) => {
       if (!(event.target instanceof HTMLInputElement)) {
         return;
