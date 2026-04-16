@@ -37,11 +37,10 @@ function toNormalizedStats(rawStats, fallbackDate) {
 
   const scoreBands = toNormalizedScoreBands(rawStats.score_bands);
   const totalPlayersFromBands = scoreBands.reduce((sum, band) => sum + band.count, 0);
-  const totalPlayers = Number(rawStats.total_players);
 
   return {
     packDate: toValidDateString(rawStats.pack_date) || fallbackDate,
-    totalPlayers: Number.isFinite(totalPlayers) && totalPlayers > 0 ? totalPlayers : totalPlayersFromBands,
+    totalPlayers: totalPlayersFromBands,
     scoreBands
   };
 }
