@@ -96,7 +96,7 @@
       long_answer: String(question?.long_answer || question?.longAnswer || ""),
       type_code: String(question?.type_code || question?.typeCode || "L").toUpperCase(),
       difficulty: String(question?.difficulty || "normal"),
-      options
+      ...(options?.length > 0 && { options })
     };
   }
 
@@ -129,7 +129,7 @@
       return String(value);
     }
 
-    return String(numericValue - 25);
+    return String(numericValue);
   }
 
   function buildEndpointUrl() {
