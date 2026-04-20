@@ -1,0 +1,12 @@
+{
+  "name": "coolpat1993-github-io",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Build and obfuscation pipeline for static distribution output",
+  "scripts": {
+    "build": "node scripts/build-distribution.js"
+  },
+  "devDependencies": {
+    "javascript-obfuscator": "^4.1.1"
+  }
+}
