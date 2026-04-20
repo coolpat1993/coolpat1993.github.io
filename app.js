@@ -1561,7 +1561,6 @@ questionReviewController = createQuestionReviewController({
   viewQuestionsButtonEl,
   getIsGameFinished: () => gameFinished,
   getQuestions: () => questions,
-  getMaxFastPoints: () => MAX_FAST_POINTS,
   getResultEntries: () => buildAnswerHistoryFromResults(getMergedResultsSnapshot())
 });
 

@@ -10,10 +10,58 @@ function escapeHtml(value) {
 function formatReviewAnswer(answer, timedOut = false) {
   const normalized = String(answer || "").trim();
   if (!normalized) {
-    return timedOut ? "No answer (timed out)" : "No answer";
+    return "No answer";
   }
 
   return normalized;
+}
+
+function getOptionLabelFromCode(question, code) {
+  const normalizedCode = String(code || "").trim().toUpperCase();
+  if (!Array.isArray(question?.options) || normalizedCode.length !== 1) {
+    return null;
+  }
+
+  const optionIndex = normalizedCode.charCodeAt(0) - 65;
+  const optionLabel = question.options[optionIndex];
+  return optionLabel ? String(optionLabel) : null;
+}
+
+function formatReviewUserAnswer(entry, sourceQuestion) {
+  const rawAnswer = String(entry?.userAnswer || "").trim();
+  if (!rawAnswer) {
+    return formatReviewAnswer(rawAnswer, !!entry?.timedOut);
+  }
+
+  if (!sourceQuestion || !Array.isArray(sourceQuestion.options)) {
+    return formatReviewAnswer(rawAnswer, !!entry?.timedOut);
+  }
+
+  const normalizedAnswer = rawAnswer.toUpperCase();
+
+  if (entry?.typeCode === "M") {
+    const labels = normalizedAnswer
+      .split("")
+      .map((code) => getOptionLabelFromCode(sourceQuestion, code))
+      .filter(Boolean);
+
+    if (labels.length > 0) {
+      return labels.join(" / ");
+    }
+  }
+
+  if (entry?.typeCode === "S") {
+    const labels = normalizedAnswer
+      .split("")
+      .map((code) => getOptionLabelFromCode(sourceQuestion, code))
+      .filter(Boolean);
+
+    if (labels.length > 0) {
+      return labels.join(" | ");
+    }
+  }
+
+  return formatReviewAnswer(rawAnswer, !!entry?.timedOut);
 }
 
 export function createQuestionReviewController({
@@ -23,7 +71,6 @@ export function createQuestionReviewController({
   viewQuestionsButtonEl,
   getIsGameFinished,
   getQuestions,
-  getMaxFastPoints,
   getResultEntries
 }) {
   if (!panelEl || !listEl) {
@@ -42,22 +89,23 @@ export function createQuestionReviewController({
     }
 
     const questions = getQuestions();
-    const maxFastPoints = getMaxFastPoints();
 
     listEl.innerHTML = resultEntries.map((entry, idx) => {
       const questionNumber = Number.isInteger(entry?.questionIndex) ? entry.questionIndex + 1 : idx + 1;
       const sourceQuestion = questions[questionNumber - 1];
       const questionText = sourceQuestion?.question || `Question ${questionNumber}`;
       const correctAnswer = formatReviewAnswer(entry?.correctAnswer, false);
-      const yourAnswer = formatReviewAnswer(entry?.userAnswer, !!entry?.timedOut);
+      const yourAnswer = formatReviewUserAnswer(entry, sourceQuestion);
       const earnedPoints = Number.isFinite(entry?.earnedPoints) ? entry.earnedPoints : 0;
+      const isCorrect = typeof entry?.isCorrect === "boolean" ? entry.isCorrect : earnedPoints > 0;
+      const statusEmoji = isCorrect ? "✅" : "❌";
 
       return `
         <article class="question-review-item">
           <p class="question-review-question"><strong>Q${questionNumber}.</strong> ${escapeHtml(questionText)}</p>
           <p class="question-review-meta"><span class="question-review-meta-label">Answer:</span> ${escapeHtml(correctAnswer)}</p>
-          <p class="question-review-meta"><span class="question-review-meta-label">Your answer:</span> ${escapeHtml(yourAnswer)}</p>
-          <p class="question-review-meta"><span class="question-review-meta-label">Score:</span> ${earnedPoints}/${maxFastPoints}</p>
+          <p class="question-review-meta"><span class="question-review-meta-label">Your answer:</span> ${escapeHtml(yourAnswer)}  ${statusEmoji}</p>
+          <p class="question-review-meta"><span class="question-review-meta-label">Score:</span> ${earnedPoints}</p>
         </article>
       `;
     }).join("");
