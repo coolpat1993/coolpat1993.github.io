@@ -39,7 +39,9 @@
 
         <section class="answer-panel">
           <div id="pregameHeader" class="pregame-header" aria-hidden="true">
-            <img src="./assets/images/sq-logo-2021.png" alt="SpeedQuizzing" class="pregame-logo" />
+            <div class="pf-logo-bar s-BlLlyjsTZn_0">
+              <div class="pf-wordmark s-BlLlyjsTZn_0">Speed<span class="s-BlLlyjsTZn_0">Quiz</span>.com</div>
+            </div>
           </div>
           <div id="numberAnswerDisplay" class="number-answer-display" hidden aria-live="polite"></div>
           <div id="keypad" class="keypad" hidden aria-label="Answer keypad"></div>
@@ -105,7 +107,17 @@
               <div class="finish-actions">
                 <button id="shareScoreButton" class="sq-button sq-button--primary" type="button">Share results</button>
                 <button id="replayButton" class="sq-button sq-button--compact" type="button">Replay</button>
+                <button id="viewQuestionsButton" class="view-questions-icon" type="button" aria-label="View questions" title="View questions">&#9776;</button>
               </div>
+            </div>
+          </section>
+          <section id="questionReviewPanel" class="question-review-panel" hidden aria-modal="true" aria-label="Question review">
+            <div class="question-review-card">
+              <button id="questionReviewCloseButton" class="sq-button sq-button--icon question-review-close" type="button" aria-label="Close">✕</button>
+              <div class="question-review-card-header">
+                <h2 class="question-review-title">Question review</h2>
+              </div>
+              <div id="questionReviewList" class="question-review-list" aria-live="polite"></div>
             </div>
           </section>
           <p id="packDateDisplay" class="pack-date-display"></p>

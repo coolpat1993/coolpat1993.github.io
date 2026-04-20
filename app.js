@@ -73,6 +73,8 @@ import {
   buildBetterThanText
 } from "./js/score-percentile.js";
 
+import { createQuestionReviewController } from "./js/question-review-modal.js";
+
 // View state management
 let currentView = null;
 let questions = [];
@@ -101,11 +103,17 @@ const startFooterNavEl = document.querySelector("#startFooterNav");
 const finalScoreValueEl = document.querySelector("#finalScoreValue");
 const scorePercentileTextEl = document.querySelector("#scorePercentileText");
 const shareScoreButtonEl = document.querySelector("#shareScoreButton");
+const viewQuestionsButtonEl = document.querySelector("#viewQuestionsButton");
 const replayButtonEl = document.querySelector("#replayButton");
+const questionReviewPanelEl = document.querySelector("#questionReviewPanel");
+const questionReviewCloseButtonEl = document.querySelector("#questionReviewCloseButton");
+const questionReviewListEl = document.querySelector("#questionReviewList");
 const devResetProgressButtonIntroEl = document.querySelector("#devResetProgressButtonIntro");
 const modeHintOverlayEl = document.querySelector("#modeHintOverlay");
 const modeHintTitleEl = modeHintOverlayEl?.querySelector(".mode-hint-title");
 const modeHintTextEl = modeHintOverlayEl?.querySelector(".mode-hint-text");
+
+let questionReviewController = null;
 
 // Hide dev buttons if not in development mode
 if (!IS_DEV_MODE) {
@@ -119,6 +127,7 @@ function setCurrentView(viewState) {
   }
 
   currentView = viewState;
+  questionReviewController?.close();
 
   // Hide all panels
   introPanelEl.hidden = true;
@@ -603,6 +612,8 @@ function handleReplayGame() {
   if (!gameFinished) {
     return;
   }
+
+  questionReviewController?.close();
 
   // Set the replayed flag to true to persist it
   savedProgress.replayed = true;
@@ -1542,6 +1553,17 @@ document.addEventListener("keydown", (event) => {
 });
 
 shareScoreButtonEl.addEventListener("click", handleShareScore);
+
+questionReviewController = createQuestionReviewController({
+  panelEl: questionReviewPanelEl,
+  closeButtonEl: questionReviewCloseButtonEl,
+  listEl: questionReviewListEl,
+  viewQuestionsButtonEl,
+  getIsGameFinished: () => gameFinished,
+  getQuestions: () => questions,
+  getMaxFastPoints: () => MAX_FAST_POINTS,
+  getResultEntries: () => buildAnswerHistoryFromResults(getMergedResultsSnapshot())
+});
 
 if (replayButtonEl) {
   replayButtonEl.addEventListener("click", handleReplayGame);

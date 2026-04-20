@@ -535,7 +535,6 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-bottom: 60px;
 }
 
 .finish-panel[hidden] {
@@ -550,6 +549,18 @@ textarea {
   padding: 10px 12px 0;
   align-items: center;
   text-align: center;
+}
+
+.view-questions-icon {
+  background: transparent;
+  border: 0;
+  font-size: 2.1rem;
+  color: #fff;
+  cursor: pointer;
+}
+
+.view-questions-icon:hover {
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .finish-label {
@@ -772,6 +783,109 @@ textarea {
   display: none;
 }
 
+.question-review-panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0s;
+}
+
+.question-review-panel.is-open {
+  opacity: 1;
+  pointer-events: auto;
+  animation: htp-fade-in 0.25s ease forwards;
+}
+
+.question-review-panel[hidden] {
+  display: none;
+}
+
+.question-review-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.96);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.question-review-card-header {
+  text-align: center;
+  padding-top: 2px;
+}
+
+.question-review-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  transition: color 0.15s;
+}
+
+.question-review-close:active {
+  color: #fff;
+}
+
+.question-review-title {
+  margin: 0;
+  text-align: center;
+  font-family: "Montserrat", "Kumbh", sans-serif;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.question-review-list {
+  flex: 1;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  overflow-y: auto;
+  padding: 6px 2px 2px;
+}
+
+.question-review-item {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.question-review-question {
+  margin: 0;
+  font-family: "Montserrat", "Kumbh", sans-serif;
+  font-size: 0.96rem;
+  line-height: 1.35;
+}
+
+.question-review-meta {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.question-review-meta-label {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.question-review-empty {
+  margin: 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.98rem;
+}
+
 .how-to-play-card {
   position: relative;
   width: 100%;
@@ -899,9 +1013,23 @@ textarea {
   display: none;
 }
 
-.pregame-logo {
-  width: min(72%, 240px);
-  height: auto;
+.pf-logo-bar.s-BlLlyjsTZn_0 {
+  display: flex;
+  justify-content: center;
+  padding: 2.2rem 20px 0.6rem;
+}
+
+.pf-wordmark.s-BlLlyjsTZn_0 {
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -1px;
+  line-height: 1;
+  font-family: "Kumbh", -apple-system, sans-serif;
+}
+
+.pf-wordmark.s-BlLlyjsTZn_0 span:where(.s-BlLlyjsTZn_0) {
+  color: #00cfff;
 }
 
 .intro-title {
