@@ -546,7 +546,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 28px;
-  padding: 10px 12px 0;
+  padding: 12px;
   align-items: center;
   text-align: center;
 }
@@ -1016,7 +1016,7 @@ textarea {
 .pf-logo-bar.s-BlLlyjsTZn_0 {
   display: flex;
   justify-content: center;
-  padding: 2.2rem 20px 0.6rem;
+  padding: 1rem;
 }
 
 .pf-wordmark.s-BlLlyjsTZn_0 {
