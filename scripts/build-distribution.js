@@ -1,26 +1,33 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
+const esbuild = require("esbuild");
 const JavaScriptObfuscator = require("javascript-obfuscator");
-
-const projectRoot = path.resolve(__dirname, "..");
-const outputDir = path.join(projectRoot, "distribution");
-
-const topLevelFilesToCopy = ["index.html","style.css"];
-const topLevelJsToObfuscate = ["app.js"];
-const jsSourceDir = path.join(projectRoot, "js");
-const assetsSourceDir = path.join(projectRoot, "assets");
 
 const obfuscationOptions = {
   compact: true,
   controlFlowFlattening: true,
-  deadCodeInjection: false,
+  controlFlowFlatteningThreshold: 0.75,
+  deadCodeInjection: true,
+  deadCodeInjectionThreshold: 0.4,
   stringArray: true,
   stringArrayEncoding: ["base64"],
-  stringArrayThreshold: 0.75,
+  stringArrayThreshold: 0.85,
+  stringArrayRotate: true,
+  stringArrayShuffle: true,
+  splitStrings: true,
+  splitStringsChunkLength: 5,
   transformObjectKeys: true,
+  renameGlobals: false,
+  renameProperties: false,
+  selfDefending: true,
   unicodeEscapeSequence: false,
-  renameGlobals: false
 };
+
+const projectRoot = path.resolve(__dirname, "..");
+const outputDir = path.join(projectRoot, "distribution");
+
+const topLevelFilesToCopy = ["index.html", "style.css"];
+const assetsSourceDir = path.join(projectRoot, "assets");
 
 async function ensureDir(dirPath) {
   await fs.mkdir(dirPath, { recursive: true });
@@ -54,36 +61,21 @@ async function copyDirectoryRecursively(sourceDir, targetDir) {
   }
 }
 
-async function getAllJavaScriptFiles(sourceDir) {
-  const files = [];
+async function bundleJavaScript() {
+  const bundlePath = path.join(outputDir, "bundle.js");
 
-  async function walk(currentDir) {
-    const entries = await fs.readdir(currentDir, { withFileTypes: true });
+  await esbuild.build({
+    entryPoints: [path.join(projectRoot, "app.js")],
+    bundle: true,
+    minify: true,
+    outfile: bundlePath,
+    platform: "browser",
+    format: "iife",
+  });
 
-    for (const entry of entries) {
-      const fullPath = path.join(currentDir, entry.name);
-
-      if (entry.isDirectory()) {
-        await walk(fullPath);
-        continue;
-      }
-
-      if (entry.isFile() && entry.name.endsWith(".js")) {
-        files.push(fullPath);
-      }
-    }
-  }
-
-  await walk(sourceDir);
-  return files;
-}
-
-async function obfuscateJavaScriptFile(sourcePath, targetPath) {
-  const sourceCode = await fs.readFile(sourcePath, "utf8");
-  const obfuscated = JavaScriptObfuscator.obfuscate(sourceCode, obfuscationOptions).getObfuscatedCode();
-
-  await ensureDir(path.dirname(targetPath));
-  await fs.writeFile(targetPath, obfuscated, "utf8");
+  const bundled = await fs.readFile(bundlePath, "utf8");
+  const obfuscated = JavaScriptObfuscator.obfuscate(bundled, obfuscationOptions).getObfuscatedCode();
+  await fs.writeFile(bundlePath, obfuscated, "utf8");
 }
 
 async function buildDistribution() {
@@ -94,18 +86,16 @@ async function buildDistribution() {
     await copyFileIntoDistribution(relativePath);
   }
 
-  for (const relativePath of topLevelJsToObfuscate) {
-    const sourcePath = path.join(projectRoot, relativePath);
-    const targetPath = path.join(outputDir, relativePath);
-    await obfuscateJavaScriptFile(sourcePath, targetPath);
-  }
+  await bundleJavaScript();
 
-  const jsFiles = await getAllJavaScriptFiles(jsSourceDir);
-  for (const sourcePath of jsFiles) {
-    const relativeFromJsRoot = path.relative(jsSourceDir, sourcePath);
-    const targetPath = path.join(outputDir, "js", relativeFromJsRoot);
-    await obfuscateJavaScriptFile(sourcePath, targetPath);
-  }
+  // Update index.html in distribution to reference bundle.js instead of app.js
+  const htmlPath = path.join(outputDir, "index.html");
+  let html = await fs.readFile(htmlPath, "utf8");
+  html = html.replace(
+    '<script type="module" src="./app.js"></script>',
+    '<script src="./bundle.js"></script>'
+  );
+  await fs.writeFile(htmlPath, html, "utf8");
 
   await copyDirectoryRecursively(assetsSourceDir, path.join(outputDir, "assets"));
 
