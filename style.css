@@ -33,6 +33,13 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "Speedquizzing2021v3";
+  src: url("./assets/fonts/Speedquizzing2021v3.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   color-scheme: only light;
   --sq-cyan: #00cfff;
