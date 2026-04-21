@@ -1025,27 +1025,13 @@ textarea {
   color: #fff;
   letter-spacing: -1px;
   line-height: 1;
-  font-family: "Speedquizzing2021v3", -apple-system, sans-serif;
+  font-family: "Speedquizzing2021v3", sans-serif;
 }
 
 .pf-wordmark.s-BlLlyjsTZn_0 span:where(.s-BlLlyjsTZn_0) {
   color: #00cfff;
 }
 
-.intro-title {
-  margin: 0;
-  font-family: "LuckiestGuy", "Montserrat", sans-serif;
-  font-size: clamp(2.4rem, 8vw, 3.2rem);
-  letter-spacing: 0.05em;
-  color: var(--sq-cyan);
-  font-weight: 400;
-}
-
-.intro-logo {
-  max-width: 100%;
-  max-height: 120px;
-  object-fit: contain;
-}
 
 .intro-subtitle {
   margin: 0;
