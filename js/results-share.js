@@ -23,7 +23,7 @@ export function buildShareText({
 }) {
   const heading = `I scored ${score} points!`;
   const breakdown = buildAnswerBreakdownText(resultEntries);
-  return `${heading}\n\n${breakdown}\n${shareUrl}`;
+  return `${heading}\n${breakdown}\n${shareUrl}`;
 }
 
 export function buildCanonicalQuizUrl(packDate = null) {
