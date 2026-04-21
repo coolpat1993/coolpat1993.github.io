@@ -573,10 +573,11 @@ async function handleShareScore() {
   }
 
   const resultEntries = buildAnswerHistoryFromResults(getMergedResultsSnapshot());
+  const isTomorrowTestPack = new URLSearchParams(window.location.search).get("quiz") === "7777-66-55";
   const result = await shareResults({
     score,
     resultEntries,
-    shareUrl: buildCanonicalQuizUrl(activePackDate)
+    shareUrl: isTomorrowTestPack ? "tomorrow's test pack" : buildCanonicalQuizUrl(activePackDate)
   });
 
   if (result.success) {

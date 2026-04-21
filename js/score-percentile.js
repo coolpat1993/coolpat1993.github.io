@@ -36,11 +36,9 @@ function toNormalizedStats(rawStats, fallbackDate) {
   }
 
   const scoreBands = toNormalizedScoreBands(rawStats.score_bands);
-  const totalPlayersFromBands = scoreBands.reduce((sum, band) => sum + band.count, 0);
 
   return {
     packDate: toValidDateString(rawStats.pack_date) || fallbackDate,
-    totalPlayers: totalPlayersFromBands,
     scoreBands
   };
 }
@@ -88,7 +86,17 @@ export function calculateBetterThanPercentage(score, stats) {
     return null;
   }
 
-  const totalPlayers = Number(stats.totalPlayers);
+  // calculate tota players from score bands, removing the bands with the same score as the player 
+
+  const totalPlayers = stats.scoreBands.reduce((sum, band) => {
+    if (band.score != normalizedScore) {
+      return sum + band.count;
+    }
+
+    return sum;
+  }, 0);
+
+
   if (!Number.isFinite(totalPlayers) || totalPlayers <= 0) {
     return null;
   }
