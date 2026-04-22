@@ -85,6 +85,7 @@ const scoreValueEl = document.querySelector("#scoreValue");
 const fastPointsValueEl = document.querySelector("#fastPointsValue");
 const timerFillEl = document.querySelector("#timerFill");
 const timerTrackEl = document.querySelector(".timer-track");
+const hudEl = document.querySelector(".hud");
 const questionPanelEl = document.querySelector("#questionPanel");
 const questionTextEl = document.querySelector("#questionText");
 const feedbackTextEl = document.querySelector("#feedbackText");
@@ -135,6 +136,7 @@ function setCurrentView(viewState) {
   finishPanelEl.hidden = true;
   startFooterNavEl.hidden = true;
   pregameHeaderEl.hidden = true;
+  hudEl.hidden = true;
   keypadEl.hidden = true;
   numberAnswerDisplayEl.hidden = true;
   packDateDisplayEl.hidden = true;
@@ -150,6 +152,7 @@ function setCurrentView(viewState) {
       break;
 
     case VIEW_STATES.GAME:
+      hudEl.hidden = false;
       questionPanelEl.hidden = false;
       keypadEl.hidden = false;
       break;

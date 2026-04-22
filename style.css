@@ -103,7 +103,6 @@ body {
 .hud {
   background: transparent;
   padding: 2px 6px;
-  display: block;
 }
 
 .hud-row {
@@ -1023,7 +1022,7 @@ textarea {
 .pf-logo-bar.s-BlLlyjsTZn_0 {
   display: flex;
   justify-content: center;
-  padding: 1rem;
+  padding: calc(1rem + 4vh) 1rem 1rem;
 }
 
 .pf-wordmark.s-BlLlyjsTZn_0 {
