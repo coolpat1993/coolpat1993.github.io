@@ -106,7 +106,6 @@ body {
 .hud {
   background: transparent;
   padding: 2px 6px;
-  display: block;
 }
 
 .hud-row {
