@@ -41,7 +41,9 @@ import {
   getResultMessage,
   expandAnswerOptions,
   getComparableAnswerOptions,
-  isCurrentAnswerCorrect
+  isCurrentAnswerCorrect,
+  parseQuizDate,
+  formatQuizDateForQuery
 } from "./js/quiz-helpers.js";
 
 import { createQuizNavigationController } from "./js/quiz-navigation.js";
@@ -319,6 +321,7 @@ function handleStartGame() {
   } else {
     restartGame();
   }
+  window.parent.postMessage({ type: 'sq-start' }, '*');
 }
 
 
@@ -512,6 +515,7 @@ function completeGame() {
   feedbackTextEl.textContent = `You scored ${score} out of ${TOTAL_POSSIBLE_SCORE}.`;
   persistCompletedProgressIfFirstRun();
   showFinishPanel();
+  window.parent.postMessage({ type: 'sq-complete' }, '*');
 }
 
 function restartGame() {
@@ -1574,12 +1578,19 @@ if (replayButtonEl) {
 
 if (prevQuizButtonEl) {
   prevQuizButtonEl.addEventListener("click", () => {
+    const baseDate = parseQuizDate(activePackDate);
+    if (baseDate) {
+      const prevDate = new Date(baseDate.getTime());
+      prevDate.setUTCDate(prevDate.getUTCDate() - 1);
+      window.parent.postMessage({ type: 'sq-nav', quiz: formatQuizDateForQuery(prevDate) }, '*');
+    }
     void quizNavigation.goToRelativeQuizDate(-1);
   });
 }
 
 if (nextQuizButtonEl) {
   nextQuizButtonEl.addEventListener("click", () => {
+    window.parent.postMessage({ type: 'sq-nav', quiz: null }, '*');
     void quizNavigation.goToLatestQuiz();
   });
 }
