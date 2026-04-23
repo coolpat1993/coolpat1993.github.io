@@ -3,134 +3,49 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SpeedQuizzing Web Prototype</title>
-    <link rel="preload" href="./assets/fonts/KumbhSans-Regular.ttf" as="font" type="font/ttf" crossorigin />
-    <link rel="preload" href="./assets/fonts/KumbhSans-Bold.ttf" as="font" type="font/ttf" crossorigin />
-    <link rel="preload" href="./assets/fonts/Montserrat-500.ttf" as="font" type="font/ttf" crossorigin />
-    <link rel="preload" href="./assets/fonts/Montserrat-700.ttf" as="font" type="font/ttf" crossorigin />
-    <link rel="preload" href="./assets/fonts/LuckiestGuy-Regular.ttf" as="font" type="font/ttf" crossorigin />
-    <link rel="preload" href="./assets/fonts/Speedquizzing2021v3.ttf" as="font" type="font/ttf" crossorigin />
-    <link rel="stylesheet" href="./style.css" />
+    <title>We've moved</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: Arial, sans-serif;
+        background: #f7f7f7;
+        color: #1f1f1f;
+      }
+
+      main {
+        max-width: 680px;
+        padding: 24px;
+        text-align: center;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 2rem;
+      }
+
+      p {
+        margin: 0 0 12px;
+        line-height: 1.5;
+      }
+
+      a {
+        color: #0059b8;
+      }
+    </style>
   </head>
   <body>
-    <main class="app-shell">
-      <section class="phone-frame" aria-label="Game screen">
-        <header class="hud" hidden>
-          <div class="hud-row">
-            <div class="hud-score">
-              <span id="scoreValue" class="hud-value">0</span>
-            </div>
-            <div class="timer-track" role="progressbar" aria-label="Question timer" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
-              <div id="timerFill" class="timer-fill"></div>
-            </div>
-            <div class="hud-fastest">
-              <span id="fastPointsValue" class="hud-value">10</span>
-            </div>
-          </div>
-        </header>
-
-        <section id="questionPanel" hidden class="question-panel">
-          <h1 id="questionText" class="question-text"></h1>
-          <p id="feedbackText" class="feedback-text" aria-live="polite"></p>
-          <div id="modeHintOverlay" class="mode-hint-overlay" hidden aria-live="polite" aria-atomic="true">
-            <p class="mode-hint-title"></p>
-            <p class="mode-hint-text"></p>
-          </div>
-        </section>
-
-        <section class="answer-panel">
-          <div id="pregameHeader" class="pregame-header" aria-hidden="true">
-            <div class="pf-logo-bar s-BlLlyjsTZn_0">
-              <div class="pf-wordmark s-BlLlyjsTZn_0">Speed<span class="s-BlLlyjsTZn_0">Quiz</span>.com</div>
-            </div>
-          </div>
-          <div id="numberAnswerDisplay" class="number-answer-display" hidden aria-live="polite"></div>
-          <div id="keypad" class="keypad" hidden aria-label="Answer keypad"></div>
-          <section id="introPanel" class="intro-panel" aria-live="polite">
-            <div class="intro-card">
-              <p class="intro-subtitle">The daily Speed Quiz</p>
-              <p class="intro-description">10 random trivia questions.</p>
-              <p id="startupStatusText" class="intro-status" aria-live="polite"></p>
-              <div class="intro-actions">
-                <button id="startButton" class="sq-button sq-button--primary sq-button--large-text" type="button">Start</button>
-                <button id="howToPlayButton" class="sq-button" type="button">How to Play</button>
-                <button id="devResetProgressButtonIntro" class="sq-button sq-button--small-text" type="button">Dev: reset</button>
-              </div>
-            </div>
-          </section>
-          <section id="howToPlayPanel" class="how-to-play-panel" hidden aria-modal="true" aria-label="How to Play">
-            <div class="how-to-play-card">
-                <button id="howToPlayCloseButton" class="sq-button sq-button--icon how-to-play-close" type="button" aria-label="Close">✕</button>
-                <div class="how-to-play-card-header">
-                  <h2 class="how-to-play-title">How to Play</h2>
-                </div>
-              <div id="howToPlayContent" class="how-to-play-content">
-                <div class="how-to-play-slide">
-                  <p class="how-to-play-slide-text">A question will appear on screen. Once it appears, the countdown starts. Answer as quickly as possible to earn more points!</p>
-                </div>
-                <div class="how-to-play-slide" hidden>
-                  <h3 class="how-to-play-slide-heading">Letters</h3>
-                  <p class="how-to-play-slide-text">Input only the first letter of your answer.</p>
-                  <ul class="how-to-play-list">
-                    <li>If the answer is a person's name, use the first letter of their first name.</li>
-                    <li>If the answer begins with &ldquo;The&rdquo;, e.g. &ldquo;The Lion King&rdquo;, answer &ldquo;L&rdquo; not &ldquo;T&rdquo;.</li>
-                  </ul>
-                  <img src="./assets/images/letters.png" alt="" class="how-to-play-keypad-image" />
-                </div>
-                <div class="how-to-play-slide" hidden>
-                  <h3 class="how-to-play-slide-heading">Multiple Choice</h3>
-                  <p class="how-to-play-slide-text">Select the correct answer from the options.</p>
-                  <img src="./assets/images/multiple.png" alt="" class="how-to-play-keypad-image" />
-                </div>
-                <div class="how-to-play-slide" hidden>
-                  <h3 class="how-to-play-slide-heading">Numbers</h3>
-                  <p class="how-to-play-slide-text">Type in a number and press Enter.</p>
-                  <img src="./assets/images/numbers.png" alt="" class="how-to-play-keypad-image" />
-                </div>
-                <div class="how-to-play-slide" hidden>
-                  <h3 class="how-to-play-slide-heading">Sequence</h3>
-                  <p class="how-to-play-slide-text">Put the options in the correct order by tapping them in sequence.</p>
-                  <img src="./assets/images/sequence.png" alt="" class="how-to-play-keypad-image" />
-                </div>
-              </div>
-              <div class="how-to-play-footer">
-                <div id="howToPlayDots" class="how-to-play-dots"></div>
-                <button id="howToPlayNextButton" class="sq-button sq-button--primary how-to-play-next-btn" type="button">Next</button>
-              </div>
-            </div>
-          </section>
-          <section id="finishPanel" class="finish-panel" hidden aria-live="polite">
-            <div class="finish-card">
-              <p class="finish-label">Final score</p>
-              <p id="finalScoreValue" class="finish-score-value">0</p>
-              <p id="scorePercentileText" class="finish-percentile" hidden></p>
-
-              <div class="finish-actions">
-                <button id="shareScoreButton" class="sq-button sq-button--primary" type="button">Share results</button>
-                <button id="replayButton" class="sq-button sq-button--compact" type="button">Replay</button>
-                <button id="viewQuestionsButton" class="view-questions-icon" type="button" aria-label="View questions" title="View questions">&#9776;</button>
-              </div>
-            </div>
-          </section>
-          <section id="questionReviewPanel" class="question-review-panel" hidden aria-modal="true" aria-label="Question review">
-            <div class="question-review-card">
-              <button id="questionReviewCloseButton" class="sq-button sq-button--icon question-review-close" type="button" aria-label="Close">✕</button>
-              <div class="question-review-card-header">
-                <h2 class="question-review-title">Question review</h2>
-              </div>
-              <div id="questionReviewList" class="question-review-list" aria-live="polite"></div>
-            </div>
-          </section>
-          <p id="packDateDisplay" class="pack-date-display"></p>
-          <div id="startFooterNav" class="start-footer-nav">
-            <button id="prevQuizButton" class="sq-button sq-button--compact start-footer-nav-button" type="button">&lt; Previous quiz</button>
-            <button id="nextQuizButton" class="sq-button sq-button--primary sq-button--compact start-footer-nav-button" disabled type="button">Latest quiz</button>
-          </div>
-        </section>
-
-      </section>
+    <main>
+      <h1>We've moved</h1>
+      <p>
+        This website will no longer contain the quiz.
+      </p>
+      <p>
+        Please use this temporary link in the meantime:
+        <a href="https://daily-quiz.speedquizzing.workers.dev/">https://daily-quiz.speedquizzing.workers.dev/</a>
+      </p>
     </main>
-
-    <script type="module" src="./app.js"></script>
   </body>
 </html>
