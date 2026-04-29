@@ -175,7 +175,7 @@
     const answerText = String(question.short_answer || "").trim();
     const answerSnippet = answerText.length > 60 ? `${answerText.slice(0, 57)}...` : answerText;
     const typeCodeText = String(question.type_code || "").trim().toUpperCase();
-    const difficultyCode = String(question.difficulty || "").trim().charAt(0).toUpperCase();
+    const difficultyCode = String(question.difficulty || "").trim();
 
     card.innerHTML = `
       <div class="card-header">
