@@ -146,12 +146,8 @@
       return false;
     }
 
-    if (typeof value === "number") {
-      return value === 1;
-    }
-
     const normalized = String(value).trim().toLowerCase();
-    return normalized === "true" || normalized === "1";
+    return normalized === "true";
   }
 
   function buildEndpointUrl() {
