@@ -137,6 +137,23 @@
     return String(numericValue);
   }
 
+  function isUkOnlyEnabled(value) {
+    if (value === true) {
+      return true;
+    }
+
+    if (value === false || value === null || value === undefined) {
+      return false;
+    }
+
+    if (typeof value === "number") {
+      return value === 1;
+    }
+
+    const normalized = String(value).trim().toLowerCase();
+    return normalized === "true" || normalized === "1";
+  }
+
   function buildEndpointUrl() {
     const dateStamp = String(elements.quizDateInput.value || "").trim();
 
@@ -182,15 +199,15 @@
     const typeCodeText = String(question.type_code || "").trim().toUpperCase();
     const difficultyCode = String(question.difficulty || "").trim();
     const hasUkOnly = Object.prototype.hasOwnProperty.call(question || {}, "uk_only");
-    const ukOnlyValue = hasUkOnly ? String(question.uk_only ?? "").trim() : "";
-    const showUkOnlyAsterisk = hasUkOnly && ukOnlyValue === "1";
+    const ukOnlyValue = hasUkOnly ? question.uk_only : undefined;
+    const showUkOnlyAsterisk = hasUkOnly && isUkOnlyEnabled(ukOnlyValue);
 
     card.innerHTML = `
       <div class="card-header">
         <div class="card-meta">
           <span class="question-meta">${escapeHtml(typeCodeText)}</span>
           ${difficultyCode ? `<span class="question-meta difficulty-meta">${escapeHtml(difficultyCode)}</span>` : ""}
-          ${showUkOnlyAsterisk ? `<span class="question-meta uk-only-asterisk" title="uk_only is 1">*</span>` : ""}
+          ${showUkOnlyAsterisk ? `<span class="question-meta uk-only-asterisk" title="uk_only is true">*</span>` : ""}
         </div>
       </div>
       <p class="card-question">${escapeHtml(snippet || "No question text")}</p>
