@@ -88,6 +88,10 @@
     const options = Array.isArray(question?.options)
       ? question.options.map((item) => String(item ?? ""))
       : [];
+    const hasUkOnly =
+      Object.prototype.hasOwnProperty.call(question || {}, "uk_only") ||
+      Object.prototype.hasOwnProperty.call(question || {}, "ukOnly");
+    const ukOnlyValue = hasUkOnly ? question?.uk_only ?? question?.ukOnly : undefined;
 
     return {
       id: String(question?.id || question?.question_id || `question${index + 1}`),
@@ -96,6 +100,7 @@
       long_answer: String(question?.long_answer || question?.longAnswer || ""),
       type_code: String(question?.type_code || question?.typeCode || "L").toUpperCase(),
       difficulty: String(question?.difficulty || "normal"),
+      ...(hasUkOnly && { uk_only: ukOnlyValue }),
       ...(options?.length > 0 && { options })
     };
   }
@@ -176,12 +181,16 @@
     const answerSnippet = answerText.length > 60 ? `${answerText.slice(0, 57)}...` : answerText;
     const typeCodeText = String(question.type_code || "").trim().toUpperCase();
     const difficultyCode = String(question.difficulty || "").trim();
+    const hasUkOnly = Object.prototype.hasOwnProperty.call(question || {}, "uk_only");
+    const ukOnlyValue = hasUkOnly ? String(question.uk_only ?? "").trim() : "";
+    const showUkOnlyAsterisk = hasUkOnly && ukOnlyValue === "0";
 
     card.innerHTML = `
       <div class="card-header">
         <div class="card-meta">
           <span class="question-meta">${escapeHtml(typeCodeText)}</span>
           ${difficultyCode ? `<span class="question-meta difficulty-meta">${escapeHtml(difficultyCode)}</span>` : ""}
+          ${showUkOnlyAsterisk ? `<span class="question-meta uk-only-asterisk" title="uk_only is 0">*</span>` : ""}
         </div>
       </div>
       <p class="card-question">${escapeHtml(snippet || "No question text")}</p>

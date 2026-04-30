@@ -229,6 +229,15 @@ button.secondary {
   color: #6c4e20;
 }
 
+.uk-only-asterisk {
+  background: #ffe4e6;
+  color: #b91c1c;
+  font-weight: 800;
+  line-height: 1;
+  min-width: 1.1em;
+  text-align: center;
+}
+
 .card-question {
   margin: 0 0 6px;
   font-size: 0.86rem;
