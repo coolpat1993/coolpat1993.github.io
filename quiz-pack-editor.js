@@ -10,6 +10,15 @@
   const REGIONS = ["gb", "us"];
   const DEFAULT_REGION = "gb";
 
+  function createEmptyAltQuestions() {
+    return REGIONS.reduce((acc, region) => {
+      if (region !== DEFAULT_REGION) {
+        acc[region] = {};
+      }
+      return acc;
+    }, {});
+  }
+
   const elements = {
     quizDateInput: document.getElementById("quizDateInput"),
     regionInput: document.getElementById("regionInput"),
@@ -36,7 +45,7 @@
   const state = {
     packDate: "",
     questions: [],
-    altQuestions: {},
+    altQuestions: createEmptyAltQuestions(),
     results: null,
     uploadApiKey: "",
     region: DEFAULT_REGION,
@@ -111,18 +120,68 @@
   }
 
   function normalizeAltQuestions(altQuestionsPayload) {
+    const normalizedByRegion = createEmptyAltQuestions();
+
     if (!altQuestionsPayload || typeof altQuestionsPayload !== "object") {
+      return normalizedByRegion;
+    }
+
+    Object.entries(altQuestionsPayload).forEach(([regionKey, entries]) => {
+      const normalizedRegion = String(regionKey || "").trim().toLowerCase();
+      if (!REGIONS.includes(normalizedRegion) || normalizedRegion === DEFAULT_REGION) {
+        return;
+      }
+
+      if (!Array.isArray(entries)) {
+        return;
+      }
+
+      entries.forEach((entry) => {
+        if (!entry || typeof entry !== "object") {
+          return;
+        }
+
+        const altId = String(entry.alt_id || "").trim();
+        if (!altId) {
+          return;
+        }
+
+        const normalized = normalizeQuestion({ ...entry, id: altId }, 0);
+        const { id: _ignoredId, ...withoutId } = normalized;
+        normalizedByRegion[normalizedRegion][altId] = withoutId;
+      });
+    });
+
+    return normalizedByRegion;
+  }
+
+  function serializeAltQuestions(altQuestionsByRegion) {
+    if (!altQuestionsByRegion || typeof altQuestionsByRegion !== "object") {
       return {};
     }
 
-    return Object.entries(altQuestionsPayload).reduce((acc, [id, value]) => {
-      if (!value || typeof value !== "object") {
+    return Object.entries(altQuestionsByRegion).reduce((acc, [region, questionsById]) => {
+      const normalizedRegion = String(region || "").trim().toLowerCase();
+      if (!REGIONS.includes(normalizedRegion) || normalizedRegion === DEFAULT_REGION) {
         return acc;
       }
 
-      const normalized = normalizeQuestion({ ...value, id }, 0);
-      const { id: _ignoredId, ...withoutId } = normalized;
-      acc[String(id)] = withoutId;
+      const entries = Object.entries(questionsById || {}).reduce((items, [altId, question]) => {
+        if (!altId || !question || typeof question !== "object") {
+          return items;
+        }
+
+        items.push({
+          alt_id: String(altId),
+          ...question
+        });
+        return items;
+      }, []);
+
+      if (entries.length > 0) {
+        acc[normalizedRegion.toUpperCase()] = entries;
+      }
+
       return acc;
     }, {});
   }
@@ -190,6 +249,19 @@
     return String(baseQuestion.id || "");
   }
 
+  function getRegionDisplayLabel(region) {
+    const normalizedRegion = String(region || "").trim().toLowerCase();
+    if (normalizedRegion === "gb") {
+      return "UK";
+    }
+
+    if (normalizedRegion === "us") {
+      return "US";
+    }
+
+    return normalizedRegion.toUpperCase();
+  }
+
   function getQuestionForRegion(index, region = state.region) {
     const baseQuestion = state.questions[index];
     if (!baseQuestion) {
@@ -201,7 +273,8 @@
     }
 
     const id = String(baseQuestion.id || "");
-    const altQuestion = id ? state.altQuestions[id] : null;
+    const altRegion = state.altQuestions[region] || {};
+    const altQuestion = id ? altRegion[id] : null;
     if (!altQuestion) {
       return baseQuestion;
     }
@@ -213,9 +286,14 @@
     };
   }
 
-  function ensureAltQuestionByIndex(index) {
+  function ensureAltQuestionByIndex(index, region) {
     const baseQuestion = state.questions[index];
     if (!baseQuestion) {
+      return null;
+    }
+
+    const normalizedRegion = String(region || "").trim().toLowerCase();
+    if (!REGIONS.includes(normalizedRegion) || normalizedRegion === DEFAULT_REGION) {
       return null;
     }
 
@@ -224,32 +302,63 @@
       return null;
     }
 
-    if (!state.altQuestions[id]) {
-      state.altQuestions[id] = cloneQuestionForAlt(baseQuestion);
+    if (!state.altQuestions[normalizedRegion]) {
+      state.altQuestions[normalizedRegion] = {};
     }
 
-    return state.altQuestions[id];
+    if (!state.altQuestions[normalizedRegion][id]) {
+      state.altQuestions[normalizedRegion][id] = cloneQuestionForAlt(baseQuestion);
+    }
+
+    return state.altQuestions[normalizedRegion][id];
   }
 
   function moveAltQuestionKey(previousId, nextId) {
     const oldId = String(previousId || "").trim();
     const newId = String(nextId || "").trim();
 
-    if (!oldId || !newId || oldId === newId || !state.altQuestions[oldId]) {
+    if (!oldId || !newId || oldId === newId) {
       return;
     }
 
-    state.altQuestions[newId] = state.altQuestions[oldId];
-    delete state.altQuestions[oldId];
+    REGIONS.forEach((region) => {
+      if (region === DEFAULT_REGION) {
+        return;
+      }
+
+      const regionQuestions = state.altQuestions[region];
+      if (!regionQuestions || !regionQuestions[oldId]) {
+        return;
+      }
+
+      regionQuestions[newId] = regionQuestions[oldId];
+      delete regionQuestions[oldId];
+    });
   }
 
-  function removeAltQuestionByIndex(index) {
+  function removeAltQuestionByIndex(index, region) {
     const id = getQuestionIdByIndex(index);
     if (!id) {
       return;
     }
 
-    delete state.altQuestions[id];
+    const normalizedRegion = String(region || "").trim().toLowerCase();
+    if (normalizedRegion && normalizedRegion !== DEFAULT_REGION) {
+      if (state.altQuestions[normalizedRegion]) {
+        delete state.altQuestions[normalizedRegion][id];
+      }
+      return;
+    }
+
+    REGIONS.forEach((region) => {
+      if (region === DEFAULT_REGION) {
+        return;
+      }
+
+      if (state.altQuestions[region]) {
+        delete state.altQuestions[region][id];
+      }
+    });
   }
 
   function buildEndpointUrl() {
@@ -301,7 +410,15 @@
     const ukOnlyValue = hasUkOnly ? question.uk_only : undefined;
     const showUkOnlyAsterisk = hasUkOnly && ukOnlyValue === true;
     const questionId = getQuestionIdByIndex(index);
-    const hasAlternativeQuestion = Boolean(questionId && state.altQuestions[questionId]);
+    const hasAlternativeQuestion =
+      Boolean(questionId) &&
+      REGIONS.some((region) => {
+        if (region === DEFAULT_REGION) {
+          return false;
+        }
+
+        return Boolean(state.altQuestions[region]?.[questionId]);
+      });
 
     card.innerHTML = `
       <div class="card-header">
@@ -450,7 +567,7 @@
         `<option value="${code}" ${currentModalRegion === code ? "selected" : ""}>${code.toUpperCase()}</option>`
     ).join("");
 
-    elements.modalQIndex.textContent = `Q${index + 1}`;
+    elements.modalQIndex.textContent = `Q${index + 1} - ${getRegionDisplayLabel(currentModalRegion)}`;
     elements.modalBody.innerHTML = `
       <div class="grid-two">
         <div class="card-field">
@@ -472,7 +589,7 @@
       </div>
       <div class="grid-two">
         <div class="card-field">
-          <label>Type Code E M H</label>
+          <label>Type Code</label>
           <select data-field="type_code" data-index="${index}" data-region="${currentModalRegion}">
             ${TYPE_CODES.map((code) => `<option value="${code}" ${question.type_code === code ? "selected" : ""}>${code}</option>`).join("")}
           </select>
@@ -510,6 +627,7 @@
     `;
 
     elements.questionModal.hidden = false;
+    updateModalActionButtonLabels(currentModalRegion);
     updateModalNavigationButtons();
   }
 
@@ -549,6 +667,19 @@
     updateModalNavigationButtons();
   }
 
+  function updateModalActionButtonLabels(region = currentModalRegion) {
+    const normalizedRegion = String(region || "").trim().toLowerCase();
+    const isAltRegion = normalizedRegion !== DEFAULT_REGION;
+
+    if (elements.deleteModalButton) {
+      elements.deleteModalButton.textContent = isAltRegion ? "Delete Alt" : "Delete Question";
+    }
+
+    if (elements.closeModalFooterButton) {
+      elements.closeModalFooterButton.textContent = isAltRegion ? "Save Alt" : "Done";
+    }
+  }
+
   function renderAddCard() {
     const card = document.createElement("div");
     card.className = "question-card add-card";
@@ -570,8 +701,25 @@
 
   function deleteCurrentQuestion() {
     if (currentModalIndex < 0) return;
-    if (!confirm(`Delete Q${currentModalIndex + 1}? This cannot be undone.`)) return;
+
+    const isAltRegion = currentModalRegion !== DEFAULT_REGION;
+    const questionLabel = `Q${currentModalIndex + 1} (${getRegionDisplayLabel(currentModalRegion)})`;
+    const confirmMessage = isAltRegion
+      ? `Delete alt question for ${questionLabel}? This cannot be undone.`
+      : `Delete ${questionLabel}? This cannot be undone.`;
+    if (!confirm(confirmMessage)) return;
+
     const idx = currentModalIndex;
+
+    if (isAltRegion) {
+      removeAltQuestionByIndex(idx, currentModalRegion);
+      currentModalIndex = -1;
+      elements.questionModal.hidden = true;
+      renderQuestions();
+      updateModalNavigationButtons();
+      return;
+    }
+
     removeAltQuestionByIndex(idx);
     currentModalIndex = -1;
     elements.questionModal.hidden = true;
@@ -626,7 +774,7 @@
       const nextValue = target.value === "true";
 
       if (region !== DEFAULT_REGION) {
-        const altQuestion = ensureAltQuestionByIndex(index);
+        const altQuestion = ensureAltQuestionByIndex(index, region);
         if (!altQuestion) {
           return;
         }
@@ -655,7 +803,7 @@
         .filter(Boolean);
 
       if (region !== DEFAULT_REGION) {
-        const altQuestion = ensureAltQuestionByIndex(index);
+        const altQuestion = ensureAltQuestionByIndex(index, region);
         if (!altQuestion) {
           return;
         }
@@ -670,7 +818,7 @@
     }
 
     if (region !== DEFAULT_REGION) {
-      const altQuestion = ensureAltQuestionByIndex(index);
+      const altQuestion = ensureAltQuestionByIndex(index, region);
       if (!altQuestion) {
         return;
       }
@@ -729,7 +877,7 @@
       pack_date: state.packDate || elements.quizDateInput.value || "",
       questions: state.questions,
       results: state.results,
-      alt_questions: state.altQuestions
+      alt_questions: serializeAltQuestions(state.altQuestions)
     };
   }
 
@@ -924,6 +1072,7 @@
     });
 
     renderQuestions();
+    updateModalActionButtonLabels(DEFAULT_REGION);
     updateModalNavigationButtons();
     loadPack();
   }
