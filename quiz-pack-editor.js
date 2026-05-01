@@ -7,9 +7,12 @@
   const UPLOAD_API_KEY_STORAGE_KEY = "quiz-pack-editor.upload-api-key";
   const QUIZ_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
   const TYPE_CODES = ["L", "M", "N", "S"];
+  const REGIONS = ["gb", "us"];
+  const DEFAULT_REGION = "gb";
 
   const elements = {
     quizDateInput: document.getElementById("quizDateInput"),
+    regionInput: document.getElementById("regionInput"),
     uploadApiKeyInput: document.getElementById("uploadApiKeyInput"),
     loadButton: document.getElementById("loadButton"),
     uploadPackButton: document.getElementById("uploadPackButton"),
@@ -33,8 +36,10 @@
   const state = {
     packDate: "",
     questions: [],
+    altQuestions: {},
     results: null,
     uploadApiKey: "",
+    region: DEFAULT_REGION,
     hasLoadedPack: false,
     dragIndex: -1,
     lastDragEndedAt: 0,
@@ -105,14 +110,33 @@
     };
   }
 
+  function normalizeAltQuestions(altQuestionsPayload) {
+    if (!altQuestionsPayload || typeof altQuestionsPayload !== "object") {
+      return {};
+    }
+
+    return Object.entries(altQuestionsPayload).reduce((acc, [id, value]) => {
+      if (!value || typeof value !== "object") {
+        return acc;
+      }
+
+      const normalized = normalizeQuestion({ ...value, id }, 0);
+      const { id: _ignoredId, ...withoutId } = normalized;
+      acc[String(id)] = withoutId;
+      return acc;
+    }, {});
+  }
+
   function normalizePack(payload) {
     const questions = Array.isArray(payload?.questions) ? payload.questions : [];
     const results = payload?.results && typeof payload.results === "object" ? payload.results : null;
+    const altQuestions = normalizeAltQuestions(payload?.alt_questions);
 
     return {
       pack_date: String(payload?.pack_date || payload?.packDate || elements.quizDateInput.value || ""),
       questions: questions.map((question, index) => normalizeQuestion(question, index)),
-      results
+      results,
+      alt_questions: altQuestions
     };
   }
 
@@ -137,17 +161,95 @@
     return String(numericValue);
   }
 
-  function isUkOnlyEnabled(value) {
-    if (value === true) {
-      return true;
+  function cloneQuestionForAlt(question) {
+    const alt = {
+      q: String(question?.q || ""),
+      short_answer: String(question?.short_answer || ""),
+      long_answer: String(question?.long_answer || ""),
+      type_code: String(question?.type_code || "L").toUpperCase(),
+      difficulty: String(question?.difficulty || "normal")
+    };
+
+    if (Object.prototype.hasOwnProperty.call(question || {}, "uk_only")) {
+      alt.uk_only = question.uk_only;
     }
 
-    if (value === false || value === null || value === undefined) {
-      return false;
+    if (Array.isArray(question?.options) && question.options.length > 0) {
+      alt.options = question.options.map((item) => String(item ?? ""));
     }
 
-    const normalized = String(value).trim().toLowerCase();
-    return normalized === "true";
+    return alt;
+  }
+
+  function getQuestionIdByIndex(index) {
+    const baseQuestion = state.questions[index];
+    if (!baseQuestion) {
+      return "";
+    }
+
+    return String(baseQuestion.id || "");
+  }
+
+  function getQuestionForRegion(index, region = state.region) {
+    const baseQuestion = state.questions[index];
+    if (!baseQuestion) {
+      return null;
+    }
+
+    if (region === DEFAULT_REGION) {
+      return baseQuestion;
+    }
+
+    const id = String(baseQuestion.id || "");
+    const altQuestion = id ? state.altQuestions[id] : null;
+    if (!altQuestion) {
+      return baseQuestion;
+    }
+
+    return {
+      ...baseQuestion,
+      ...altQuestion,
+      id
+    };
+  }
+
+  function ensureAltQuestionByIndex(index) {
+    const baseQuestion = state.questions[index];
+    if (!baseQuestion) {
+      return null;
+    }
+
+    const id = String(baseQuestion.id || "");
+    if (!id) {
+      return null;
+    }
+
+    if (!state.altQuestions[id]) {
+      state.altQuestions[id] = cloneQuestionForAlt(baseQuestion);
+    }
+
+    return state.altQuestions[id];
+  }
+
+  function moveAltQuestionKey(previousId, nextId) {
+    const oldId = String(previousId || "").trim();
+    const newId = String(nextId || "").trim();
+
+    if (!oldId || !newId || oldId === newId || !state.altQuestions[oldId]) {
+      return;
+    }
+
+    state.altQuestions[newId] = state.altQuestions[oldId];
+    delete state.altQuestions[oldId];
+  }
+
+  function removeAltQuestionByIndex(index) {
+    const id = getQuestionIdByIndex(index);
+    if (!id) {
+      return;
+    }
+
+    delete state.altQuestions[id];
   }
 
   function buildEndpointUrl() {
@@ -180,6 +282,7 @@
   }
 
   let currentModalIndex = -1;
+  let currentModalRegion = DEFAULT_REGION;
 
   function renderQuestionCard(question, index) {
     const card = document.createElement("div");
@@ -196,13 +299,16 @@
     const difficultyCode = String(question.difficulty || "").trim();
     const hasUkOnly = Object.prototype.hasOwnProperty.call(question || {}, "uk_only");
     const ukOnlyValue = hasUkOnly ? question.uk_only : undefined;
-    const showUkOnlyAsterisk = hasUkOnly && isUkOnlyEnabled(ukOnlyValue);
+    const showUkOnlyAsterisk = hasUkOnly && ukOnlyValue === true;
+    const questionId = getQuestionIdByIndex(index);
+    const hasAlternativeQuestion = Boolean(questionId && state.altQuestions[questionId]);
 
     card.innerHTML = `
       <div class="card-header">
         <div class="card-meta">
           <span class="question-meta">${escapeHtml(typeCodeText)}</span>
           ${difficultyCode ? `<span class="question-meta difficulty-meta">${escapeHtml(difficultyCode)}</span>` : ""}
+          ${hasAlternativeQuestion ? `<span class="question-meta alt-question-asterisk" title="Alternative region question exists">*</span>` : ""}
           ${showUkOnlyAsterisk ? `<span class="question-meta uk-only-asterisk" title="uk_only is true">*</span>` : ""}
         </div>
       </div>
@@ -315,7 +421,7 @@
   }
 
   function refreshCard(index) {
-    const question = state.questions[index];
+    const question = getQuestionForRegion(index, state.region);
     if (!question) {
       return;
     }
@@ -328,50 +434,78 @@
     old.replaceWith(renderQuestionCard(question, index));
   }
 
-  function openQuestionModal(index) {
-    const question = state.questions[index];
+  function openQuestionModal(index, region = state.region) {
+    const question = getQuestionForRegion(index, region);
     if (!question) {
       return;
     }
 
     currentModalIndex = index;
+    currentModalRegion = region;
     const optionsText = (question.options || []).join("\n");
+    const baseQuestionId = getQuestionIdByIndex(index);
+
+    const regionOptions = REGIONS.map(
+      (code) =>
+        `<option value="${code}" ${currentModalRegion === code ? "selected" : ""}>${code.toUpperCase()}</option>`
+    ).join("");
 
     elements.modalQIndex.textContent = `Q${index + 1}`;
     elements.modalBody.innerHTML = `
       <div class="grid-two">
         <div class="card-field">
-          <label>ID</label>
-          <input data-field="id" data-index="${index}" type="text" value="${escapeAttr(question.id)}" />
+          <label>Region</label>
+          <select data-field="region" data-index="${index}">
+            ${regionOptions}
+          </select>
         </div>
         <div class="card-field">
+          <label>ID</label>
+          <input
+            data-field="id"
+            data-index="${index}"
+            type="text"
+            value="${escapeAttr(baseQuestionId)}"
+            ${currentModalRegion !== DEFAULT_REGION ? "readonly" : ""}
+          />
+        </div>
+      </div>
+      <div class="grid-two">
+        <div class="card-field">
           <label>Type Code E M H</label>
-          <select data-field="type_code" data-index="${index}">
+          <select data-field="type_code" data-index="${index}" data-region="${currentModalRegion}">
             ${TYPE_CODES.map((code) => `<option value="${code}" ${question.type_code === code ? "selected" : ""}>${code}</option>`).join("")}
+          </select>
+        </div>
+        <div class="card-field">
+          <label>UK Only</label>
+          <select data-field="uk_only" data-index="${index}" data-region="${currentModalRegion}">
+            <option value="true" ${question.uk_only === true ? "selected" : ""}>true</option>
+            <option value="false" ${question.uk_only !== true ? "selected" : ""}>false</option>
           </select>
         </div>
       </div>
       <div class="card-field">
         <label>Question Text</label>
-        <textarea data-field="q" data-index="${index}">${escapeHtml(question.q)}</textarea>
+        <textarea data-field="q" data-index="${index}" data-region="${currentModalRegion}">${escapeHtml(question.q)}</textarea>
       </div>
       <div class="grid-two">
         <div class="card-field">
           <label>Short Answer</label>
-          <input data-field="short_answer" data-index="${index}" type="text" value="${escapeAttr(question.short_answer)}" />
+          <input data-field="short_answer" data-index="${index}" data-region="${currentModalRegion}" type="text" value="${escapeAttr(question.short_answer)}" />
         </div>
         <div class="card-field">
           <label>Long Answer</label>
-          <input data-field="long_answer" data-index="${index}" type="text" value="${escapeAttr(question.long_answer)}" />
+          <input data-field="long_answer" data-index="${index}" data-region="${currentModalRegion}" type="text" value="${escapeAttr(question.long_answer)}" />
         </div>
       </div>
       <div class="card-field">
         <label>Difficulty</label>
-        <input data-field="difficulty" data-index="${index}" type="text" value="${escapeAttr(question.difficulty)}" />
+        <input data-field="difficulty" data-index="${index}" data-region="${currentModalRegion}" type="text" value="${escapeAttr(question.difficulty)}" />
       </div>
       <div class="card-field">
         <label>Options (one per line)</label>
-        <textarea data-field="options" data-index="${index}">${escapeHtml(optionsText)}</textarea>
+        <textarea data-field="options" data-index="${index}" data-region="${currentModalRegion}">${escapeHtml(optionsText)}</textarea>
       </div>
     `;
 
@@ -403,7 +537,7 @@
       return;
     }
 
-    openQuestionModal(targetIndex);
+    openQuestionModal(targetIndex, currentModalRegion);
   }
 
   function closeQuestionModal() {
@@ -438,6 +572,7 @@
     if (currentModalIndex < 0) return;
     if (!confirm(`Delete Q${currentModalIndex + 1}? This cannot be undone.`)) return;
     const idx = currentModalIndex;
+    removeAltQuestionByIndex(idx);
     currentModalIndex = -1;
     elements.questionModal.hidden = true;
     state.questions.splice(idx, 1);
@@ -454,7 +589,7 @@
 
     const fragment = document.createDocumentFragment();
     state.questions.forEach((question, index) => {
-      fragment.appendChild(renderQuestionCard(question, index));
+      fragment.appendChild(renderQuestionCard(getQuestionForRegion(index, state.region), index));
     });
     fragment.appendChild(renderAddCard());
     elements.questionsContainer.appendChild(fragment);
@@ -473,20 +608,79 @@
   function syncQuestionFromInput(target) {
     const field = target.dataset.field;
     const index = Number(target.dataset.index);
+    const region = target.dataset.region || currentModalRegion;
 
     if (!field || Number.isNaN(index) || !state.questions[index]) {
       return;
     }
 
-    if (field === "options") {
-      state.questions[index].options = target.value
-        .split("\n")
-        .map((item) => item.trim())
-        .filter(Boolean);
+    if (field === "region") {
+      const selectedRegion = String(target.value || "").toLowerCase();
+      const nextRegion = REGIONS.includes(selectedRegion) ? selectedRegion : DEFAULT_REGION;
+      currentModalRegion = nextRegion;
+      openQuestionModal(index, nextRegion);
       return;
     }
 
-    state.questions[index][field] = target.value;
+    if (field === "uk_only") {
+      const nextValue = target.value === "true";
+
+      if (region !== DEFAULT_REGION) {
+        const altQuestion = ensureAltQuestionByIndex(index);
+        if (!altQuestion) {
+          return;
+        }
+
+        altQuestion.uk_only = nextValue;
+      } else {
+        state.questions[index].uk_only = nextValue;
+      }
+
+      refreshCard(index);
+      return;
+    }
+
+    if (field === "id") {
+      const previousId = String(state.questions[index].id || "");
+      state.questions[index].id = target.value;
+      moveAltQuestionKey(previousId, target.value);
+      refreshCard(index);
+      return;
+    }
+
+    if (field === "options") {
+      const nextOptions = target.value
+        .split("\n")
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+      if (region !== DEFAULT_REGION) {
+        const altQuestion = ensureAltQuestionByIndex(index);
+        if (!altQuestion) {
+          return;
+        }
+
+        altQuestion.options = nextOptions;
+      } else {
+        state.questions[index].options = nextOptions;
+      }
+
+      refreshCard(index);
+      return;
+    }
+
+    if (region !== DEFAULT_REGION) {
+      const altQuestion = ensureAltQuestionByIndex(index);
+      if (!altQuestion) {
+        return;
+      }
+
+      altQuestion[field] = target.value;
+    } else {
+      state.questions[index][field] = target.value;
+    }
+
+    refreshCard(index);
   }
 
   async function loadPack() {
@@ -510,7 +704,12 @@
 
       state.packDate = normalized.pack_date;
       state.questions = normalized.questions;
+      state.altQuestions = normalized.alt_questions;
       state.results = normalized.results;
+      state.region = DEFAULT_REGION;
+      if (elements.regionInput) {
+        elements.regionInput.value = DEFAULT_REGION;
+      }
       state.hasLoadedPack = true;
       renderQuestions();
 
@@ -529,7 +728,8 @@
     return {
       pack_date: state.packDate || elements.quizDateInput.value || "",
       questions: state.questions,
-      results: state.results
+      results: state.results,
+      alt_questions: state.altQuestions
     };
   }
 
@@ -681,6 +881,15 @@
     elements.quizDateInput.addEventListener("pointerdown", openDatePicker);
     elements.quizDateInput.addEventListener("click", openDatePicker);
     elements.quizDateInput.addEventListener("change", loadPack);
+    elements.regionInput?.addEventListener("change", (event) => {
+      if (!(event.target instanceof HTMLSelectElement)) {
+        return;
+      }
+
+      const selectedRegion = String(event.target.value || "").toLowerCase();
+      state.region = REGIONS.includes(selectedRegion) ? selectedRegion : DEFAULT_REGION;
+      renderQuestions();
+    });
     elements.uploadApiKeyInput?.addEventListener("input", (event) => {
       if (!(event.target instanceof HTMLInputElement)) {
         return;

@@ -25,9 +25,14 @@ body {
 }
 
 #quizDateInput,
+#regionInput,
 #uploadApiKeyInput {
   width: 100%;
   max-width: 250px;
+}
+
+#regionInput {
+  max-width: 112px;
 }
 
 .editor-shell {
@@ -75,7 +80,7 @@ body {
 
 .row {
   display: grid;
-  grid-template-columns: repeat(2, max-content);
+  grid-template-columns: repeat(2, max-content) 1fr;
   gap: 8px;
 }
 
@@ -88,6 +93,11 @@ body {
 .row .control-group {
   margin-bottom: 0;
   width: 250px;
+}
+
+.row .control-group.region-group {
+  width: 112px;
+  justify-self: end;
 }
 
 .control-group label {
@@ -227,6 +237,15 @@ button.secondary {
 .difficulty-meta {
   background: #f4e8cf;
   color: #6c4e20;
+}
+
+.alt-question-asterisk {
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-weight: 800;
+  line-height: 1;
+  min-width: 1.1em;
+  text-align: center;
 }
 
 .uk-only-asterisk {
@@ -398,6 +417,12 @@ button.danger:hover {
 
   .controls {
     position: static;
+  }
+
+  .row .control-group.region-group {
+    width: 100%;
+    max-width: 112px;
+    justify-self: start;
   }
 
   .editor-shell {
