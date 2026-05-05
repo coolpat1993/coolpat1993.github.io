@@ -25,11 +25,11 @@
           </div>
 
           <div class="control-group region-group">
-            <label for="regionInput">Region</label>
-            <select id="regionInput">
-              <option value="gb">GB</option>
-              <option value="us">US</option>
-            </select>
+            <label>Region</label>
+            <div id="regionTabs" class="region-tabs" role="tablist" aria-label="Region">
+              <button type="button" class="region-tab is-active" data-region-tab="gb" role="tab" aria-selected="true">UK</button>
+              <button type="button" class="region-tab" data-region-tab="us" role="tab" aria-selected="false">US</button>
+            </div>
           </div>
         </div>
 

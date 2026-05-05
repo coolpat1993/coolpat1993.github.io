@@ -23,7 +23,7 @@
 
   const elements = {
     quizDateInput: document.getElementById("quizDateInput"),
-    regionInput: document.getElementById("regionInput"),
+    regionTabs: document.getElementById("regionTabs"),
     uploadApiKeyInput: document.getElementById("uploadApiKeyInput"),
     loadButton: document.getElementById("loadButton"),
     uploadPackButton: document.getElementById("uploadPackButton"),
@@ -421,6 +421,58 @@
       ...altQuestion,
       id
     };
+  }
+
+  function buildRegionTabsMarkup(selectedRegion, { field, index, className = "", includeLabel = true } = {}) {
+    const normalizedRegion = REGIONS.includes(String(selectedRegion || "").toLowerCase())
+      ? String(selectedRegion || "").toLowerCase()
+      : DEFAULT_REGION;
+    const classes = ["region-tabs", className].filter(Boolean).join(" ");
+
+    return `
+      <div class="${classes}" role="tablist" ${includeLabel ? 'aria-label="Region"' : ""}>
+        ${REGIONS.map((code) => {
+          const isSelected = normalizedRegion === code;
+          const fieldAttr = field ? ` data-field="${field}"` : "";
+          const indexAttr = Number.isInteger(index) ? ` data-index="${index}"` : "";
+
+          return `
+            <button
+              type="button"
+              class="region-tab ${isSelected ? "is-active" : ""}"
+              data-region-tab="${code}"
+              ${fieldAttr}
+              ${indexAttr}
+              role="tab"
+              aria-selected="${isSelected ? "true" : "false"}"
+            >
+              ${escapeHtml(getRegionDisplayLabel(code))}
+            </button>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+
+  function updateTopRegionTabs(activeRegion) {
+    if (!elements.regionTabs) {
+      return;
+    }
+
+    const normalizedRegion = REGIONS.includes(String(activeRegion || "").toLowerCase())
+      ? String(activeRegion || "").toLowerCase()
+      : DEFAULT_REGION;
+
+    const tabs = elements.regionTabs.querySelectorAll("[data-region-tab]");
+    tabs.forEach((tab) => {
+      if (!(tab instanceof HTMLButtonElement)) {
+        return;
+      }
+
+      const isActive = tab.dataset.regionTab === normalizedRegion;
+      tab.classList.toggle("is-active", isActive);
+      tab.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
   }
 
   function ensureAltQuestionByIndex(index, region) {
@@ -977,30 +1029,22 @@
     currentModalRegion = region;
     const baseQuestionId = getQuestionIdByIndex(index);
 
-    const regionOptions = REGIONS.map(
-      (code) =>
-        `<option value="${code}" ${currentModalRegion === code ? "selected" : ""}>${code.toUpperCase()}</option>`
-    ).join("");
-
     elements.modalQIndex.textContent = `Q${index + 1} - ${getRegionDisplayLabel(currentModalRegion)}`;
     elements.modalBody.innerHTML = `
-      <div class="grid-two">
-        <div class="card-field">
-          <label>Region</label>
-          <select data-field="region" data-index="${index}">
-            ${regionOptions}
-          </select>
-        </div>
-        <div class="card-field">
-          <label>ID</label>
-          <input
-            data-field="id"
-            data-index="${index}"
-            type="text"
-            value="${escapeAttr(baseQuestionId)}"
-            ${currentModalRegion !== DEFAULT_REGION ? "readonly" : ""}
-          />
-        </div>
+      ${buildRegionTabsMarkup(currentModalRegion, {
+        field: "region",
+        index,
+        className: "modal-region-tabs"
+      })}
+      <div class="card-field">
+        <label>ID</label>
+        <input
+          data-field="id"
+          data-index="${index}"
+          type="text"
+          value="${escapeAttr(baseQuestionId)}"
+          ${currentModalRegion !== DEFAULT_REGION ? "readonly" : ""}
+        />
       </div>
       <div class="grid-two">
         <div class="card-field">
@@ -1169,7 +1213,9 @@
     }
 
     if (field === "region") {
-      const selectedRegion = String(target.value || "").toLowerCase();
+      const selectedRegion = String(
+        target instanceof HTMLButtonElement ? target.dataset.regionTab : target.value || ""
+      ).toLowerCase();
       const nextRegion = REGIONS.includes(selectedRegion) ? selectedRegion : DEFAULT_REGION;
       currentModalRegion = nextRegion;
       openQuestionModal(index, nextRegion);
@@ -1288,9 +1334,7 @@
       state.altQuestions = normalized.alt_questions;
       state.results = normalized.results;
       state.region = DEFAULT_REGION;
-      if (elements.regionInput) {
-        elements.regionInput.value = DEFAULT_REGION;
-      }
+      updateTopRegionTabs(DEFAULT_REGION);
       state.hasLoadedPack = true;
       renderQuestions();
 
@@ -1453,13 +1497,15 @@
     elements.quizDateInput.addEventListener("pointerdown", openDatePicker);
     elements.quizDateInput.addEventListener("click", openDatePicker);
     elements.quizDateInput.addEventListener("change", loadPack);
-    elements.regionInput?.addEventListener("change", (event) => {
-      if (!(event.target instanceof HTMLSelectElement)) {
+    elements.regionTabs?.addEventListener("click", (event) => {
+      const button = event.target instanceof HTMLElement ? event.target.closest("[data-region-tab]") : null;
+      if (!(button instanceof HTMLButtonElement)) {
         return;
       }
 
-      const selectedRegion = String(event.target.value || "").toLowerCase();
+      const selectedRegion = String(button.dataset.regionTab || "").toLowerCase();
       state.region = REGIONS.includes(selectedRegion) ? selectedRegion : DEFAULT_REGION;
+      updateTopRegionTabs(state.region);
       renderQuestions();
     });
     elements.uploadApiKeyInput?.addEventListener("input", (event) => {
@@ -1513,7 +1559,17 @@
       scrambleSequenceOptions(index, region);
     });
 
+    elements.modalBody.addEventListener("click", (event) => {
+      const regionTab = event.target instanceof HTMLElement ? event.target.closest('[data-field="region"][data-region-tab]') : null;
+      if (!(regionTab instanceof HTMLButtonElement)) {
+        return;
+      }
+
+      syncQuestionFromInput(regionTab);
+    });
+
     renderQuestions();
+    updateTopRegionTabs(state.region);
     updateModalActionButtonLabels(DEFAULT_REGION);
     updateModalNavigationButtons();
     loadPack();

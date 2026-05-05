@@ -25,14 +25,9 @@ body {
 }
 
 #quizDateInput,
-#regionInput,
 #uploadApiKeyInput {
   width: 100%;
   max-width: 250px;
-}
-
-#regionInput {
-  max-width: 112px;
 }
 
 .editor-shell {
@@ -96,13 +91,48 @@ body {
 }
 
 .row .control-group.region-group {
-  width: 112px;
+  width: 180px;
   justify-self: end;
 }
 
 .control-group label {
   font-weight: 700;
   font-size: 0.88rem;
+}
+
+.region-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid #b8b09c;
+  border-radius: 12px;
+  background: #f7f3e9;
+  width: fit-content;
+}
+
+.region-tab {
+  border: none;
+  background: transparent;
+  color: #486254;
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-width: 64px;
+}
+
+.region-tab:hover {
+  background: #edf4ee;
+  color: var(--accent-strong);
+  transform: none;
+}
+
+.region-tab.is-active {
+  background: var(--accent);
+  color: #f8fffb;
+}
+
+.region-tab.is-active:hover {
+  background: var(--accent-strong);
 }
 
 input,
@@ -363,6 +393,10 @@ button.secondary {
   font-size: 0.85rem;
 }
 
+.modal-region-tabs {
+  margin-bottom: 14px;
+}
+
 .choice-editor-list {
   display: grid;
   gap: 8px;
@@ -457,7 +491,7 @@ button.danger:hover {
 
   .row .control-group.region-group {
     width: 100%;
-    max-width: 112px;
+    max-width: 180px;
     justify-self: start;
   }
 
