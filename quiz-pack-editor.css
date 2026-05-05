@@ -363,6 +363,42 @@ button.secondary {
   font-size: 0.85rem;
 }
 
+.choice-editor-list {
+  display: grid;
+  gap: 8px;
+}
+
+.choice-editor-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 24px;
+  align-items: center;
+  gap: 8px;
+}
+
+.choice-editor-code {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e8f0e9;
+  font-weight: 700;
+  color: #1f4335;
+}
+
+.choice-editor-row input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  justify-self: center;
+}
+
+.sequence-preview-labels {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: #35594a;
+}
+
 /* ── Add question card ── */
 
 .add-card {

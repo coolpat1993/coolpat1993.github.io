@@ -7,6 +7,8 @@
   const UPLOAD_API_KEY_STORAGE_KEY = "quiz-pack-editor.upload-api-key";
   const QUIZ_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
   const TYPE_CODES = ["L", "M", "N", "S"];
+  const ANSWER_CODES = ["A", "B", "C", "D", "E", "F"];
+  const MAX_CHOICE_OPTIONS = ANSWER_CODES.length;
   const REGIONS = ["gb", "us"];
   const DEFAULT_REGION = "gb";
 
@@ -107,7 +109,7 @@
       Object.prototype.hasOwnProperty.call(question || {}, "ukOnly");
     const ukOnlyValue = hasUkOnly ? question?.uk_only ?? question?.ukOnly : undefined;
 
-    return {
+    return sanitizeQuestionByType({
       id: String(question?.id || question?.question_id || `question${index + 1}`),
       q: String(question?.q || question?.question || ""),
       short_answer: String(question?.short_answer || question?.answer || ""),
@@ -116,7 +118,142 @@
       difficulty: String(question?.difficulty || "normal"),
       ...(hasUkOnly && { uk_only: ukOnlyValue }),
       ...(options?.length > 0 && { options })
+    });
+  }
+
+  function normalizeTypeCode(typeCode) {
+    const normalized = String(typeCode || "").trim().toUpperCase();
+    return TYPE_CODES.includes(normalized) ? normalized : "L";
+  }
+
+  function trimTrailingEmptyOptions(options) {
+    const next = Array.isArray(options) ? options.map((item) => String(item || "")) : [];
+    while (next.length > 0 && !next[next.length - 1].trim()) {
+      next.pop();
+    }
+
+    return next.slice(0, MAX_CHOICE_OPTIONS);
+  }
+
+  function sanitizeLetterShortAnswer(value) {
+    const upper = String(value || "").toUpperCase();
+    const lettersOnly = upper.replace(/[^A-Z]/g, "");
+    return lettersOnly.slice(0, 1);
+  }
+
+  function sanitizeNumberShortAnswer(value) {
+    const raw = String(value || "").trim();
+    if (!raw) {
+      return "";
+    }
+
+    const chars = raw.replace(/[^0-9.-]/g, "");
+    let result = "";
+    let hasDot = false;
+
+    for (let i = 0; i < chars.length; i += 1) {
+      const char = chars[i];
+
+      if (/\d/.test(char)) {
+        result += char;
+        continue;
+      }
+
+      if (char === "-" && result.length === 0) {
+        result += char;
+        continue;
+      }
+
+      if (char === "." && !hasDot) {
+        if (result.length === 0 || result === "-") {
+          result += "0";
+        }
+        result += ".";
+        hasDot = true;
+      }
+    }
+
+    return result;
+  }
+
+  function sanitizeMultipleChoiceShortAnswer(question) {
+    const normalized = sanitizeLetterShortAnswer(question.short_answer);
+    const optionCount = Array.isArray(question.options) ? question.options.length : 0;
+    if (!normalized || optionCount === 0) {
+      return "";
+    }
+
+    const selectedIndex = normalized.charCodeAt(0) - 65;
+    return selectedIndex >= 0 && selectedIndex < optionCount ? normalized : "";
+  }
+
+  function buildSequentialAnswerCode(optionCount) {
+    return ANSWER_CODES.slice(0, Math.max(0, optionCount)).join("");
+  }
+
+  function sanitizeSequenceShortAnswer(question) {
+    const optionCount = Array.isArray(question.options) ? question.options.length : 0;
+    if (optionCount === 0) {
+      return "";
+    }
+
+    const raw = String(question.short_answer || "")
+      .toUpperCase()
+      .replace(/[^A-F]/g, "");
+
+    if (!raw) {
+      return buildSequentialAnswerCode(optionCount);
+    }
+
+    const used = new Set();
+    const sanitized = [];
+    for (const code of raw) {
+      const idx = code.charCodeAt(0) - 65;
+      if (idx < 0 || idx >= optionCount || used.has(code)) {
+        continue;
+      }
+
+      used.add(code);
+      sanitized.push(code);
+    }
+
+    if (sanitized.length !== optionCount) {
+      return buildSequentialAnswerCode(optionCount);
+    }
+
+    return sanitized.join("");
+  }
+
+  function sanitizeQuestionByType(question) {
+    const sanitized = {
+      ...question,
+      type_code: normalizeTypeCode(question?.type_code)
     };
+
+    if (sanitized.type_code === "L") {
+      sanitized.short_answer = sanitizeLetterShortAnswer(sanitized.short_answer);
+      return sanitized;
+    }
+
+    if (sanitized.type_code === "N") {
+      sanitized.short_answer = sanitizeNumberShortAnswer(sanitized.short_answer);
+      delete sanitized.options;
+      return sanitized;
+    }
+
+    if (sanitized.type_code === "M") {
+      sanitized.options = trimTrailingEmptyOptions(sanitized.options).filter((item) => item.trim().length > 0);
+      sanitized.short_answer = sanitizeMultipleChoiceShortAnswer(sanitized);
+      return sanitized;
+    }
+
+    if (sanitized.type_code === "S") {
+      sanitized.options = trimTrailingEmptyOptions(sanitized.options).filter((item) => item.trim().length > 0);
+      sanitized.short_answer = sanitizeSequenceShortAnswer(sanitized);
+      return sanitized;
+    }
+
+    return sanitized;
   }
 
   function normalizeAltQuestions(altQuestionsPayload) {
@@ -551,6 +688,285 @@
     old.replaceWith(renderQuestionCard(question, index));
   }
 
+  function getEditableQuestionForRegion(index, region = currentModalRegion) {
+    if (!state.questions[index]) {
+      return null;
+    }
+
+    if (region !== DEFAULT_REGION) {
+      return ensureAltQuestionByIndex(index, region);
+    }
+
+    return state.questions[index];
+  }
+
+  function getSequenceAnswerList(question) {
+    const options = Array.isArray(question?.options)
+      ? question.options.map((item) => String(item || "").trim()).filter(Boolean)
+      : [];
+    const answerCodes = String(question?.short_answer || "")
+      .toUpperCase()
+      .replace(/[^A-F]/g, "");
+
+    if (answerCodes && options.length > 0) {
+      const labels = answerCodes
+        .split("")
+        .map((code) => {
+          const idx = code.charCodeAt(0) - 65;
+          return options[idx] || "";
+        })
+        .filter(Boolean);
+
+      if (labels.length > 0) {
+        return labels.slice(0, MAX_CHOICE_OPTIONS);
+      }
+    }
+
+    return options.slice(0, MAX_CHOICE_OPTIONS);
+  }
+
+  function getSequenceAnswerListFromModal(index) {
+    const inputs = Array.from(
+      elements.modalBody.querySelectorAll(
+        `input[data-field="sequence_answer_label"][data-index="${index}"]`
+      )
+    );
+
+    return inputs
+      .sort((a, b) => Number(a.dataset.optionIndex) - Number(b.dataset.optionIndex))
+      .map((input) => String(input.value || "").trim())
+      .filter(Boolean)
+      .slice(0, MAX_CHOICE_OPTIONS);
+  }
+
+  function syncSequenceFromAnswerList(index, region) {
+    const editableQuestion = getEditableQuestionForRegion(index, region);
+    if (!editableQuestion) {
+      return;
+    }
+
+    const answerList = getSequenceAnswerListFromModal(index);
+    editableQuestion.options = answerList;
+    editableQuestion.short_answer = buildSequentialAnswerCode(answerList.length);
+    sanitizeQuestionByType(editableQuestion);
+    updateSequencePreviewInModal(index, editableQuestion);
+  }
+
+  function getSequencePreviewText(question) {
+    const codes = String(question?.short_answer || "")
+      .toUpperCase()
+      .replace(/[^A-F]/g, "");
+
+    if (!codes) {
+      return "-";
+    }
+
+    return codes.split("").join(" - ");
+  }
+
+  function getSequencePreviewLabels(question) {
+    const options = Array.isArray(question?.options)
+      ? question.options.map((item) => String(item || "").trim())
+      : [];
+    const codes = String(question?.short_answer || "")
+      .toUpperCase()
+      .replace(/[^A-F]/g, "");
+
+    if (!codes) {
+      return "";
+    }
+
+    return codes
+      .split("")
+      .map((code) => {
+        const idx = code.charCodeAt(0) - 65;
+        const label = options[idx] || "";
+        return label ? `${code}: ${label}` : code;
+      })
+      .join(" | ");
+  }
+
+  function updateSequencePreviewInModal(index, question) {
+    const codePreviewInput = elements.modalBody.querySelector(
+      `input[data-field="sequence_code_preview"][data-index="${index}"]`
+    );
+    const labelPreview = elements.modalBody.querySelector(
+      `[data-field="sequence_label_preview"][data-index="${index}"]`
+    );
+
+    if (codePreviewInput instanceof HTMLInputElement) {
+      codePreviewInput.value = getSequencePreviewText(question);
+    }
+
+    if (labelPreview instanceof HTMLElement) {
+      const labelText = getSequencePreviewLabels(question);
+      labelPreview.textContent = labelText || "";
+      labelPreview.hidden = !labelText;
+    }
+  }
+
+  function scrambleSequenceOptions(index, region) {
+    const editableQuestion = getEditableQuestionForRegion(index, region);
+    if (!editableQuestion) {
+      return;
+    }
+
+    const answerList = getSequenceAnswerListFromModal(index);
+    if (answerList.length < 2) {
+      setStatus("Add at least two sequence answers before scrambling.", true);
+      return;
+    }
+
+    const entries = answerList.map((label, position) => ({
+      label,
+      position
+    }));
+    const shuffled = [...entries];
+
+    for (let i = shuffled.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    editableQuestion.options = shuffled.map((item) => item.label);
+    editableQuestion.short_answer = entries
+      .map((item) => {
+        const shuffledIndex = shuffled.findIndex((candidate) => candidate.position === item.position);
+        return ANSWER_CODES[shuffledIndex] || "";
+      })
+      .join("");
+
+    sanitizeQuestionByType(editableQuestion);
+    refreshCard(index);
+    setStatus("Sequence options scrambled.", false);
+    openQuestionModal(index, region);
+  }
+
+  function buildAnswerEditorMarkup(question, index, region) {
+    const typeCode = normalizeTypeCode(question?.type_code);
+
+    if (typeCode === "L") {
+      return `
+        <div class="card-field">
+          <label>Short Answer (single capital letter)</label>
+          <input
+            data-field="short_answer"
+            data-index="${index}"
+            data-region="${region}"
+            type="text"
+            maxlength="1"
+            inputmode="text"
+            value="${escapeAttr(sanitizeLetterShortAnswer(question.short_answer))}"
+          />
+        </div>
+      `;
+    }
+
+    if (typeCode === "N") {
+      return `
+        <div class="card-field">
+          <label>Short Answer (number only)</label>
+          <input
+            data-field="short_answer"
+            data-index="${index}"
+            data-region="${region}"
+            type="text"
+            inputmode="decimal"
+            value="${escapeAttr(sanitizeNumberShortAnswer(question.short_answer))}"
+          />
+        </div>
+      `;
+    }
+
+    if (typeCode === "M") {
+      const options = Array.isArray(question.options) ? question.options.slice(0, MAX_CHOICE_OPTIONS) : [];
+      const selectedCode = sanitizeLetterShortAnswer(question.short_answer);
+      const radioName = `choice-correct-${index}-${region}`;
+
+      return `
+        <div class="card-field">
+          <label>Multiple Choice Options</label>
+          <div class="choice-editor-list">
+            ${ANSWER_CODES.map((code, optionIndex) => {
+              const value = options[optionIndex] || "";
+              const isChecked = selectedCode === code;
+              return `
+                <label class="choice-editor-row">
+                  <span class="choice-editor-code">${code}</span>
+                  <input
+                    data-field="choice_option"
+                    data-index="${index}"
+                    data-region="${region}"
+                    data-option-index="${optionIndex}"
+                    type="text"
+                    value="${escapeAttr(value)}"
+                  />
+                  <input
+                    data-field="choice_correct"
+                    data-index="${index}"
+                    data-region="${region}"
+                    data-option-index="${optionIndex}"
+                    data-answer-code="${code}"
+                    type="radio"
+                    name="${radioName}"
+                    ${isChecked ? "checked" : ""}
+                    ${value.trim() ? "" : "disabled"}
+                  />
+                </label>
+              `;
+            }).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    const sequenceAnswers = getSequenceAnswerList(question);
+    const sequenceCodePreview = getSequencePreviewText(question);
+    const sequenceLabelPreview = getSequencePreviewLabels(question);
+
+    return `
+      <div class="card-field">
+        <label>Sequence Answer List (A-F in correct order)</label>
+        <div class="choice-editor-list">
+          ${ANSWER_CODES.map((code, optionIndex) => {
+            const value = sequenceAnswers[optionIndex] || "";
+            return `
+              <label class="choice-editor-row">
+                <span class="choice-editor-code">${code}</span>
+                <input
+                  data-field="sequence_answer_label"
+                  data-index="${index}"
+                  data-region="${region}"
+                  data-option-index="${optionIndex}"
+                  type="text"
+                  value="${escapeAttr(value)}"
+                />
+              </label>
+            `;
+          }).join("")}
+        </div>
+        <label>Scramble Sequence</label>
+        <input
+          data-field="sequence_code_preview"
+          data-index="${index}"
+          type="text"
+          value="${escapeAttr(sequenceCodePreview)}"
+          readonly
+        />
+        <p class="sequence-preview-labels" data-field="sequence_label_preview" data-index="${index}" ${sequenceLabelPreview ? "" : "hidden"}>${escapeHtml(sequenceLabelPreview)}</p>
+        <button
+          type="button"
+          class="secondary"
+          data-action="scramble_sequence"
+          data-index="${index}"
+          data-region="${region}"
+        >
+          Scramble Sequence
+        </button>
+      </div>
+    `;
+  }
+
   function openQuestionModal(index, region = state.region) {
     const question = getQuestionForRegion(index, region);
     if (!question) {
@@ -559,7 +975,6 @@
 
     currentModalIndex = index;
     currentModalRegion = region;
-    const optionsText = (question.options || []).join("\n");
     const baseQuestionId = getQuestionIdByIndex(index);
 
     const regionOptions = REGIONS.map(
@@ -606,23 +1021,14 @@
         <label>Question Text</label>
         <textarea data-field="q" data-index="${index}" data-region="${currentModalRegion}">${escapeHtml(question.q)}</textarea>
       </div>
-      <div class="grid-two">
-        <div class="card-field">
-          <label>Short Answer</label>
-          <input data-field="short_answer" data-index="${index}" data-region="${currentModalRegion}" type="text" value="${escapeAttr(question.short_answer)}" />
-        </div>
-        <div class="card-field">
-          <label>Long Answer</label>
-          <input data-field="long_answer" data-index="${index}" data-region="${currentModalRegion}" type="text" value="${escapeAttr(question.long_answer)}" />
-        </div>
+      <div class="card-field">
+        <label>Long Answer</label>
+        <input data-field="long_answer" data-index="${index}" data-region="${currentModalRegion}" type="text" value="${escapeAttr(question.long_answer)}" />
       </div>
+      ${buildAnswerEditorMarkup(question, index, currentModalRegion)}
       <div class="card-field">
         <label>Difficulty</label>
         <input data-field="difficulty" data-index="${index}" data-region="${currentModalRegion}" type="text" value="${escapeAttr(question.difficulty)}" />
-      </div>
-      <div class="card-field">
-        <label>Options (one per line)</label>
-        <textarea data-field="options" data-index="${index}" data-region="${currentModalRegion}">${escapeHtml(optionsText)}</textarea>
       </div>
     `;
 
@@ -772,17 +1178,12 @@
 
     if (field === "uk_only") {
       const nextValue = target.value === "true";
-
-      if (region !== DEFAULT_REGION) {
-        const altQuestion = ensureAltQuestionByIndex(index, region);
-        if (!altQuestion) {
-          return;
-        }
-
-        altQuestion.uk_only = nextValue;
-      } else {
-        state.questions[index].uk_only = nextValue;
+      const editableQuestion = getEditableQuestionForRegion(index, region);
+      if (!editableQuestion) {
+        return;
       }
+
+      editableQuestion.uk_only = nextValue;
 
       refreshCard(index);
       return;
@@ -796,38 +1197,70 @@
       return;
     }
 
-    if (field === "options") {
-      const nextOptions = target.value
-        .split("\n")
+    const editableQuestion = getEditableQuestionForRegion(index, region);
+    if (!editableQuestion) {
+      return;
+    }
+
+    if (field === "type_code") {
+      editableQuestion.type_code = normalizeTypeCode(target.value);
+      sanitizeQuestionByType(editableQuestion);
+      refreshCard(index);
+      openQuestionModal(index, region);
+      return;
+    }
+
+    if (field === "short_answer") {
+      if (editableQuestion.type_code === "L") {
+        editableQuestion.short_answer = sanitizeLetterShortAnswer(target.value);
+      } else if (editableQuestion.type_code === "N") {
+        editableQuestion.short_answer = sanitizeNumberShortAnswer(target.value);
+      } else {
+        editableQuestion.short_answer = String(target.value || "");
+      }
+
+      target.value = editableQuestion.short_answer;
+      refreshCard(index);
+      return;
+    }
+
+    if (field === "choice_option") {
+      const optionIndex = Number(target.dataset.optionIndex);
+      if (!Number.isInteger(optionIndex) || optionIndex < 0 || optionIndex >= MAX_CHOICE_OPTIONS) {
+        return;
+      }
+
+      const nextOptions = Array.isArray(editableQuestion.options)
+        ? editableQuestion.options.slice(0, MAX_CHOICE_OPTIONS)
+        : [];
+      nextOptions[optionIndex] = String(target.value || "");
+      editableQuestion.options = trimTrailingEmptyOptions(nextOptions)
         .map((item) => item.trim())
         .filter(Boolean);
-
-      if (region !== DEFAULT_REGION) {
-        const altQuestion = ensureAltQuestionByIndex(index, region);
-        if (!altQuestion) {
-          return;
-        }
-
-        altQuestion.options = nextOptions;
-      } else {
-        state.questions[index].options = nextOptions;
-      }
+      editableQuestion.short_answer = sanitizeMultipleChoiceShortAnswer(editableQuestion);
 
       refreshCard(index);
       return;
     }
 
-    if (region !== DEFAULT_REGION) {
-      const altQuestion = ensureAltQuestionByIndex(index, region);
-      if (!altQuestion) {
-        return;
+    if (field === "choice_correct") {
+      if (target instanceof HTMLInputElement && target.checked) {
+        editableQuestion.short_answer = sanitizeLetterShortAnswer(target.dataset.answerCode);
       }
 
-      altQuestion[field] = target.value;
-    } else {
-      state.questions[index][field] = target.value;
+      editableQuestion.short_answer = sanitizeMultipleChoiceShortAnswer(editableQuestion);
+      refreshCard(index);
+      return;
     }
 
+    if (field === "sequence_answer_label") {
+      syncSequenceFromAnswerList(index, region);
+      refreshCard(index);
+      return;
+    }
+
+    editableQuestion[field] = target.value;
+    sanitizeQuestionByType(editableQuestion);
     refreshCard(index);
   }
 
@@ -870,15 +1303,6 @@
     } catch (error) {
       setStatus(`Failed to load pack: ${error.message}`, true);
     }
-  }
-
-  function getCurrentPack() {
-    return {
-      pack_date: state.packDate || elements.quizDateInput.value || "",
-      questions: state.questions,
-      results: state.results,
-      alt_questions: serializeAltQuestions(state.altQuestions)
-    };
   }
 
   async function uploadPack() {
@@ -1051,12 +1475,6 @@
     elements.nextQuestionButton?.addEventListener("click", () => navigateModalQuestion(1));
     elements.deleteModalButton.addEventListener("click", deleteCurrentQuestion);
 
-    elements.questionModal.addEventListener("click", (event) => {
-      if (event.target === elements.questionModal) {
-        closeQuestionModal();
-      }
-    });
-
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && !elements.questionModal.hidden) {
         closeQuestionModal();
@@ -1069,6 +1487,30 @@
       }
 
       syncQuestionFromInput(event.target);
+    });
+
+    elements.modalBody.addEventListener("click", (event) => {
+      if (!(event.target instanceof HTMLElement)) {
+        return;
+      }
+
+      const actionElement = event.target.closest("[data-action]");
+      if (!(actionElement instanceof HTMLElement)) {
+        return;
+      }
+
+      const action = actionElement.dataset.action;
+      if (action !== "scramble_sequence") {
+        return;
+      }
+
+      const index = Number(actionElement.dataset.index);
+      const region = actionElement.dataset.region || currentModalRegion;
+      if (Number.isNaN(index)) {
+        return;
+      }
+
+      scrambleSequenceOptions(index, region);
     });
 
     renderQuestions();
