@@ -1349,8 +1349,18 @@
     }
   }
 
+    function getCurrentPack() {
+    return {
+      pack_date: state.packDate || elements.quizDateInput.value || "",
+      questions: state.questions,
+      results: state.results,
+      alt_questions: serializeAltQuestions(state.altQuestions)
+    };
+  }
+
   async function uploadPack() {
     const pack = getCurrentPack();
+    console.log("Quiz pack upload preview:", pack);
     const dateToken = (pack.pack_date || elements.quizDateInput.value || "").trim();
     const uploadApiKey = String(state.uploadApiKey || elements.uploadApiKeyInput?.value || "").trim();
 
