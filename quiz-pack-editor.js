@@ -104,6 +104,7 @@
     const options = Array.isArray(question?.options)
       ? question.options.map((item) => String(item ?? ""))
       : [];
+    const hasCategory = Object.prototype.hasOwnProperty.call(question || {}, "category");
     const hasUkOnly =
       Object.prototype.hasOwnProperty.call(question || {}, "uk_only") ||
       Object.prototype.hasOwnProperty.call(question || {}, "ukOnly");
@@ -116,6 +117,7 @@
       long_answer: String(question?.long_answer || question?.longAnswer || ""),
       type_code: String(question?.type_code || question?.typeCode || "L").toUpperCase(),
       difficulty: String(question?.difficulty || "normal"),
+      ...(hasCategory && { category: String(question?.category || "") }),
       ...(hasUkOnly && { uk_only: ukOnlyValue }),
       ...(options?.length > 0 && { options })
     });
@@ -365,6 +367,10 @@
       type_code: String(question?.type_code || "L").toUpperCase(),
       difficulty: String(question?.difficulty || "normal")
     };
+
+    if (Object.prototype.hasOwnProperty.call(question || {}, "category")) {
+      alt.category = String(question?.category || "");
+    }
 
     if (Object.prototype.hasOwnProperty.call(question || {}, "uk_only")) {
       alt.uk_only = question.uk_only;
