@@ -1440,32 +1440,44 @@
     return text;
   }
 
-  function toAnswerIndex(answerCode) {
-    const code = sanitizeLetterShortAnswer(answerCode);
-    if (!code) {
-      return -1;
-    }
-
-    return code.charCodeAt(0) - 65;
-  }
-
-  function toAnswerCode(index) {
-    if (!Number.isInteger(index) || index < 0 || index >= ANSWER_CODES.length) {
-      return "";
-    }
-
-    return ANSWER_CODES[index];
-  }
-
   function normalizeGeneratedUsAlt(baseQuestion, candidateAlt) {
     const base = normalizeQuestion(baseQuestion, 0);
+    const candidate = candidateAlt && typeof candidateAlt === "object" ? candidateAlt : {};
+
+    const hasGeneratedQuestionText =
+      Object.prototype.hasOwnProperty.call(candidate, "q") ||
+      Object.prototype.hasOwnProperty.call(candidate, "question");
+    const hasGeneratedShortAnswer =
+      Object.prototype.hasOwnProperty.call(candidate, "short_answer") ||
+      Object.prototype.hasOwnProperty.call(candidate, "answer");
+    const hasGeneratedLongAnswer =
+      Object.prototype.hasOwnProperty.call(candidate, "long_answer") ||
+      Object.prototype.hasOwnProperty.call(candidate, "longAnswer");
+
+    const generatedQuestionText = Object.prototype.hasOwnProperty.call(candidate, "q")
+      ? candidate.q
+      : candidate.question;
+    const generatedShortAnswer = Object.prototype.hasOwnProperty.call(candidate, "short_answer")
+      ? candidate.short_answer
+      : candidate.answer;
+    const generatedLongAnswer = Object.prototype.hasOwnProperty.call(candidate, "long_answer")
+      ? candidate.long_answer
+      : candidate.longAnswer;
+
     const mergedInput = {
       ...base,
-      ...(candidateAlt && typeof candidateAlt === "object" ? candidateAlt : {}),
+      ...candidate,
       id: String(base.id || ""),
+      q: hasGeneratedQuestionText ? String(generatedQuestionText ?? "") : String(base.q || ""),
+      short_answer: hasGeneratedShortAnswer
+        ? String(generatedShortAnswer ?? "")
+        : String(base.short_answer || ""),
+      long_answer: hasGeneratedLongAnswer
+        ? String(generatedLongAnswer ?? "")
+        : String(base.long_answer || ""),
       difficulty: String(
-        candidateAlt && typeof candidateAlt === "object" && candidateAlt.difficulty
-          ? candidateAlt.difficulty
+        candidate && candidate.difficulty
+          ? candidate.difficulty
           : base.difficulty
       ),
       uk_only: false
@@ -1475,35 +1487,127 @@
       mergedInput.category = String(base.category || "");
     }
 
-    const normalized = normalizeQuestion(mergedInput, 0);
+    let normalized = normalizeQuestion(mergedInput, 0);
     normalized.uk_only = false;
 
     if (Object.prototype.hasOwnProperty.call(base, "category")) {
       normalized.category = String(base.category || "");
     }
 
-    sanitizeQuestionByType(normalized);
+    normalized = reconcileGeneratedAnswerFields(normalized);
+    normalized = sanitizeQuestionByType(normalized);
 
     const { id: _ignoredId, ...withoutId } = normalized;
     return withoutId;
   }
 
+  function reconcileGeneratedAnswerFields(question) {
+    const next = {
+      ...question,
+      q: String(question?.q || ""),
+      short_answer: String(question?.short_answer || ""),
+      long_answer: String(question?.long_answer || "")
+    };
+    const typeCode = normalizeTypeCode(next.type_code);
+
+    if (typeCode === "M") {
+      const options = Array.isArray(next.options)
+        ? next.options.map((item) => String(item || "").trim()).filter(Boolean)
+        : [];
+      const answerCode = sanitizeLetterShortAnswer(next.short_answer);
+      const answerIndex = answerCode ? answerCode.charCodeAt(0) - 65 : -1;
+
+      if (answerIndex >= 0 && answerIndex < options.length) {
+        next.long_answer = options[answerIndex];
+      } else if (options.length > 0) {
+        next.short_answer = "A";
+        next.long_answer = options[0];
+      }
+    }
+
+    if (typeCode === "S") {
+      const options = Array.isArray(next.options)
+        ? next.options.map((item) => String(item || "").trim()).filter(Boolean)
+        : [];
+      const sequenceCode = String(next.short_answer || "")
+        .toUpperCase()
+        .replace(/[^A-F]/g, "");
+
+      if (sequenceCode.length === options.length && options.length > 0) {
+        const ordered = sequenceCode
+          .split("")
+          .map((code) => {
+            const idx = code.charCodeAt(0) - 65;
+            return options[idx] || "";
+          })
+          .filter(Boolean);
+
+        if (ordered.length === options.length) {
+          next.long_answer = ordered.join(" -> ");
+        }
+      }
+    }
+
+    if (typeCode === "N") {
+      const numeric = sanitizeNumberShortAnswer(next.short_answer);
+      next.short_answer = numeric;
+      if (!String(next.long_answer || "").trim()) {
+        next.long_answer = numeric;
+      }
+    }
+
+    if (typeCode === "L") {
+      const longAnswer = String(next.long_answer || "").trim();
+      if (longAnswer) {
+        next.short_answer = sanitizeLetterShortAnswer(longAnswer.charAt(0));
+      }
+    }
+
+    return next;
+  }
+
   function buildOpenAiMessages(items) {
     const system = [
-      "Convert this question into an American equivalent question.",
+      "You are generating NEW US quiz alternatives for UK-only questions.",
+      "Primary goal: every generated US question and answer pair must be correct.",
+      "The US question does NOT need to be closely related to the UK source.",
+      "Keep only the category and approximate difficulty; topic/entity can be completely different.",
+      "Prioritize broad US familiarity and low ambiguity.",
+      "Write specific clues with a single clear answer.",
+      "Avoid vague wording like 'popular', 'well-known', 'famous for', or 'known for' unless a unique identifier is also present.",
+      "Avoid UK-only references.",
+      "Slogan, mascot, jingle, or campaign clues are allowed only when they are specific, widely recognized in the US, and point to one clear brand/entity.",
+      "Prefer stable facts with clear, verifiable answers over niche or arguable facts.",
+      "If uncertain about any fact, replace it with a simpler US fact you are certain about.",
+      "Never guess.",
+      "Ensure short_answer is fully correct for q and type_code.",
+      "For M questions: options must be plausible and short_answer must point to the correct option letter.",
+      "For S questions: options must be the answer items and short_answer must represent the correct order.",
+      "For N questions: short_answer must be a valid numeric string.",
       "Return valid JSON only with shape: {\"items\":[{\"id\":string,\"us_alt\":object}]}"
     ].join(" ");
 
     const user = {
-      task: "Generate US alt questions for the provided UK-only questions.",
+      task: "Generate accurate US alternative questions for the provided UK-only items.",
       constraints: {
         locale_target: "en-US",
-        preserve_type_code: false,
+        preserve_type_code: "prefer_but_not_required",
         preserve_category: true,
-        preserve_difficulty: "approximate",
+        preserve_difficulty: "approximate_easy_to_medium",
         prioritize_wide_american_appeal: true,
         keep_answer_correct: true,
-        allow_non_1_to_1_rewrites: true,
+        allow_non_1_to_1_rewrites: "strong",
+        require_similarity_to_source: false,
+        prefer_new_topic_over_paraphrase: true,
+        avoid_uk_specific_entities: true,
+        allow_specific_unambiguous_us_slogan_clues: true,
+        avoid_generic_brand_popularity_clues: true,
+        prefer_objective_facts: true,
+        require_unambiguous_answers: true,
+        require_specific_unique_clues: true,
+        avoid_vague_popularity_wording: true,
+        require_high_factual_confidence: true,
+        never_guess: true,
         output_json_only: true
       },
       questions: items
@@ -1519,7 +1623,7 @@
     const messages = buildOpenAiMessages(items);
     const requestBody = {
       model: OPENAI_MODEL,
-      temperature: 0.2,
+      temperature: 0.3,
       response_format: { type: "json_object" },
       messages
     };
@@ -1531,14 +1635,26 @@
       messages: requestBody.messages
     });
 
-    const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`
-      },
-      body: JSON.stringify(requestBody)
-    });
+    let response;
+    try {
+      response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(requestBody)
+      });
+    } catch (error) {
+      const message = String(error?.message || "");
+      if (message === "Failed to fetch") {
+        throw new Error(
+          "OpenAI request blocked in browser (CORS/network). Direct client-side calls to api.openai.com from this page origin are blocked. Use a server-side proxy endpoint and call that endpoint from the editor."
+        );
+      }
+
+      throw error;
+    }
 
     let payload = {};
     try {
@@ -1606,11 +1722,13 @@
       return false;
     }
 
+    const normalizedAlt = normalizeGeneratedUsAlt(baseQuestion, generatedAlt);
+
     if (!state.altQuestions.us) {
       state.altQuestions.us = {};
     }
 
-    state.altQuestions.us[id] = normalizeGeneratedUsAlt(baseQuestion, generatedAlt);
+    state.altQuestions.us[id] = normalizedAlt;
     return true;
   }
 
@@ -1656,6 +1774,8 @@
       const generatedItems = await requestUsAltsFromOpenAi(items, apiKey);
       let appliedCount = 0;
 
+      console.log("OpenAI generated US alternatives (raw):", generatedItems);
+
       generatedItems.forEach((entry) => {
         const id = String(entry?.id || "").trim();
         if (!id || !idToIndex.has(id)) {
@@ -1668,13 +1788,17 @@
           return;
         }
 
-        if (applyGeneratedUsAlt(index, generatedAlt)) {
+        const applied = applyGeneratedUsAlt(index, generatedAlt);
+        if (applied) {
           appliedCount += 1;
         }
       });
 
       if (appliedCount === 0) {
-        setStatus("AI generation completed, but no usable US alternatives were returned.", true);
+        setStatus(
+          "AI generation completed, but no usable US alternatives were returned.",
+          true
+        );
       } else {
         renderQuestions();
 
