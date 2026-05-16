@@ -180,6 +180,12 @@ button:hover {
   background: var(--accent-strong);
 }
 
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 button.secondary {
   background: transparent;
   color: var(--accent-strong);
@@ -395,6 +401,14 @@ button.secondary {
 
 .modal-region-tabs {
   margin-bottom: 14px;
+}
+
+.modal-ai-actions {
+  margin-top: -4px;
+}
+
+.modal-ai-actions button {
+  justify-self: start;
 }
 
 .choice-editor-list {

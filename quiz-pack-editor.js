@@ -5,6 +5,9 @@
     "https://www.speedquizzing.com/utils/dailyquiz/daily_quiz_upload_question_pack";
   const DAILY_QUIZ_PATH_SUFFIX = "d/o";
   const UPLOAD_API_KEY_STORAGE_KEY = "quiz-pack-editor.upload-api-key";
+  const OPENAI_API_KEY_STORAGE_KEY = "quiz-pack-editor.openai-api-key";
+  const OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
+  const OPENAI_MODEL = "gpt-4.1-mini";
   const QUIZ_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
   const TYPE_CODES = ["L", "M", "N", "S"];
   const ANSWER_CODES = ["A", "B", "C", "D", "E", "F"];
@@ -26,6 +29,7 @@
     regionTabs: document.getElementById("regionTabs"),
     uploadApiKeyInput: document.getElementById("uploadApiKeyInput"),
     loadButton: document.getElementById("loadButton"),
+    generateUsAiButton: document.getElementById("generateUsAiButton"),
     uploadPackButton: document.getElementById("uploadPackButton"),
     statusMessage: document.getElementById("statusMessage"),
     packMeta: document.getElementById("packMeta"),
@@ -52,9 +56,11 @@
     uploadApiKey: "",
     region: DEFAULT_REGION,
     hasLoadedPack: false,
+    isGeneratingUsAlts: false,
     dragIndex: -1,
     lastDragEndedAt: 0,
-    dropIndicator: null
+    dropIndicator: null,
+    openAiApiKey: ""
   };
 
   function setUploadApiKey(nextApiKey) {
@@ -81,6 +87,59 @@
     if (elements.uploadApiKeyInput) {
       elements.uploadApiKeyInput.value = savedApiKey;
     }
+  }
+
+  function setOpenAiApiKey(nextApiKey) {
+    const safeApiKey = String(nextApiKey || "").trim();
+    state.openAiApiKey = safeApiKey;
+
+    try {
+      localStorage.setItem(OPENAI_API_KEY_STORAGE_KEY, safeApiKey);
+    } catch {
+      // Ignore storage failures (private mode, storage limits, etc.).
+    }
+  }
+
+  function hydrateOpenAiApiKey() {
+    let savedApiKey = "";
+
+    try {
+      savedApiKey = String(localStorage.getItem(OPENAI_API_KEY_STORAGE_KEY) || "").trim();
+    } catch {
+      savedApiKey = "";
+    }
+
+    state.openAiApiKey = savedApiKey;
+  }
+
+  function isLikelyOpenAiKey(value) {
+    const key = String(value || "").trim();
+    return /^sk-[A-Za-z0-9._\-]{20,}$/.test(key);
+  }
+
+  function requestOpenAiApiKeyFromUser() {
+    const entered = prompt("Paste a valid OpenAI API key (starts with sk-)", state.openAiApiKey || "");
+    if (entered === null) {
+      return "";
+    }
+
+    const key = String(entered || "").trim();
+    if (!isLikelyOpenAiKey(key)) {
+      setStatus("AI generation cancelled: please provide a valid OpenAI API key.", true);
+      return "";
+    }
+
+    setOpenAiApiKey(key);
+    return key;
+  }
+
+  function ensureOpenAiApiKey() {
+    const existingKey = String(state.openAiApiKey || "").trim();
+    if (isLikelyOpenAiKey(existingKey)) {
+      return existingKey;
+    }
+
+    return requestOpenAiApiKeyFromUser();
   }
 
   function getTodayDateString() {
@@ -1034,6 +1093,22 @@
     currentModalIndex = index;
     currentModalRegion = region;
     const baseQuestionId = getQuestionIdByIndex(index);
+    const baseQuestion = state.questions[index];
+    const canGenerateUsAlt = baseQuestion?.uk_only === true;
+    const aiButtonMarkup = canGenerateUsAlt
+      ? `
+        <div class="card-field modal-ai-actions">
+          <button
+            type="button"
+            class="secondary"
+            data-action="generate_us_alt_ai"
+            data-index="${index}"
+          >
+            Generate US Alt (AI)
+          </button>
+        </div>
+      `
+      : "";
 
     elements.modalQIndex.textContent = `Q${index + 1} - ${getRegionDisplayLabel(currentModalRegion)}`;
     elements.modalBody.innerHTML = `
@@ -1042,6 +1117,7 @@
         index,
         className: "modal-region-tabs"
       })}
+      ${aiButtonMarkup}
       <div class="card-field">
         <label>ID</label>
         <input
@@ -1083,6 +1159,7 @@
     `;
 
     elements.questionModal.hidden = false;
+    setAiGenerationBusyState(state.isGeneratingUsAlts);
     updateModalActionButtonLabels(currentModalRegion);
     updateModalNavigationButtons();
   }
@@ -1316,6 +1393,330 @@
     refreshCard(index);
   }
 
+  function getUkOnlyQuestionIndices() {
+    return state.questions.reduce((indices, question, index) => {
+      if (question && question.uk_only === true) {
+        indices.push(index);
+      }
+      return indices;
+    }, []);
+  }
+
+  function buildQuestionPayloadForAi(index) {
+    const question = state.questions[index];
+    if (!question) {
+      return null;
+    }
+
+    const payload = {
+      id: String(question.id || ""),
+      index,
+      type_code: normalizeTypeCode(question.type_code),
+      difficulty: String(question.difficulty || "normal"),
+      q: String(question.q || ""),
+      long_answer: String(question.long_answer || ""),
+      short_answer: String(question.short_answer || ""),
+      uk_only: question.uk_only === true
+    };
+
+    if (Object.prototype.hasOwnProperty.call(question, "category")) {
+      payload.category = String(question.category || "");
+    }
+
+    if (Array.isArray(question.options)) {
+      payload.options = question.options.map((item) => String(item || ""));
+    }
+
+    return payload;
+  }
+
+  function stripMarkdownJsonFences(raw) {
+    const text = String(raw || "").trim();
+    const fencedMatch = text.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+    if (fencedMatch) {
+      return fencedMatch[1].trim();
+    }
+
+    return text;
+  }
+
+  function toAnswerIndex(answerCode) {
+    const code = sanitizeLetterShortAnswer(answerCode);
+    if (!code) {
+      return -1;
+    }
+
+    return code.charCodeAt(0) - 65;
+  }
+
+  function toAnswerCode(index) {
+    if (!Number.isInteger(index) || index < 0 || index >= ANSWER_CODES.length) {
+      return "";
+    }
+
+    return ANSWER_CODES[index];
+  }
+
+  function normalizeGeneratedUsAlt(baseQuestion, candidateAlt) {
+    const base = normalizeQuestion(baseQuestion, 0);
+    const mergedInput = {
+      ...base,
+      ...(candidateAlt && typeof candidateAlt === "object" ? candidateAlt : {}),
+      id: String(base.id || ""),
+      difficulty: String(
+        candidateAlt && typeof candidateAlt === "object" && candidateAlt.difficulty
+          ? candidateAlt.difficulty
+          : base.difficulty
+      ),
+      uk_only: false
+    };
+
+    if (Object.prototype.hasOwnProperty.call(base, "category")) {
+      mergedInput.category = String(base.category || "");
+    }
+
+    const normalized = normalizeQuestion(mergedInput, 0);
+    normalized.uk_only = false;
+
+    if (Object.prototype.hasOwnProperty.call(base, "category")) {
+      normalized.category = String(base.category || "");
+    }
+
+    sanitizeQuestionByType(normalized);
+
+    const { id: _ignoredId, ...withoutId } = normalized;
+    return withoutId;
+  }
+
+  function buildOpenAiMessages(items) {
+    const system = [
+      "Convert this question into an American equivalent question.",
+      "Return valid JSON only with shape: {\"items\":[{\"id\":string,\"us_alt\":object}]}"
+    ].join(" ");
+
+    const user = {
+      task: "Generate US alt questions for the provided UK-only questions.",
+      constraints: {
+        locale_target: "en-US",
+        preserve_type_code: false,
+        preserve_category: true,
+        preserve_difficulty: "approximate",
+        prioritize_wide_american_appeal: true,
+        keep_answer_correct: true,
+        allow_non_1_to_1_rewrites: true,
+        output_json_only: true
+      },
+      questions: items
+    };
+
+    return [
+      { role: "system", content: system },
+      { role: "user", content: JSON.stringify(user) }
+    ];
+  }
+
+  async function requestUsAltsFromOpenAi(items, apiKey) {
+    const messages = buildOpenAiMessages(items);
+    const requestBody = {
+      model: OPENAI_MODEL,
+      temperature: 0.2,
+      response_format: { type: "json_object" },
+      messages
+    };
+
+    console.log("OpenAI prompt payload:", {
+      model: requestBody.model,
+      temperature: requestBody.temperature,
+      response_format: requestBody.response_format,
+      messages: requestBody.messages
+    });
+
+    const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    let payload = {};
+    try {
+      payload = await response.json();
+    } catch {
+      payload = {};
+    }
+
+    if (!response.ok) {
+      const errorCode = String(payload?.error?.code || "");
+      const errorMessage = String(payload?.error?.message || `HTTP ${response.status}`);
+      const err = new Error(errorMessage || `HTTP ${response.status}`);
+      err.code = errorCode;
+      err.status = response.status;
+      throw err;
+    }
+
+    const content = stripMarkdownJsonFences(payload?.choices?.[0]?.message?.content || "");
+    if (!content) {
+      throw new Error("OpenAI returned an empty response.");
+    }
+
+    let parsed = null;
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      throw new Error("OpenAI returned invalid JSON.");
+    }
+
+    const itemsArray = Array.isArray(parsed?.items) ? parsed.items : [];
+    if (itemsArray.length === 0) {
+      throw new Error("OpenAI did not return any generated questions.");
+    }
+
+    return itemsArray;
+  }
+
+  function setAiGenerationBusyState(isBusy) {
+    state.isGeneratingUsAlts = Boolean(isBusy);
+
+    if (elements.generateUsAiButton) {
+      elements.generateUsAiButton.disabled = state.isGeneratingUsAlts;
+      elements.generateUsAiButton.textContent = state.isGeneratingUsAlts
+        ? "Generating US (AI)..."
+        : "Generate US (AI)";
+    }
+
+    const modalAiButton = elements.modalBody.querySelector('[data-action="generate_us_alt_ai"]');
+    if (modalAiButton instanceof HTMLButtonElement) {
+      modalAiButton.disabled = state.isGeneratingUsAlts;
+      modalAiButton.textContent = state.isGeneratingUsAlts
+        ? "Generating US Alt..."
+        : "Generate US Alt (AI)";
+    }
+  }
+
+  function applyGeneratedUsAlt(index, generatedAlt) {
+    const baseQuestion = state.questions[index];
+    if (!baseQuestion) {
+      return false;
+    }
+
+    const id = String(baseQuestion.id || "").trim();
+    if (!id) {
+      return false;
+    }
+
+    if (!state.altQuestions.us) {
+      state.altQuestions.us = {};
+    }
+
+    state.altQuestions.us[id] = normalizeGeneratedUsAlt(baseQuestion, generatedAlt);
+    return true;
+  }
+
+  async function generateUsAlternatives(questionIndices) {
+    if (!Array.isArray(questionIndices) || questionIndices.length === 0) {
+      setStatus("No UK-only questions found to generate US alternatives.", true);
+      return;
+    }
+
+    if (state.isGeneratingUsAlts) {
+      return;
+    }
+
+    const apiKey = ensureOpenAiApiKey();
+    if (!apiKey) {
+      return;
+    }
+
+    const uniqueIndices = Array.from(new Set(questionIndices))
+      .filter((index) => Number.isInteger(index) && index >= 0 && index < state.questions.length)
+      .filter((index) => state.questions[index]?.uk_only === true);
+
+    if (uniqueIndices.length === 0) {
+      setStatus("No UK-only questions found to generate US alternatives.", true);
+      return;
+    }
+
+    const items = uniqueIndices
+      .map((index) => buildQuestionPayloadForAi(index))
+      .filter((item) => item && item.id);
+
+    if (items.length === 0) {
+      setStatus("AI generation failed: missing question IDs for UK-only questions.", true);
+      return;
+    }
+
+    const idToIndex = new Map(items.map((item) => [String(item.id), item.index]));
+
+    try {
+      setAiGenerationBusyState(true);
+      setStatus(`Generating US alternatives for ${items.length} UK-only question(s)...`, false);
+
+      const generatedItems = await requestUsAltsFromOpenAi(items, apiKey);
+      let appliedCount = 0;
+
+      generatedItems.forEach((entry) => {
+        const id = String(entry?.id || "").trim();
+        if (!id || !idToIndex.has(id)) {
+          return;
+        }
+
+        const index = idToIndex.get(id);
+        const generatedAlt = entry?.us_alt && typeof entry.us_alt === "object" ? entry.us_alt : null;
+        if (!generatedAlt) {
+          return;
+        }
+
+        if (applyGeneratedUsAlt(index, generatedAlt)) {
+          appliedCount += 1;
+        }
+      });
+
+      if (appliedCount === 0) {
+        setStatus("AI generation completed, but no usable US alternatives were returned.", true);
+      } else {
+        renderQuestions();
+
+        if (!elements.questionModal.hidden && currentModalIndex >= 0) {
+          openQuestionModal(currentModalIndex, currentModalRegion);
+        }
+
+        setStatus(`Generated ${appliedCount} US alternative question(s).`, false);
+      }
+    } catch (error) {
+      const errorCode = String(error?.code || "");
+      const statusCode = Number(error?.status || 0);
+      if (statusCode === 401 || errorCode === "invalid_api_key") {
+        setAiGenerationBusyState(false);
+        setOpenAiApiKey("");
+        setStatus("OpenAI key is invalid. Paste a valid key to continue.", true);
+        const retriedKey = requestOpenAiApiKeyFromUser();
+        if (retriedKey) {
+          await generateUsAlternatives(uniqueIndices);
+        }
+        return;
+      }
+
+      setStatus(`AI generation failed: ${error?.message || "Unknown error"}`, true);
+    } finally {
+      setAiGenerationBusyState(false);
+    }
+  }
+
+  async function generateAllUkOnlyUsAlternatives() {
+    const indices = getUkOnlyQuestionIndices();
+    await generateUsAlternatives(indices);
+  }
+
+  async function generateSingleUsAlternative(index) {
+    if (!Number.isInteger(index) || index < 0 || index >= state.questions.length) {
+      return;
+    }
+
+    await generateUsAlternatives([index]);
+  }
+
   async function loadPack() {
     const endpoint = buildEndpointUrl();
     if (!endpoint) {
@@ -1462,6 +1863,7 @@
   function initialize() {
     elements.quizDateInput.value = getTomorrowDateString();
     hydrateUploadApiKey();
+    hydrateOpenAiApiKey();
 
     const openDatePicker = () => {
       if (typeof elements.quizDateInput.showPicker === "function") {
@@ -1509,6 +1911,7 @@
     });
 
     elements.loadButton.addEventListener("click", loadPack);
+    elements.generateUsAiButton?.addEventListener("click", generateAllUkOnlyUsAlternatives);
     elements.uploadPackButton.addEventListener("click", uploadPack);
     elements.quizDateInput.addEventListener("pointerdown", openDatePicker);
     elements.quizDateInput.addEventListener("click", openDatePicker);
@@ -1562,6 +1965,16 @@
       }
 
       const action = actionElement.dataset.action;
+      if (action === "generate_us_alt_ai") {
+        const index = Number(actionElement.dataset.index);
+        if (Number.isNaN(index)) {
+          return;
+        }
+
+        generateSingleUsAlternative(index);
+        return;
+      }
+
       if (action !== "scramble_sequence") {
         return;
       }
