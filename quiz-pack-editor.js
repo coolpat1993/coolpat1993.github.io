@@ -654,10 +654,8 @@
     card.draggable = true;
 
     const previewText = String(question.q || "").trim();
-    const snippet = previewText.length > 90 ? `${previewText.slice(0, 87)}...` : previewText;
 
     const answerText = String(question.short_answer || "").trim();
-    const answerSnippet = answerText.length > 60 ? `${answerText.slice(0, 57)}...` : answerText;
     const typeCodeText = String(question.type_code || "").trim().toUpperCase();
     const difficultyCode = String(question.difficulty || "").trim();
     const hasUkOnly = Object.prototype.hasOwnProperty.call(question || {}, "uk_only");
@@ -683,8 +681,8 @@
           ${showUkOnlyAsterisk ? `<span class="question-meta uk-only-asterisk" title="uk_only is true">*</span>` : ""}
         </div>
       </div>
-      <p class="card-question">${escapeHtml(snippet || "No question text")}</p>
-      <p class="card-answer">${escapeHtml(answerSnippet || "\u2014")}</p>
+      <p class="card-question">${escapeHtml(previewText || "No question text")}</p>
+      <p class="card-answer">${escapeHtml(answerText || "\u2014")}</p>
     `;
 
     card.addEventListener("click", () => {

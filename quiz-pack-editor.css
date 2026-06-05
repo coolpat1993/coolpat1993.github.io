@@ -214,11 +214,13 @@ button.secondary {
   --question-gap: 10px;
   margin-top: 12px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--question-gap);
 }
 
 .question-card {
+  display: flex;
+  flex-direction: column;
   padding: 12px;
   cursor: pointer;
   transition: transform 0.14s ease, box-shadow 0.14s ease;
@@ -299,19 +301,18 @@ button.secondary {
   color: #1a2520;
   line-height: 1.4;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
 .card-answer {
-  margin: 0;
+  margin: auto 0 0;
   font-size: 0.82rem;
   color: #486254;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* ── Modal ── */
@@ -491,8 +492,21 @@ button.danger:hover {
   transform: none;
 }
 
+@media (max-width: 1180px) {
+  .questions {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .questions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 
 @media (max-width: 760px) {
+  .questions,
   .row,
   .grid-two,
   .pack-meta {
