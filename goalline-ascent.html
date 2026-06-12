@@ -1,0 +1,1998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Goalline Ascent</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;700&family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pitch: #0A1F0F;
+    --pitch-mid: #112B16;
+    --pitch-light: #1A3D22;
+    --leather: #C8A96E;
+    --leather-dark: #9A7B47;
+    --paper: #F0EDE6;
+    --paper-dim: #BEB9AF;
+    --lime: #A8E04A;
+    --red: #D93B3B;
+    --blue: #4A9ED9;
+    --gold: #F0C040;
+    --white: #FFFFFF;
+    --ui-border: rgba(200,169,110,0.3);
+    --card-shadow: 0 4px 20px rgba(0,0,0,0.7);
+    --turn-yellow: #FFD700;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--pitch);
+    color: var(--paper);
+    min-height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ========== SCREENS ========== */
+  .screen { display: none; width: 100vw; height: 100vh; }
+  .screen.active { display: flex; }
+
+  /* ========== TITLE SCREEN ========== */
+  #title-screen {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 50% 60%, #1A3D22 0%, #0A1F0F 70%);
+    position: relative;
+    overflow: hidden;
+  }
+  #title-screen::before {
+    content: '';
+    position: absolute;
+    width: 800px; height: 800px;
+    border-radius: 50%;
+    border: 1px solid rgba(168,224,74,0.08);
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    box-shadow: 0 0 0 80px rgba(168,224,74,0.03), 0 0 0 160px rgba(168,224,74,0.02);
+  }
+  .title-pitch-lines {
+    position: absolute;
+    width: 600px; height: 400px;
+    border: 1px solid rgba(255,255,255,0.04);
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+  }
+  .title-pitch-lines::after {
+    content: '';
+    position: absolute;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.04);
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+  }
+  .game-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 10vw, 96px);
+    color: var(--paper);
+    letter-spacing: 6px;
+    text-align: center;
+    line-height: 1;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 0 60px rgba(168,224,74,0.3);
+  }
+  .game-subtitle {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 4px;
+    color: var(--lime);
+    text-transform: uppercase;
+    margin-top: 8px;
+    position: relative; z-index: 1;
+  }
+  .title-buttons { display: flex; flex-direction: column; gap: 12px; margin-top: 48px; position: relative; z-index: 1; }
+
+  .btn {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 3px;
+    padding: 14px 48px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .btn-primary {
+    background: var(--lime);
+    color: var(--pitch);
+  }
+  .btn-primary:hover { background: #c0f060; transform: translateY(-2px); box-shadow: 0 6px 24px rgba(168,224,74,0.4); }
+  .btn-secondary {
+    background: transparent;
+    color: var(--leather);
+    border: 1px solid var(--leather);
+  }
+  .btn-secondary:hover { background: rgba(200,169,110,0.1); transform: translateY(-2px); }
+  .btn-danger { background: var(--red); color: white; }
+  .btn-danger:hover { background: #e84040; transform: translateY(-2px); }
+  .btn-sm { font-size: 14px; padding: 8px 20px; letter-spacing: 2px; }
+
+  /* ========== FORMATION SCREEN ========== */
+  #formation-screen {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--pitch);
+    overflow-y: auto;
+    padding: 32px;
+  }
+  .formation-title { font-family: 'Bebas Neue', sans-serif; font-size: 48px; letter-spacing: 4px; margin-bottom: 8px; }
+  .formation-sub { color: var(--paper-dim); font-size: 13px; margin-bottom: 40px; letter-spacing: 1px; }
+  .formations-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 800px; width: 100%; }
+  .formation-card {
+    background: var(--pitch-mid);
+    border: 2px solid var(--ui-border);
+    padding: 28px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .formation-card:hover { border-color: var(--lime); transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+  .formation-card.selected { border-color: var(--lime); background: #1a2e1c; }
+  .formation-name { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 3px; color: var(--lime); }
+  .formation-label { font-size: 11px; letter-spacing: 2px; color: var(--paper-dim); margin-bottom: 16px; text-transform: uppercase; }
+  .formation-passive { font-size: 13px; color: var(--leather); margin-top: 12px; font-style: italic; }
+  .formation-desc { font-size: 13px; color: var(--paper-dim); margin-top: 8px; line-height: 1.5; }
+  .formation-tag {
+    position: absolute; top: 12px; right: 12px;
+    font-family: 'Roboto Mono', monospace; font-size: 10px;
+    padding: 3px 8px;
+    letter-spacing: 1px;
+  }
+  .tag-balanced { background: var(--blue); color: white; }
+  .tag-aggressive { background: var(--red); color: white; }
+  .tag-defensive { background: #555; color: white; }
+  .tag-technical { background: var(--leather-dark); color: white; }
+
+  /* ========== MAP SCREEN ========== */
+  #map-screen {
+    flex-direction: column;
+    background: var(--pitch);
+    overflow: hidden;
+  }
+  .map-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--pitch-mid);
+    flex-shrink: 0;
+  }
+  .map-header-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 3px; color: var(--lime); }
+  .map-stats { display: flex; gap: 24px; }
+  .map-stat { text-align: center; }
+  .map-stat-val { font-family: 'Roboto Mono', monospace; font-size: 18px; font-weight: 600; color: var(--gold); }
+  .map-stat-lbl { font-size: 10px; letter-spacing: 1px; color: var(--paper-dim); text-transform: uppercase; }
+  .map-body { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 20px; }
+  .map-svg-container { position: relative; }
+
+  .map-node {
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .map-node circle {
+    transition: all 0.2s;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+  }
+  .map-node:hover circle { filter: drop-shadow(0 0 12px currentColor); }
+  .map-node text { pointer-events: none; }
+
+  .node-available { animation: nodePulse 2s infinite; }
+  @keyframes nodePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  /* ========== MATCH SCREEN ========== */
+  #match-screen {
+    flex-direction: column;
+    background: #0a1a0c;
+    overflow: hidden;
+  }
+
+  /* Scoreboard */
+  .scoreboard {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #050d06;
+    border-bottom: 2px solid var(--ui-border);
+    padding: 10px 24px;
+    gap: 24px;
+    flex-shrink: 0;
+  }
+  .score-team { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .score-team-name { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px; }
+  .score-goals { font-family: 'Bebas Neue', sans-serif; font-size: 48px; color: var(--paper); line-height: 1; }
+  .score-sep { font-family: 'Bebas Neue', sans-serif; font-size: 32px; color: var(--paper-dim); padding: 0 8px; }
+  .score-turn {
+    text-align: center;
+    font-family: 'Roboto Mono', monospace;
+  }
+  .score-turn-num { font-size: 28px; color: var(--gold); font-weight: 600; }
+  .score-turn-lbl { font-size: 10px; color: var(--paper-dim); letter-spacing: 1px; }
+
+  /* Stats bars */
+  .match-stats-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    background: var(--pitch-mid);
+    border-bottom: 1px solid var(--ui-border);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .stat-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--pitch-light);
+    padding: 4px 10px;
+    font-size: 12px;
+    font-family: 'Roboto Mono', monospace;
+  }
+  .stat-chip .chip-icon { font-size: 14px; }
+  .stat-chip .chip-val { font-weight: 600; }
+  .stat-chip .chip-lbl { color: var(--paper-dim); font-size: 10px; }
+  .tempo-bar {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-left: auto;
+  }
+  .tempo-pip {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--lime);
+    background: transparent;
+    transition: background 0.2s;
+  }
+  .tempo-pip.filled { background: var(--lime); box-shadow: 0 0 8px rgba(168,224,74,0.6); }
+
+  /* Pitch display */
+  .match-pitch-area {
+    flex: 1;
+    display: flex;
+    gap: 16px;
+    padding: 12px 16px;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .match-side-panel {
+    width: 200px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+  }
+
+  .panel-section {
+    background: var(--pitch-mid);
+    border: 1px solid var(--ui-border);
+    padding: 12px;
+  }
+  .panel-section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: var(--leather);
+    border-bottom: 1px solid var(--ui-border);
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+  }
+  .player-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 11px;
+  }
+  .player-row:last-child { border-bottom: none; }
+  .player-pos {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 10px;
+    color: var(--paper-dim);
+    width: 24px;
+  }
+  .player-name { flex: 1; color: var(--paper); font-weight: 600; }
+  .player-fitness-bar {
+    width: 36px; height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .player-fitness-fill {
+    height: 100%;
+    background: var(--lime);
+    border-radius: 2px;
+    transition: width 0.4s;
+  }
+  .player-fitness-fill.mid { background: var(--gold); }
+  .player-fitness-fill.low { background: var(--red); }
+  .player-trait-badge {
+    font-size: 9px;
+    padding: 1px 4px;
+    background: rgba(200,169,110,0.15);
+    color: var(--leather);
+    white-space: nowrap;
+  }
+
+  /* Centre pitch visualiser */
+  .pitch-centre {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    overflow: hidden;
+  }
+
+  .pitch-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        rgba(255,255,255,0.012) 0px,
+        rgba(255,255,255,0.012) 1px,
+        transparent 1px,
+        transparent 60px
+      );
+  }
+
+  /* Momentum bar */
+  .momentum-display {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    position: relative; z-index: 1;
+  }
+  .momentum-label { font-size: 11px; letter-spacing: 2px; color: var(--paper-dim); text-transform: uppercase; font-family: 'Roboto Mono', monospace; }
+  .momentum-track {
+    width: 100%;
+    height: 14px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 0;
+    overflow: hidden;
+    position: relative;
+  }
+  .momentum-fill {
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--lime);
+    transition: width 0.5s, left 0.5s, background 0.3s;
+  }
+  .momentum-fill.enemy { background: var(--red); left: 50%; transform: none; }
+
+  /* Action log */
+  .action-log {
+    width: 100%;
+    max-width: 400px;
+    height: 120px;
+    overflow-y: auto;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--ui-border);
+    padding: 8px;
+    font-size: 11px;
+    position: relative; z-index: 1;
+  }
+  .log-entry { padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.05); line-height: 1.4; }
+  .log-entry:last-child { border-bottom: none; }
+  .log-goal { color: var(--lime); font-weight: 600; }
+  .log-enemy-goal { color: var(--red); font-weight: 600; }
+  .log-miss { color: var(--paper-dim); }
+  .log-card-play { color: var(--leather); }
+  .log-info { color: var(--paper-dim); }
+
+  /* Chance display */
+  .chance-display {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: relative; z-index: 1;
+  }
+  .chance-box {
+    text-align: center;
+    background: var(--pitch-mid);
+    border: 1px solid var(--ui-border);
+    padding: 12px 20px;
+    min-width: 90px;
+  }
+  .chance-val { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--lime); line-height: 1; }
+  .chance-lbl { font-size: 10px; letter-spacing: 1px; color: var(--paper-dim); text-transform: uppercase; font-family: 'Roboto Mono', monospace; }
+  .vs-text { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--paper-dim); }
+  .def-val { color: var(--red); }
+
+  /* Hand / Cards */
+  .card-hand-area {
+    flex-shrink: 0;
+    background: rgba(0,0,0,0.5);
+    border-top: 2px solid var(--ui-border);
+    padding: 12px 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .hand-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .hand-label { font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 2px; color: var(--paper-dim); }
+  .hand-action-btns { display: flex; gap: 8px; }
+
+  .cards-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .card {
+    width: 110px;
+    min-width: 110px;
+    background: var(--pitch-mid);
+    border: 2px solid var(--ui-border);
+    padding: 10px 8px 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .card:hover {
+    transform: translateY(-12px) scale(1.05);
+    border-color: var(--lime);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+    z-index: 10;
+  }
+  .card.unplayable { opacity: 0.4; cursor: not-allowed; }
+  .card.unplayable:hover { transform: none; border-color: var(--ui-border); }
+
+  .card-cost {
+    position: absolute;
+    top: 6px; right: 6px;
+    width: 22px; height: 22px;
+    background: var(--lime);
+    color: var(--pitch);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .card-icon { font-size: 22px; text-align: center; }
+  .card-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1px;
+    line-height: 1.2;
+    color: var(--paper);
+    padding-right: 20px;
+  }
+  .card-type {
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: 'Roboto Mono', monospace;
+  }
+  .card-type-attack { color: var(--lime); }
+  .card-type-defence { color: var(--blue); }
+  .card-type-possession { color: var(--leather); }
+  .card-type-morale { color: var(--gold); }
+  .card-type-utility { color: var(--paper-dim); }
+  .card-type-shoot { color: var(--red); }
+  .card-effect { font-size: 10px; color: var(--paper-dim); line-height: 1.3; margin-top: 2px; }
+  .card-rarity-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-top: auto;
+  }
+  .rarity-common { background: var(--paper-dim); }
+  .rarity-uncommon { background: var(--blue); }
+  .rarity-rare { background: var(--gold); }
+  .rarity-legendary { background: var(--red); box-shadow: 0 0 6px var(--red); }
+
+  /* Card left accent strip */
+  .card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+  }
+  .card[data-type="attack"]::before { background: var(--lime); }
+  .card[data-type="defence"]::before { background: var(--blue); }
+  .card[data-type="possession"]::before { background: var(--leather); }
+  .card[data-type="morale"]::before { background: var(--gold); }
+  .card[data-type="utility"]::before { background: #888; }
+  .card[data-type="shoot"]::before { background: var(--red); }
+
+  /* ========== EVENT SCREEN ========== */
+  #event-screen {
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 50% 30%, #1a2e1c 0%, var(--pitch) 70%);
+  }
+  .event-card {
+    background: var(--pitch-mid);
+    border: 1px solid var(--ui-border);
+    max-width: 520px;
+    width: 90%;
+    padding: 40px;
+    position: relative;
+  }
+  .event-header {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--lime);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .event-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 3px;
+    margin-bottom: 16px;
+  }
+  .event-text {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--paper-dim);
+    margin-bottom: 32px;
+    border-left: 3px solid var(--ui-border);
+    padding-left: 16px;
+  }
+  .event-choices { display: flex; flex-direction: column; gap: 12px; }
+  .event-choice-btn {
+    background: var(--pitch-light);
+    border: 1px solid var(--ui-border);
+    color: var(--paper);
+    padding: 14px 20px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .event-choice-btn:hover { border-color: var(--lime); background: #1a3020; }
+  .event-choice-btn span.choice-effect { font-size: 11px; color: var(--leather); font-style: italic; }
+
+  /* ========== SHOP SCREEN ========== */
+  #shop-screen {
+    flex-direction: column;
+    background: var(--pitch);
+    overflow: hidden;
+  }
+  .shop-header {
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--pitch-mid);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .shop-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 4px; color: var(--gold); }
+  .shop-funds { font-family: 'Roboto Mono', monospace; font-size: 24px; color: var(--gold); }
+  .shop-body { flex: 1; overflow-y: auto; padding: 24px 32px; display: flex; flex-direction: column; gap: 24px; }
+  .shop-section-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 3px; color: var(--leather); border-bottom: 1px solid var(--ui-border); padding-bottom: 8px; margin-bottom: 12px; }
+  .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+  .shop-item {
+    background: var(--pitch-mid);
+    border: 1px solid var(--ui-border);
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .shop-item:hover { border-color: var(--gold); transform: translateY(-2px); }
+  .shop-item.purchased { opacity: 0.4; cursor: not-allowed; }
+  .shop-item-name { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 1px; }
+  .shop-item-desc { font-size: 11px; color: var(--paper-dim); line-height: 1.4; }
+  .shop-item-cost {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 14px;
+    color: var(--gold);
+    margin-top: auto;
+  }
+  .shop-footer { padding: 16px 32px; border-top: 1px solid var(--ui-border); background: var(--pitch-mid); display: flex; justify-content: flex-end; flex-shrink: 0; }
+
+  /* ========== RESULT SCREEN ========== */
+  #result-screen {
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 50% 50%, #1a3020 0%, var(--pitch) 70%);
+    flex-direction: column;
+    gap: 24px;
+  }
+  .result-header {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 80px;
+    letter-spacing: 8px;
+    text-align: center;
+    line-height: 1;
+  }
+  .result-win { color: var(--lime); text-shadow: 0 0 60px rgba(168,224,74,0.5); }
+  .result-lose { color: var(--red); text-shadow: 0 0 60px rgba(217,59,59,0.5); }
+  .result-draw { color: var(--gold); text-shadow: 0 0 60px rgba(240,192,64,0.5); }
+  .result-score {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 56px;
+    letter-spacing: 4px;
+    color: var(--paper);
+  }
+  .result-details {
+    background: var(--pitch-mid);
+    border: 1px solid var(--ui-border);
+    padding: 24px 40px;
+    text-align: center;
+    min-width: 320px;
+  }
+  .result-stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 13px;
+  }
+  .result-stat-row:last-child { border-bottom: none; }
+  .result-stat-key { color: var(--paper-dim); }
+  .result-stat-val { font-family: 'Roboto Mono', monospace; color: var(--paper); }
+  .result-btns { display: flex; gap: 12px; }
+
+  /* ========== RUN OVER ========== */
+  #runover-screen {
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background: radial-gradient(ellipse at 50% 50%, #2a0808 0%, var(--pitch) 70%);
+    gap: 20px;
+  }
+  .runover-title { font-family: 'Bebas Neue', sans-serif; font-size: 72px; letter-spacing: 6px; color: var(--red); }
+  .runover-sub { font-family: 'Roboto Mono', monospace; font-size: 13px; color: var(--paper-dim); letter-spacing: 2px; }
+
+  /* ========== NOTIFICATIONS ========== */
+  #notif-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 1000;
+    pointer-events: none;
+  }
+  .notif {
+    background: var(--pitch-mid);
+    border-left: 4px solid var(--lime);
+    padding: 10px 16px;
+    font-size: 13px;
+    max-width: 260px;
+    animation: notifIn 0.3s ease, notifOut 0.3s ease 2.7s forwards;
+    pointer-events: none;
+  }
+  .notif.bad { border-color: var(--red); }
+  .notif.warn { border-color: var(--gold); }
+  @keyframes notifIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+  @keyframes notifOut { from { opacity: 1; } to { opacity: 0; } }
+
+  /* Enemy turn overlay */
+  .enemy-turn-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    align-items: center;
+    justify-content: center;
+    z-index: 500;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    letter-spacing: 6px;
+    color: var(--red);
+    text-shadow: 0 0 40px rgba(217,59,59,0.7);
+  }
+  .enemy-turn-overlay.active { display: flex; }
+
+  /* ========== Scrollbar ========== */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--pitch-light); border-radius: 2px; }
+
+  /* Act label */
+  .act-label {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--paper-dim);
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<!-- TITLE SCREEN -->
+<div class="screen active" id="title-screen">
+  <div class="title-pitch-lines"></div>
+  <h1 class="game-title">GOALLINE<br>ASCENT</h1>
+  <p class="game-subtitle">A Football Roguelike Deckbuilder</p>
+  <div class="title-buttons">
+    <button class="btn btn-primary" onclick="showScreen('formation-screen')">NEW RUN</button>
+    <button class="btn btn-secondary btn-sm" onclick="showHowToPlay()">HOW TO PLAY</button>
+  </div>
+</div>
+
+<!-- FORMATION SELECT SCREEN -->
+<div class="screen" id="formation-screen">
+  <h2 class="formation-title">CHOOSE YOUR FORMATION</h2>
+  <p class="formation-sub">Your formation is your character class — it defines your playstyle.</p>
+  <div class="formations-grid" id="formations-grid"></div>
+  <div style="margin-top: 24px; display: flex; gap: 12px;">
+    <button class="btn btn-secondary btn-sm" onclick="showScreen('title-screen')">BACK</button>
+    <button class="btn btn-primary" id="start-run-btn" onclick="startRun()" disabled>START RUN</button>
+  </div>
+</div>
+
+<!-- MAP SCREEN -->
+<div class="screen" id="map-screen">
+  <div class="map-header">
+    <div>
+      <div class="map-header-title" id="map-act-title">ACT 1 — LOWER LEAGUE</div>
+      <div class="act-label" id="map-node-info">Select your next destination</div>
+    </div>
+    <div class="map-stats">
+      <div class="map-stat"><div class="map-stat-val" id="map-wins">0</div><div class="map-stat-lbl">Wins</div></div>
+      <div class="map-stat"><div class="map-stat-val" id="map-losses">0</div><div class="map-stat-lbl">Losses</div></div>
+      <div class="map-stat"><div class="map-stat-val" id="map-funds">💰 120</div><div class="map-stat-lbl">Funds</div></div>
+      <div class="map-stat"><div class="map-stat-val" id="map-health">❤️ 3</div><div class="map-stat-lbl">Lives</div></div>
+    </div>
+  </div>
+  <div class="map-body">
+    <svg id="map-svg" width="700" height="480" viewBox="0 0 700 480"></svg>
+  </div>
+</div>
+
+<!-- MATCH SCREEN -->
+<div class="screen" id="match-screen">
+  <!-- Scoreboard -->
+  <div class="scoreboard">
+    <div class="score-team">
+      <div class="score-team-name" id="home-name">YOUR CLUB</div>
+      <div class="score-goals" id="home-score">0</div>
+    </div>
+    <div class="score-turn">
+      <div class="score-turn-num">T<span id="turn-num">1</span>/9</div>
+      <div class="score-turn-lbl">Turn</div>
+    </div>
+    <div class="score-sep">–</div>
+    <div class="score-team">
+      <div class="score-goals" id="away-score">0</div>
+      <div class="score-team-name" id="away-name">OPPONENT</div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="match-stats-row">
+    <div class="stat-chip">
+      <span class="chip-icon">⚡</span>
+      <span class="chip-val" id="stat-chance">0</span>
+      <span class="chip-lbl">Chance</span>
+    </div>
+    <div class="stat-chip">
+      <span class="chip-icon">🛡</span>
+      <span class="chip-val" id="stat-defence">0</span>
+      <span class="chip-lbl">Defence</span>
+    </div>
+    <div class="stat-chip">
+      <span class="chip-icon">🔥</span>
+      <span class="chip-val" id="stat-momentum">0</span>
+      <span class="chip-lbl">Momentum</span>
+    </div>
+    <div class="stat-chip">
+      <span class="chip-icon">😤</span>
+      <span class="chip-val" id="stat-morale">5</span>
+      <span class="chip-lbl">Morale</span>
+    </div>
+    <div class="stat-chip">
+      <span class="chip-icon">⚽</span>
+      <span class="chip-val" id="stat-possession">50</span>
+      <span class="chip-lbl">Poss%</span>
+    </div>
+    <div class="tempo-bar" id="tempo-bar">
+      <span style="font-size:10px;letter-spacing:1px;color:var(--paper-dim);font-family:Roboto Mono,monospace;">TEMPO</span>
+    </div>
+  </div>
+
+  <!-- Main pitch area -->
+  <div class="match-pitch-area">
+    <!-- Left panel: Squad -->
+    <div class="match-side-panel">
+      <div class="panel-section">
+        <div class="panel-section-title">SQUAD</div>
+        <div id="squad-list"></div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">RELICS</div>
+        <div id="relic-list" style="font-size:11px;color:var(--leather);line-height:1.8;"></div>
+      </div>
+    </div>
+
+    <!-- Centre pitch -->
+    <div class="pitch-centre">
+      <div class="pitch-bg"></div>
+      <div class="momentum-display">
+        <div class="momentum-label">MOMENTUM</div>
+        <div class="momentum-track">
+          <div class="momentum-fill" id="momentum-fill" style="width:0%;"></div>
+        </div>
+      </div>
+
+      <div class="chance-display">
+        <div class="chance-box">
+          <div class="chance-val" id="centre-chance">0</div>
+          <div class="chance-lbl">Your Chance</div>
+        </div>
+        <div class="vs-text">VS</div>
+        <div class="chance-box">
+          <div class="chance-val def-val" id="centre-defence">0</div>
+          <div class="chance-lbl">Their Defence</div>
+        </div>
+      </div>
+
+      <div class="action-log" id="action-log">
+        <div class="log-entry log-info">⚽ Match kicked off. Good luck, gaffer.</div>
+      </div>
+    </div>
+
+    <!-- Right panel: Opponent info -->
+    <div class="match-side-panel">
+      <div class="panel-section">
+        <div class="panel-section-title">OPPONENT</div>
+        <div id="opponent-info" style="font-size:11px;line-height:1.8;color:var(--paper-dim);"></div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">DECK</div>
+        <div id="deck-info" style="font-size:11px;color:var(--paper-dim);line-height:2;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card hand -->
+  <div class="card-hand-area">
+    <div class="hand-controls">
+      <div class="hand-label">YOUR HAND (<span id="hand-count">0</span> cards)</div>
+      <div class="hand-action-btns">
+        <button class="btn btn-secondary btn-sm" onclick="endTurn()">END TURN ▶</button>
+      </div>
+    </div>
+    <div class="cards-row" id="cards-row"></div>
+  </div>
+</div>
+
+<!-- EVENT SCREEN -->
+<div class="screen" id="event-screen">
+  <div class="event-card">
+    <div class="event-header">⚡ CLUB EVENT</div>
+    <div class="event-title" id="event-title">EVENT TITLE</div>
+    <div class="event-text" id="event-text">Event description goes here.</div>
+    <div class="event-choices" id="event-choices"></div>
+  </div>
+</div>
+
+<!-- SHOP SCREEN -->
+<div class="screen" id="shop-screen">
+  <div class="shop-header">
+    <div class="shop-title">🏟 TRANSFER MARKET</div>
+    <div class="shop-funds">💰 <span id="shop-funds-display">0</span></div>
+  </div>
+  <div class="shop-body" id="shop-body"></div>
+  <div class="shop-footer">
+    <button class="btn btn-primary" onclick="leaveShop()">CONTINUE →</button>
+  </div>
+</div>
+
+<!-- MATCH RESULT SCREEN -->
+<div class="screen" id="result-screen">
+  <div class="result-header" id="result-header">WIN</div>
+  <div class="result-score" id="result-score">2 – 1</div>
+  <div class="result-details" id="result-details"></div>
+  <div class="result-btns" id="result-btns"></div>
+</div>
+
+<!-- RUN OVER SCREEN -->
+<div class="screen" id="runover-screen">
+  <div class="runover-title">RELEGATED</div>
+  <div class="runover-sub">YOUR RUN IS OVER</div>
+  <div style="font-size:13px;color:var(--paper-dim);text-align:center;max-width:400px;line-height:1.8;" id="runover-details"></div>
+  <button class="btn btn-primary" style="margin-top:16px" onclick="showScreen('title-screen')">TRY AGAIN</button>
+</div>
+
+<!-- Enemy turn overlay -->
+<div class="enemy-turn-overlay" id="enemy-overlay">OPPONENT ATTACKING</div>
+
+<!-- Notifications -->
+<div id="notif-container"></div>
+
+<script>
+// ============================================================
+// DATA DEFINITIONS
+// ============================================================
+
+const FORMATIONS = [
+  {
+    id: 'traditional',
+    name: '4-4-2',
+    label: 'Traditional Manager',
+    tag: 'BALANCED',
+    tagClass: 'tag-balanced',
+    passive: 'Gain 1 Defence each turn.',
+    desc: 'A classic setup built for balance. Reliable in attack and solid at the back.',
+    startingCards: ['through-ball','through-ball','deep-line','deep-line','slow-buildup','team-talk','shoot','shoot','counter','tactical-foul'],
+    bonusStart: { defence: 2 }
+  },
+  {
+    id: 'gegenpress',
+    name: '4-3-3',
+    label: 'Gegenpress Manager',
+    tag: 'AGGRESSIVE',
+    tagClass: 'tag-aggressive',
+    passive: 'First Press card each turn costs 0.',
+    desc: 'High-energy football that suffocates opponents with relentless pressure.',
+    startingCards: ['high-press','high-press','through-ball','quick-one-two','quick-one-two','crowd-behind-us','team-talk','shoot','shoot','counter'],
+    bonusStart: { momentum: 3 }
+  },
+  {
+    id: 'counter',
+    name: '5-3-2',
+    label: 'Counter Specialist',
+    tag: 'DEFENSIVE',
+    tagClass: 'tag-defensive',
+    passive: 'Counter Attack generates +50% chance.',
+    desc: 'Sit deep, absorb, and punish. One chance is all you need.',
+    startingCards: ['park-bus','park-bus','deep-line','deep-line','counter','counter','tactical-foul','shoot','shoot','slow-buildup'],
+    bonusStart: { defence: 5 }
+  },
+  {
+    id: 'possession',
+    name: '4-2-3-1',
+    label: 'Possession Guru',
+    tag: 'TECHNICAL',
+    tagClass: 'tag-technical',
+    passive: 'Draw +1 card every turn.',
+    desc: 'Patience is a weapon. Control the tempo and the goals will come.',
+    startingCards: ['slow-buildup','slow-buildup','switch-play','switch-play','quick-one-two','through-ball','team-talk','crowd-behind-us','shoot','shoot'],
+    bonusStart: { possession: 10 }
+  }
+];
+
+const CARD_DEFS = {
+  'through-ball': { name:'Through Ball', type:'attack', cost:1, icon:'➡️', rarity:'common', effect:'Gain 8 Chance', desc:'A precise pass splitting the defence.',
+    apply(gs) { gs.chance += 8 + (gs.playerBonuses.throughBall||0); addLog(`<span class="log-card-play">Through Ball — +${8+(gs.playerBonuses.throughBall||0)} Chance</span>`); } },
+  'quick-one-two': { name:'Quick One-Two', type:'attack', cost:1, icon:'🔄', rarity:'common', effect:'Gain 5 Chance. Draw 1.',
+    desc:'Fast combination play in tight space.',
+    apply(gs) { gs.chance += 5; drawCards(gs, 1); addLog('<span class="log-card-play">Quick One-Two — +5 Chance, draw 1</span>'); } },
+  'counter': { name:'Counter Attack', type:'attack', cost:2, icon:'⚡', rarity:'uncommon', effect:'Gain 16 Chance. Lose 5 Defence.',
+    desc:'Lethal on the break — but leaves you exposed.',
+    apply(gs) {
+      const bonus = gs.formation?.id === 'counter' ? 8 : 0;
+      gs.chance += 16 + bonus;
+      gs.defence = Math.max(0, gs.defence - 5);
+      addLog(`<span class="log-card-play">Counter Attack — +${16+bonus} Chance, -5 Defence</span>`);
+    } },
+  'long-ball': { name:'Long Ball', type:'attack', cost:1, icon:'🏈', rarity:'common', effect:'Gain 10 Chance. Miss next draw.',
+    desc:'Direct and unsubtle. But effective.',
+    apply(gs) { gs.chance += 10; gs.skipNextDraw = true; addLog('<span class="log-card-play">Long Ball — +10 Chance</span>'); } },
+  'park-bus': { name:'Park The Bus', type:'defence', cost:2, icon:'🚌', rarity:'common', effect:'Gain 15 Defence.',
+    desc:'Stack bodies on the line. Nobody gets through.',
+    apply(gs) { gs.defence += 15; addLog('<span class="log-card-play">Park The Bus — +15 Defence</span>'); } },
+  'tactical-foul': { name:'Tactical Foul', type:'defence', cost:1, icon:'🟨', rarity:'common', effect:'Block next attack. 20% Yellow Card risk.',
+    desc:'Sometimes you have to stop a chance the hard way.',
+    apply(gs) {
+      gs.blockNextAttack = true;
+      if(Math.random() < 0.2) { notify('Yellow Card! Suspension risk.','warn'); addLog('<span class="log-card-play">Tactical Foul — Block set. ⚠️ Yellow Card!</span>'); }
+      else { addLog('<span class="log-card-play">Tactical Foul — Block set.</span>'); }
+    } },
+  'deep-line': { name:'Deep Line', type:'defence', cost:1, icon:'🔵', rarity:'common', effect:'Gain 8 Defence.',
+    desc:'Compact shape, no gaps to exploit.',
+    apply(gs) { gs.defence += 8; addLog('<span class="log-card-play">Deep Line — +8 Defence</span>'); } },
+  'slow-buildup': { name:'Slow Build-Up', type:'possession', cost:1, icon:'🔁', rarity:'common', effect:'Gain Possession. Draw 1.',
+    desc:'Move the ball patiently until the opening appears.',
+    apply(gs) { gs.possession = Math.min(100, gs.possession + 8); drawCards(gs, 1); addLog('<span class="log-card-play">Slow Build-Up — +8 Possession, draw 1</span>'); } },
+  'switch-play': { name:'Switch Play', type:'possession', cost:1, icon:'↔️', rarity:'uncommon', effect:'Double your next Attack card.',
+    desc:'Shift the ball wide to create space in the centre.',
+    apply(gs) { gs.doubleNextAttack = true; addLog('<span class="log-card-play">Switch Play — Next Attack doubled!</span>'); } },
+  'overlap': { name:'Overlap', type:'attack', cost:2, icon:'↗️', rarity:'uncommon', effect:'Gain 12 Chance. Gain 5 Possession.',
+    desc:'Full-back joins the attack on the flank.',
+    apply(gs) { gs.chance += 12; gs.possession = Math.min(100, gs.possession + 5); addLog('<span class="log-card-play">Overlap — +12 Chance, +5 Possession</span>'); } },
+  'high-press': { name:'High Press', type:'attack', cost:1, icon:'🔥', rarity:'uncommon', effect:'Gain 10 Chance. Gain Momentum.',
+    desc:'Win the ball high and create immediate danger.',
+    apply(gs) {
+      let cost = 1;
+      if(gs.formation?.id==='gegenpress' && !gs.usedPressThisTurn) { cost = 0; gs.usedPressThisTurn = true; }
+      gs.chance += 10;
+      gs.momentum = Math.min(20, gs.momentum + 3);
+      addLog('<span class="log-card-play">High Press — +10 Chance, +Momentum</span>');
+    } },
+  'team-talk': { name:'Team Talk', type:'morale', cost:1, icon:'📣', rarity:'common', effect:'Gain Morale. All cards +1 effective.',
+    desc:'A few well-chosen words in the changing room.',
+    apply(gs) { gs.morale = Math.min(10, gs.morale + 2); addLog('<span class="log-card-play">Team Talk — +2 Morale!</span>'); notify('+2 Morale',''); } },
+  'crowd-behind-us': { name:'Crowd Behind Us', type:'morale', cost:0, icon:'📯', rarity:'common', effect:'Gain 3 Momentum.',
+    desc:'The fans roar the team forward.',
+    apply(gs) { gs.momentum = Math.min(20, gs.momentum + 3); addLog('<span class="log-card-play">Crowd Behind Us — +3 Momentum!</span>'); } },
+  'shoot': { name:'SHOOT', type:'shoot', cost:1, icon:'⚽', rarity:'common', effect:'Convert Chance into a Goal Attempt.',
+    desc:'Pull the trigger.',
+    apply(gs) {
+      const striker = gs.squad.find(p=>p.trait==='Clinical Finisher');
+      const strikerBonus = striker ? 10 : 0;
+      const moraleBonus = Math.floor(gs.morale / 2);
+      const attack = gs.chance + gs.momentum + strikerBonus + moraleBonus;
+      const keeper = gs.enemy.defence + Math.floor(Math.random()*10);
+      addLog(`<span class="log-card-play">SHOOT — Attack: ${attack} vs Defence: ${keeper}</span>`);
+      if(attack > keeper) {
+        gs.homeGoals++;
+        gs.momentum = Math.min(20, gs.momentum + 4);
+        gs.morale = Math.min(10, gs.morale + 1);
+        addLog(`<span class="log-goal">⚽ GOOOAL! ${gs.homeGoals}–${gs.awayGoals}</span>`);
+        notify('⚽ GOAL!');
+      } else if(attack > keeper - 8) {
+        addLog('<span class="log-miss">❌ Great save! Just wide...</span>');
+        notify('Close! Just over the bar.','warn');
+      } else {
+        addLog('<span class="log-miss">🚫 Blocked. Chance wasted.</span>');
+      }
+      gs.chance = 0;
+    } },
+  'substitution': { name:'Substitution', type:'utility', cost:1, icon:'🔀', rarity:'uncommon', effect:'Remove fatigue from a player.',
+    desc:'Fresh legs change the game.',
+    apply(gs) {
+      const fatigued = gs.squad.filter(p=>p.fatigue>0);
+      if(fatigued.length>0) { fatigued[0].fatigue=0; fatigued[0].fitness=Math.min(100,fatigued[0].fitness+20); }
+      notify('Substitution made — fresh legs!');
+      addLog('<span class="log-card-play">Substitution — fatigue removed.</span>');
+    } },
+  'medical-team': { name:'Medical Team', type:'utility', cost:1, icon:'🏥', rarity:'rare', effect:'Remove injury from a player.',
+    desc:'The physio sprints on.',
+    apply(gs) {
+      const injured = gs.squad.filter(p=>p.injury>0);
+      if(injured.length>0) { injured[0].injury=0; notify('Injury treated!'); addLog('<span class="log-card-play">Medical Team — Injury cleared!</span>'); }
+      else { addLog('<span class="log-card-play">Medical Team — No injuries to treat.</span>'); }
+    } },
+};
+
+const PLAYERS = [
+  { name:'Marcus Cole',    pos:'ST', attack:8, defence:2, finishing:9, fitness:100, fatigue:0, injury:0, trait:'Clinical Finisher', traitDesc:'+25% Shot Conversion' },
+  { name:'Danny Webb',     pos:'CM', attack:6, defence:6, passing:8,  fitness:100, fatigue:0, injury:0, trait:'Playmaker',         traitDesc:'Through Ball +5 Chance' },
+  { name:'Luca Rossi',     pos:'CB', attack:2, defence:9, fitness:100, fatigue:0,  injury:0, trait:'Ironwall',             traitDesc:'+3 Defence per turn' },
+  { name:'Kai Okonkwo',    pos:'CM', attack:7, defence:5, fitness:100, fatigue:0,  injury:0, trait:'Box-to-Box',            traitDesc:'Gain 1 Momentum per turn' },
+  { name:'Sam Torres',     pos:'GK', attack:1, defence:10,fitness:100, fatigue:0,  injury:0, trait:'Sweeper Keeper',         traitDesc:'Enemy goals reduced by 1' },
+  { name:'Freddie Grant',  pos:'RW', attack:8, defence:3, fitness:100, fatigue:0,  injury:0, trait:'Pressing Monster',        traitDesc:'High Press costs 0' },
+  { name:'Yusuf Ali',      pos:'CB', attack:3, defence:8, fitness:100, fatigue:0,  injury:0, trait:'Captain',                traitDesc:'+5 Team Morale' },
+];
+
+const OPPONENTS = [
+  { name:'Millbrook Town',  difficulty:1, attack:4,  defence:6,  style:'Defensive', cards:['park-bus','deep-line','shoot'] },
+  { name:'Redcliffe FC',    difficulty:1, attack:6,  defence:5,  style:'Balanced',  cards:['through-ball','shoot','slow-buildup'] },
+  { name:'Ashton United',   difficulty:1, attack:7,  defence:4,  style:'Counter',   cards:['counter','shoot','deep-line'] },
+  { name:'Westbrook City',  difficulty:2, attack:7,  defence:7,  style:'Pressing',  cards:['high-press','shoot','through-ball','team-talk'] },
+  { name:'Northfield Rangers',difficulty:2,attack:8, defence:8,  style:'Balanced',  cards:['counter','through-ball','park-bus','shoot'] },
+  { name:'FC Coverton',     difficulty:2, attack:9,  defence:7,  style:'Attack',    cards:['through-ball','overlap','shoot','quick-one-two'] },
+  { name:'Irongate Athletic',difficulty:3,attack:9,  defence:9,  style:'Pressing',  cards:['high-press','counter','shoot','team-talk'] },
+  { name:'Solaris FC',      difficulty:3, attack:10, defence:10, style:'Possession',cards:['switch-play','overlap','shoot','slow-buildup'] },
+  { name:'Royale Madrid',   difficulty:4, attack:12, defence:12, style:'Balanced',  cards:['counter','through-ball','high-press','shoot','overlap'] },
+];
+
+const EVENTS = [
+  {
+    title:'Star Player Demands Move',
+    text:'Your best striker\'s agent has been in contact with top clubs. He wants away. How do you handle it?',
+    choices: [
+      { text:'Back him publicly', effect:'+3 Morale', apply(gs){ gs.morale=Math.min(10,gs.morale+3); } },
+      { text:'Fine him for agitation', effect:'-2 Morale, +20 Funds', apply(gs){ gs.morale=Math.max(0,gs.morale-2); gs.funds+=20; } },
+      { text:'Sell him now', effect:'+60 Funds, lose striker', apply(gs){ gs.funds+=60; gs.squad.splice(0,1); } },
+    ]
+  },
+  {
+    title:'Dressing Room Row',
+    text:'Two senior players clashed after training. The rest of the squad are taking sides. You need to defuse this before it reaches the pitch.',
+    choices: [
+      { text:'Call team meeting', effect:'+1 Morale', apply(gs){ gs.morale=Math.min(10,gs.morale+1); } },
+      { text:'Drop both players', effect:'Lose 2 Fitness across squad', apply(gs){ gs.squad.slice(0,2).forEach(p=>p.fitness=Math.max(0,p.fitness-20)); } },
+      { text:'Ignore it, focus on training', effect:'Nothing changes', apply(gs){} },
+    ]
+  },
+  {
+    title:'Rival Fan Provocation',
+    text:'The away fans are in fine voice — and not in a good way. Your players are visibly irritated.',
+    choices: [
+      { text:'Use it as motivation', effect:'+2 Momentum this match', apply(gs){ gs.momentum=(gs.momentum||0)+2; } },
+      { text:'Remind squad to stay composed', effect:'-Risk of yellow card', apply(gs){ gs.yellowCardRisk=false; } },
+    ]
+  },
+  {
+    title:'Mystery Transfer Offer',
+    text:'An unknown club has bid £70k for your midfielder. He\'s not your best player, but he\'s consistent.',
+    choices: [
+      { text:'Accept the bid', effect:'+70 Funds, lose midfielder', apply(gs){ gs.funds+=70; if(gs.squad.length>5) gs.squad.splice(3,1); } },
+      { text:'Reject the bid', effect:'Player loyalty +', apply(gs){ gs.morale=Math.min(10,gs.morale+1); } },
+    ]
+  },
+  {
+    title:'Lucky Training Ground',
+    text:'A new conditioning routine has the squad flying in training. Everyone looks sharp.',
+    choices: [
+      { text:'Embrace it', effect:'+15 Fitness all players', apply(gs){ gs.squad.forEach(p=>p.fitness=Math.min(100,p.fitness+15)); } },
+      { text:'Keep standard regime', effect:'No change', apply(gs){} },
+    ]
+  },
+];
+
+const RELICS = [
+  { id:'sports-scientist', name:'Sports Scientist', cost:50, desc:'Injuries reduced by 50%.', icon:'🏥', apply(gs){ gs.injuryReduction=0.5; } },
+  { id:'tactical-analyst',  name:'Tactical Analyst',  cost:60, desc:'Draw +1 card each turn.',   icon:'📊', apply(gs){ gs.extraDraw=(gs.extraDraw||0)+1; } },
+  { id:'fan-favourite',     name:'Fan Favourite',     cost:40, desc:'Gain +2 Morale after scoring.', icon:'📣', apply(gs){ gs.fanFavourite=true; } },
+  { id:'wealthy-owner',     name:'Wealthy Owner',     cost:70, desc:'Earn 50% more match funds.',  icon:'💰', apply(gs){ gs.wealthyOwner=true; } },
+  { id:'elite-scout',       name:'Elite Scout',       cost:55, desc:'Transfer market shows extra players.', icon:'🔭', apply(gs){ gs.eliteScout=true; } },
+  { id:'video-analysis',    name:'Video Analysis',    cost:45, desc:'See opponent tactics before match.', icon:'📹', apply(gs){ gs.videoAnalysis=true; } },
+];
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let gs = {};
+
+function initState(formation) {
+  gs = {
+    formation,
+    squad: JSON.parse(JSON.stringify(PLAYERS)).slice(0,7),
+    deck: [...formation.startingCards],
+    hand: [],
+    discard: [],
+    homeGoals: 0,
+    awayGoals: 0,
+    chance: 0,
+    defence: formation.bonusStart.defence || 0,
+    momentum: formation.bonusStart.momentum || 0,
+    morale: 5 + (formation.bonusStart.morale || 0),
+    possession: 50 + (formation.bonusStart.possession || 0),
+    tempo: 3,
+    funds: 120,
+    wins: 0,
+    losses: 0,
+    lives: 3,
+    act: 1,
+    nodeIndex: 0,
+    relics: [],
+    extraDraw: 0,
+    cardsPlayed: 0,
+    goalsScored: 0,
+    matchHistory: [],
+    enemy: null,
+    playerBonuses: {},
+    runOver: false,
+    currentNodeType: null,
+    usedPressThisTurn: false,
+    doubleNextAttack: false,
+    blockNextAttack: false,
+    skipNextDraw: false,
+    turnNum: 1,
+    yellowCardRisk: false,
+  };
+  // Apply player traits
+  applyPlayerBonuses();
+}
+
+function applyPlayerBonuses() {
+  gs.playerBonuses = {};
+  gs.squad.forEach(p => {
+    if(p.trait === 'Playmaker') gs.playerBonuses.throughBall = (gs.playerBonuses.throughBall||0) + 5;
+    if(p.trait === 'Captain') gs.morale = Math.min(10, gs.morale + 2);
+  });
+}
+
+// ============================================================
+// MAP
+// ============================================================
+const MAP_ACTS = [
+  { label:'ACT 1 — LOWER LEAGUE', nodes:[
+    { type:'match', label:'Match',    icon:'⚽', diffMod:0 },
+    { type:'event', label:'Event',    icon:'🎲' },
+    { type:'match', label:'Match',    icon:'⚽', diffMod:0 },
+    { type:'shop',  label:'Market',   icon:'💰' },
+    { type:'boss',  label:'Cup Final', icon:'🏆', diffMod:1, bossIndex:0 },
+  ]},
+  { label:'ACT 2 — CHAMPIONSHIP', nodes:[
+    { type:'match', label:'Match',    icon:'⚽', diffMod:1 },
+    { type:'event', label:'Event',    icon:'🎲' },
+    { type:'elite', label:'Elite',    icon:'🔥', diffMod:2 },
+    { type:'shop',  label:'Market',   icon:'💰' },
+    { type:'boss',  label:'Playoff Final', icon:'🏆', diffMod:2, bossIndex:1 },
+  ]},
+  { label:'ACT 3 — PREMIER TIER', nodes:[
+    { type:'match', label:'Match',    icon:'⚽', diffMod:2 },
+    { type:'event', label:'Event',    icon:'🎲' },
+    { type:'elite', label:'Elite',    icon:'🔥', diffMod:3 },
+    { type:'shop',  label:'Market',   icon:'💰' },
+    { type:'boss',  label:'League Champion', icon:'🏆', diffMod:3, bossIndex:2 },
+  ]},
+  { label:'ACT 4 — CHAMPIONS TOURNAMENT', nodes:[
+    { type:'match', label:'Match',    icon:'⚽', diffMod:3 },
+    { type:'elite', label:'Elite',    icon:'🔥', diffMod:4 },
+    { type:'event', label:'Event',    icon:'🎲' },
+    { type:'shop',  label:'Market',   icon:'💰' },
+    { type:'boss',  label:'World Champions', icon:'🏆', diffMod:4, bossIndex:3 },
+  ]},
+];
+
+const BOSS_OPPONENTS = [
+  { name:'Regional Cup Winners', difficulty:2, attack:8,  defence:8,  style:'Balanced', cards:['park-bus','through-ball','counter','shoot'] },
+  { name:'Promotion Playoff Rivals', difficulty:3, attack:10, defence:9, style:'Pressing', cards:['high-press','through-ball','shoot','team-talk','counter'] },
+  { name:'League Champions',    difficulty:4, attack:12, defence:11, style:'Technical', cards:['switch-play','overlap','through-ball','shoot','slow-buildup'] },
+  { name:'World Elite Club',    difficulty:5, attack:14, defence:14, style:'Total Football', cards:['high-press','through-ball','counter','shoot','overlap','switch-play'] },
+];
+
+function drawMap() {
+  const actData = MAP_ACTS[gs.act - 1];
+  document.getElementById('map-act-title').textContent = actData.label;
+  const svg = document.getElementById('map-svg');
+  svg.innerHTML = '';
+
+  const nodes = actData.nodes;
+  const w = 700, h = 480;
+  const nodeW = w / (nodes.length + 1);
+
+  const nodeColors = {
+    match: '#1a3d22', event: '#1a2a3d', shop: '#3d2a1a',
+    elite: '#3d1a1a', boss: '#3d3000'
+  };
+  const nodeStroke = {
+    match:'#A8E04A', event:'#4A9ED9', shop:'#C8A96E',
+    elite:'#D93B3B', boss:'#F0C040'
+  };
+
+  nodes.forEach((node, i) => {
+    const x = nodeW * (i + 1);
+    const y = h / 2 + Math.sin(i * 1.2) * 60;
+    node._x = x; node._y = y;
+
+    // Draw connector lines
+    if(i > 0) {
+      const prev = nodes[i-1];
+      const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1', prev._x); line.setAttribute('y1', prev._y);
+      line.setAttribute('x2', x); line.setAttribute('y2', y);
+      line.setAttribute('stroke', i <= gs.nodeIndex ? '#A8E04A' : 'rgba(255,255,255,0.12)');
+      line.setAttribute('stroke-width', '2');
+      line.setAttribute('stroke-dasharray', i <= gs.nodeIndex ? 'none' : '6,4');
+      svg.appendChild(line);
+    }
+
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('class', `map-node${i === gs.nodeIndex ? ' node-available' : ''}`);
+
+    const r = node.type === 'boss' ? 36 : 28;
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx', x); circle.setAttribute('cy', y); circle.setAttribute('r', r);
+    circle.setAttribute('fill', i < gs.nodeIndex ? '#0d260f' : nodeColors[node.type]);
+    circle.setAttribute('stroke', i === gs.nodeIndex ? nodeStroke[node.type] : 'rgba(255,255,255,0.2)');
+    circle.setAttribute('stroke-width', i === gs.nodeIndex ? '3' : '1');
+
+    const iconText = document.createElementNS('http://www.w3.org/2000/svg','text');
+    iconText.setAttribute('x', x); iconText.setAttribute('y', y + 6);
+    iconText.setAttribute('text-anchor','middle');
+    iconText.setAttribute('font-size', i < gs.nodeIndex ? '14' : '20');
+    iconText.textContent = i < gs.nodeIndex ? '✓' : node.icon;
+
+    const labelText = document.createElementNS('http://www.w3.org/2000/svg','text');
+    labelText.setAttribute('x', x); labelText.setAttribute('y', y + r + 18);
+    labelText.setAttribute('text-anchor','middle');
+    labelText.setAttribute('font-size','11');
+    labelText.setAttribute('fill', i === gs.nodeIndex ? '#F0EDE6' : 'rgba(240,237,230,0.5)');
+    labelText.setAttribute('font-family','Roboto Mono, monospace');
+    labelText.setAttribute('letter-spacing','1');
+    labelText.textContent = node.label.toUpperCase();
+
+    g.appendChild(circle);
+    g.appendChild(iconText);
+    g.appendChild(labelText);
+
+    if(i === gs.nodeIndex) {
+      g.style.cursor = 'pointer';
+      g.addEventListener('click', () => selectNode(i));
+    }
+    svg.appendChild(g);
+  });
+
+  updateMapHeader();
+}
+
+function updateMapHeader() {
+  document.getElementById('map-wins').textContent = gs.wins;
+  document.getElementById('map-losses').textContent = gs.losses;
+  document.getElementById('map-funds').textContent = '💰 ' + gs.funds;
+  document.getElementById('map-health').textContent = '❤️ ' + gs.lives;
+}
+
+function selectNode(i) {
+  const actData = MAP_ACTS[gs.act - 1];
+  const node = actData.nodes[i];
+  if(i !== gs.nodeIndex) return;
+
+  gs.currentNodeType = node.type;
+
+  if(node.type === 'match' || node.type === 'elite' || node.type === 'boss') {
+    startMatch(node);
+  } else if(node.type === 'event') {
+    showEvent();
+  } else if(node.type === 'shop') {
+    showShop();
+  }
+}
+
+function advanceMap() {
+  gs.nodeIndex++;
+  const actData = MAP_ACTS[gs.act - 1];
+  if(gs.nodeIndex >= actData.nodes.length) {
+    gs.act++;
+    gs.nodeIndex = 0;
+    if(gs.act > 4) {
+      // Victory!
+      showVictory();
+      return;
+    }
+  }
+  showScreen('map-screen');
+  drawMap();
+}
+
+// ============================================================
+// MATCH SYSTEM
+// ============================================================
+
+function startMatch(node) {
+  // Pick opponent
+  let opp;
+  if(node.type === 'boss') {
+    opp = JSON.parse(JSON.stringify(BOSS_OPPONENTS[node.bossIndex || 0]));
+  } else {
+    const pool = OPPONENTS.filter(o => o.difficulty <= (node.diffMod || 1) + 1 && o.difficulty >= (node.diffMod || 0));
+    opp = JSON.parse(JSON.stringify(pool[Math.floor(Math.random()*pool.length)] || OPPONENTS[0]));
+    // Scale up for elite
+    if(node.type === 'elite') {
+      opp.attack += 3; opp.defence += 3;
+      opp.name = 'Elite: ' + opp.name;
+    }
+  }
+  gs.enemy = opp;
+
+  // Reset match state
+  gs.homeGoals = 0;
+  gs.awayGoals = 0;
+  gs.chance = 0;
+  gs.defence = (gs.formation.bonusStart.defence || 0);
+  gs.momentum = (gs.formation.bonusStart.momentum || 0);
+  gs.possession = 50 + (gs.formation.bonusStart.possession || 0);
+  gs.morale = Math.min(10, gs.morale);
+  gs.turnNum = 1;
+  gs.usedPressThisTurn = false;
+  gs.doubleNextAttack = false;
+  gs.blockNextAttack = false;
+  gs.cardsPlayed = 0;
+
+  // Shuffle deck
+  gs.deck = [...gs.formation.startingCards];
+  gs.relics.forEach(r => {
+    if(r.extraCards) gs.deck.push(...r.extraCards);
+  });
+  gs.hand = [];
+  gs.discard = [];
+  shuffleDeck();
+
+  showScreen('match-screen');
+  document.getElementById('home-name').textContent = 'YOUR CLUB';
+  document.getElementById('away-name').textContent = gs.enemy.name;
+  document.getElementById('action-log').innerHTML = `<div class="log-entry log-info">⚽ Match kicked off vs ${gs.enemy.name}. Good luck, gaffer.</div>`;
+
+  renderSquad();
+  renderRelics();
+  renderOpponent();
+  startTurn();
+}
+
+function shuffleDeck() {
+  for(let i=gs.deck.length-1;i>0;i--) {
+    const j=Math.floor(Math.random()*(i+1));
+    [gs.deck[i],gs.deck[j]]=[gs.deck[j],gs.deck[i]];
+  }
+}
+
+function drawCards(gstate, n) {
+  for(let i=0;i<n;i++) {
+    if(gs.deck.length===0) {
+      if(gs.discard.length===0) break;
+      gs.deck=[...gs.discard]; gs.discard=[];
+      shuffleDeck();
+    }
+    const card = gs.deck.pop();
+    gs.hand.push(card);
+  }
+  renderHand();
+}
+
+function startTurn() {
+  gs.tempo = 3;
+  gs.usedPressThisTurn = false;
+  gs.doubleNextAttack = false;
+  gs.blockNextAttack = false;
+
+  // Formation passive
+  if(gs.formation.id === 'traditional') gs.defence += 1;
+  if(gs.formation.id === 'possession') {} // extra draw below
+  if(gs.formation.id === 'counter') {} // passive applied in counter card
+
+  // Player traits each turn
+  gs.squad.forEach(p => {
+    if(p.trait==='Ironwall' && p.injury===0) gs.defence+=1;
+    if(p.trait==='Box-to-Box' && p.injury===0) gs.momentum=Math.min(20,gs.momentum+1);
+  });
+
+  // Fatigue
+  gs.squad.forEach(p => { if(p.fatigue>0) p.fatigue++; });
+
+  let drawCount = 5 + (gs.extraDraw||0);
+  if(gs.formation.id==='possession') drawCount++;
+  drawCards(gs, drawCount);
+
+  renderMatchUI();
+  document.getElementById('turn-num').textContent = gs.turnNum;
+}
+
+function endTurn() {
+  // Discard hand
+  gs.discard.push(...gs.hand);
+  gs.hand = [];
+
+  // Enemy turn
+  runEnemyTurn();
+}
+
+function runEnemyTurn() {
+  const overlay = document.getElementById('enemy-overlay');
+  overlay.classList.add('active');
+
+  setTimeout(() => {
+    overlay.classList.remove('active');
+
+    const enemy = gs.enemy;
+    // Enemy plays 1-2 random cards from their deck
+    const numCards = 1 + Math.floor(Math.random() * 2);
+    let enemyChance = 0;
+    let enemyLog = '';
+
+    for(let i=0;i<numCards;i++) {
+      const card = enemy.cards[Math.floor(Math.random()*enemy.cards.length)];
+      const def = CARD_DEFS[card];
+      if(!def) continue;
+
+      if(def.type === 'attack' || card==='counter') {
+        const bonus = Math.floor(Math.random()*5);
+        enemyChance += (enemy.attack + bonus);
+        enemyLog += `<div class="log-entry log-info">— ${enemy.name} plays ${def.name}</div>`;
+      }
+    }
+
+    if(enemyChance > 0) {
+      // Enemy shoots
+      if(gs.blockNextAttack) {
+        addLog(`<div class="log-entry">🛡 Blocked! ${enemy.name}'s attack stopped!</div>`);
+        gs.blockNextAttack = false;
+        enemyChance = 0;
+      } else {
+        const keeper = gs.squad.find(p=>p.trait==='Sweeper Keeper');
+        const keeperBonus = keeper ? 5 : 0;
+        const ourDef = gs.defence + keeperBonus + Math.floor(Math.random()*8);
+
+        addLog(enemyLog);
+        addLog(`<div class="log-entry log-info">— ${enemy.name} shoots: ${enemyChance} vs Defence: ${ourDef}</div>`);
+
+        if(enemyChance > ourDef) {
+          let goalsScored = 1;
+          if(keeper) goalsScored = 0; // sweeper keeper blocks
+          gs.awayGoals += goalsScored;
+          if(goalsScored > 0) {
+            gs.morale = Math.max(0, gs.morale - 1);
+            addLog(`<div class="log-entry log-enemy-goal">💀 CONCEDED! ${gs.homeGoals}–${gs.awayGoals}</div>`);
+            notify('😱 They scored!','bad');
+          }
+        } else {
+          addLog(`<div class="log-entry log-miss">🧤 Saved! Keeper tips it wide.</div>`);
+        }
+      }
+    }
+
+    gs.turnNum++;
+    if(gs.turnNum > 9) {
+      endMatch();
+    } else {
+      gs.chance = 0;
+      gs.defence = Math.max(0, gs.defence - 3);
+      gs.momentum = Math.max(0, gs.momentum - 2);
+      startTurn();
+    }
+  }, 1200);
+}
+
+function endMatch() {
+  const won = gs.homeGoals > gs.awayGoals;
+  const drew = gs.homeGoals === gs.awayGoals;
+
+  let prize = 30;
+  if(won) { prize = gs.currentNodeType==='boss' ? 80 : 40; gs.wins++; }
+  else if(drew) { prize = 20; }
+  else { prize = 10; gs.losses++; gs.lives--; }
+
+  if(gs.wealthyOwner) prize = Math.floor(prize * 1.5);
+  gs.funds += prize;
+  gs.goalsScored += gs.homeGoals;
+
+  // Apply fatigue
+  gs.squad.forEach(p => {
+    p.fatigue = Math.min(100, p.fatigue + Math.floor(Math.random()*15));
+    p.fitness = Math.max(0, p.fitness - Math.floor(Math.random()*10));
+  });
+
+  gs.matchHistory.push({
+    opponent: gs.enemy.name,
+    home: gs.homeGoals,
+    away: gs.awayGoals,
+    result: won ? 'W' : drew ? 'D' : 'L'
+  });
+
+  showResult(won, drew, prize);
+}
+
+function showResult(won, drew, prize) {
+  showScreen('result-screen');
+  const header = document.getElementById('result-header');
+  header.textContent = won ? 'VICTORY' : drew ? 'DRAW' : 'DEFEAT';
+  header.className = 'result-header ' + (won ? 'result-win' : drew ? 'result-draw' : 'result-lose');
+  document.getElementById('result-score').textContent = `${gs.homeGoals} – ${gs.awayGoals}`;
+
+  const details = document.getElementById('result-details');
+  details.innerHTML = `
+    <div class="result-stat-row"><span class="result-stat-key">Opponent</span><span class="result-stat-val">${gs.enemy.name}</span></div>
+    <div class="result-stat-row"><span class="result-stat-key">Prize Money</span><span class="result-stat-val">💰 ${prize}</span></div>
+    <div class="result-stat-row"><span class="result-stat-key">Total Funds</span><span class="result-stat-val">💰 ${gs.funds}</span></div>
+    <div class="result-stat-row"><span class="result-stat-key">Lives Remaining</span><span class="result-stat-val">❤️ ${gs.lives}</span></div>
+  `;
+
+  const btns = document.getElementById('result-btns');
+  if(gs.lives <= 0) {
+    btns.innerHTML = `<button class="btn btn-danger" onclick="showRunOver()">RUN OVER</button>`;
+  } else {
+    btns.innerHTML = `<button class="btn btn-primary" onclick="afterMatch()">CONTINUE →</button>`;
+  }
+}
+
+function afterMatch() {
+  advanceMap();
+}
+
+function showRunOver() {
+  showScreen('runover-screen');
+  const details = document.getElementById('runover-details');
+  const record = gs.matchHistory.map(m => `${m.result} ${m.home}–${m.away} vs ${m.opponent}`).join('<br>');
+  details.innerHTML = `
+    <div style="color:var(--gold);font-family:'Bebas Neue';font-size:18px;letter-spacing:2px;margin-bottom:8px;">SEASON RECORD</div>
+    ${record}
+    <div style="margin-top:12px;">Total Goals: ${gs.goalsScored} | Funds Earned: ${gs.funds}</div>
+  `;
+}
+
+function showVictory() {
+  showScreen('result-screen');
+  document.getElementById('result-header').textContent = 'CHAMPIONS';
+  document.getElementById('result-header').className = 'result-header result-win';
+  document.getElementById('result-score').textContent = '🏆';
+  const record = gs.matchHistory.map(m => `${m.result} ${m.home}–${m.away} vs ${m.opponent}`).join('<br>');
+  document.getElementById('result-details').innerHTML = `
+    <div style="font-size:13px;line-height:2;color:var(--paper-dim);">
+      <b style="color:var(--lime)">RUN COMPLETE!</b><br>
+      Wins: ${gs.wins} | Goals: ${gs.goalsScored}<br><br>
+      ${record}
+    </div>
+  `;
+  document.getElementById('result-btns').innerHTML = `<button class="btn btn-primary" onclick="showScreen('title-screen')">PLAY AGAIN</button>`;
+}
+
+// ============================================================
+// CARD PLAYING
+// ============================================================
+
+function playCard(idx) {
+  const cardId = gs.hand[idx];
+  const def = CARD_DEFS[cardId];
+  if(!def) return;
+
+  let cost = def.cost;
+  // Formation passive for gegenpress
+  if(gs.formation.id==='gegenpress' && cardId==='high-press' && !gs.usedPressThisTurn) cost=0;
+  if(cardId==='crowd-behind-us') cost=0;
+
+  if(gs.tempo < cost) { notify('Not enough Tempo!','bad'); return; }
+
+  gs.tempo -= cost;
+
+  // Double attack card if switch play active
+  if(gs.doubleNextAttack && def.type==='attack') {
+    const origChance = gs.chance;
+    def.apply(gs);
+    const gained = gs.chance - origChance;
+    gs.chance = origChance + gained*2;
+    gs.doubleNextAttack = false;
+    addLog('<span class="log-card-play">↔️ Doubled!</span>');
+  } else {
+    def.apply(gs);
+  }
+
+  gs.hand.splice(idx, 1);
+  gs.discard.push(cardId);
+  gs.cardsPlayed++;
+
+  renderMatchUI();
+  renderHand();
+}
+
+// ============================================================
+// RENDER FUNCTIONS
+// ============================================================
+
+function renderMatchUI() {
+  document.getElementById('home-score').textContent = gs.homeGoals;
+  document.getElementById('away-score').textContent = gs.awayGoals;
+  document.getElementById('turn-num').textContent = gs.turnNum;
+  document.getElementById('stat-chance').textContent = gs.chance;
+  document.getElementById('stat-defence').textContent = gs.defence;
+  document.getElementById('stat-momentum').textContent = gs.momentum;
+  document.getElementById('stat-morale').textContent = gs.morale;
+  document.getElementById('stat-possession').textContent = gs.possession;
+  document.getElementById('centre-chance').textContent = gs.chance;
+  document.getElementById('centre-defence').textContent = gs.enemy ? gs.enemy.defence : 0;
+
+  // Tempo pips
+  const tempoBar = document.getElementById('tempo-bar');
+  tempoBar.innerHTML = '<span style="font-size:10px;letter-spacing:1px;color:var(--paper-dim);font-family:Roboto Mono,monospace;">TEMPO</span>';
+  for(let i=0;i<3;i++) {
+    const pip = document.createElement('div');
+    pip.className = 'tempo-pip' + (i < gs.tempo ? ' filled' : '');
+    tempoBar.appendChild(pip);
+  }
+
+  // Momentum bar
+  const fill = document.getElementById('momentum-fill');
+  const pct = Math.min(100, (gs.momentum / 20) * 100);
+  fill.style.width = pct + '%';
+  fill.style.left = '50%';
+  fill.style.transform = 'translateX(-50%)';
+}
+
+function renderHand() {
+  const row = document.getElementById('cards-row');
+  row.innerHTML = '';
+  document.getElementById('hand-count').textContent = gs.hand.length;
+
+  gs.hand.forEach((cardId, i) => {
+    const def = CARD_DEFS[cardId];
+    if(!def) return;
+
+    let cost = def.cost;
+    if(gs.formation.id==='gegenpress' && cardId==='high-press' && !gs.usedPressThisTurn) cost=0;
+    if(cardId==='crowd-behind-us') cost=0;
+
+    const canPlay = gs.tempo >= cost;
+
+    const el = document.createElement('div');
+    el.className = 'card' + (canPlay ? '' : ' unplayable');
+    el.setAttribute('data-type', def.type);
+    el.innerHTML = `
+      <div class="card-cost">${cost}</div>
+      <div class="card-icon">${def.icon}</div>
+      <div class="card-name">${def.name}</div>
+      <div class="card-type card-type-${def.type}">${def.type.toUpperCase()}</div>
+      <div class="card-effect">${def.effect}</div>
+      <div class="card-rarity-dot rarity-${def.rarity}"></div>
+    `;
+    if(canPlay) el.addEventListener('click', () => playCard(i));
+    row.appendChild(el);
+  });
+}
+
+function renderSquad() {
+  const list = document.getElementById('squad-list');
+  list.innerHTML = '';
+  gs.squad.forEach(p => {
+    const fit = p.fitness;
+    const fitClass = fit > 60 ? '' : fit > 30 ? ' mid' : ' low';
+    list.innerHTML += `
+      <div class="player-row">
+        <span class="player-pos">${p.pos}</span>
+        <span class="player-name">${p.name.split(' ')[1]}</span>
+        <div class="player-fitness-bar"><div class="player-fitness-fill${fitClass}" style="width:${fit}%"></div></div>
+        ${p.trait ? `<span class="player-trait-badge">${p.trait.substring(0,6)}</span>` : ''}
+      </div>`;
+  });
+}
+
+function renderRelics() {
+  const list = document.getElementById('relic-list');
+  if(gs.relics.length===0) { list.textContent = 'No relics yet.'; return; }
+  list.innerHTML = gs.relics.map(r=>`${r.icon} ${r.name}`).join('<br>');
+}
+
+function renderOpponent() {
+  const info = document.getElementById('opponent-info');
+  const e = gs.enemy;
+  info.innerHTML = `
+    <b style="color:var(--paper);font-size:13px;">${e.name}</b><br>
+    Style: ${e.style}<br>
+    Attack: ${e.attack}<br>
+    Defence: ${e.defence}
+  `;
+  const deckInfo = document.getElementById('deck-info');
+  deckInfo.innerHTML = `
+    Cards: ${gs.hand.length} in hand<br>
+    Deck: ${gs.deck.length} left<br>
+    Played: ${gs.cardsPlayed}
+  `;
+}
+
+function addLog(html) {
+  const log = document.getElementById('action-log');
+  const div = document.createElement('div');
+  div.className = 'log-entry';
+  div.innerHTML = html;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+// ============================================================
+// EVENT SYSTEM
+// ============================================================
+
+function showEvent() {
+  const event = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+  document.getElementById('event-title').textContent = event.title;
+  document.getElementById('event-text').textContent = event.text;
+
+  const choicesEl = document.getElementById('event-choices');
+  choicesEl.innerHTML = '';
+  event.choices.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.className = 'event-choice-btn';
+    btn.innerHTML = `${choice.text}<span class="choice-effect">${choice.effect}</span>`;
+    btn.addEventListener('click', () => {
+      choice.apply(gs);
+      notify(choice.effect);
+      advanceMap();
+    });
+    choicesEl.appendChild(btn);
+  });
+
+  showScreen('event-screen');
+}
+
+// ============================================================
+// SHOP SYSTEM
+// ============================================================
+
+function showShop() {
+  document.getElementById('shop-funds-display').textContent = gs.funds;
+  const body = document.getElementById('shop-body');
+  body.innerHTML = '';
+
+  // Cards for sale
+  const cardSection = document.createElement('div');
+  const cardKeys = Object.keys(CARD_DEFS);
+  const availableCards = cardKeys.filter(k => !gs.formation.startingCards.includes(k) || Math.random()>0.5)
+    .sort(() => Math.random()-0.5).slice(0,5);
+
+  cardSection.innerHTML = `<div class="shop-section-title">TACTICAL CARDS</div>`;
+  const cardGrid = document.createElement('div');
+  cardGrid.className = 'shop-grid';
+
+  availableCards.forEach(cardId => {
+    const def = CARD_DEFS[cardId];
+    const cost = def.rarity === 'rare' ? 50 : def.rarity === 'uncommon' ? 35 : 20;
+    const item = document.createElement('div');
+    item.className = 'shop-item';
+    item.dataset.id = cardId;
+    item.innerHTML = `
+      <div class="shop-item-name">${def.icon} ${def.name}</div>
+      <div class="card-type card-type-${def.type}" style="font-size:10px;">${def.type.toUpperCase()} · ${def.rarity}</div>
+      <div class="shop-item-desc">${def.effect}</div>
+      <div class="shop-item-cost">💰 ${cost}</div>
+    `;
+    item.addEventListener('click', () => {
+      if(gs.funds >= cost && !item.classList.contains('purchased')) {
+        gs.funds -= cost;
+        gs.formation.startingCards.push(cardId);
+        gs.deck.push(cardId);
+        item.classList.add('purchased');
+        item.innerHTML += '<div style="color:var(--lime);font-size:11px;margin-top:4px;">✓ ADDED</div>';
+        document.getElementById('shop-funds-display').textContent = gs.funds;
+        notify(`Added ${def.name} to deck!`);
+      } else if(gs.funds < cost) {
+        notify('Not enough funds!','bad');
+      }
+    });
+    cardGrid.appendChild(item);
+  });
+  cardSection.appendChild(cardGrid);
+  body.appendChild(cardSection);
+
+  // Relics for sale
+  const relicSection = document.createElement('div');
+  const availableRelics = RELICS.filter(r => !gs.relics.find(er=>er.id===r.id))
+    .sort(()=>Math.random()-0.5).slice(0,3);
+
+  relicSection.innerHTML = `<div class="shop-section-title">CLUB UPGRADES</div>`;
+  const relicGrid = document.createElement('div');
+  relicGrid.className = 'shop-grid';
+
+  availableRelics.forEach(relic => {
+    const item = document.createElement('div');
+    item.className = 'shop-item';
+    item.innerHTML = `
+      <div class="shop-item-name">${relic.icon} ${relic.name}</div>
+      <div class="shop-item-desc">${relic.desc}</div>
+      <div class="shop-item-cost">💰 ${relic.cost}</div>
+    `;
+    item.addEventListener('click', () => {
+      if(gs.funds >= relic.cost && !item.classList.contains('purchased')) {
+        gs.funds -= relic.cost;
+        const r = JSON.parse(JSON.stringify(relic));
+        gs.relics.push(r);
+        relic.apply(gs);
+        item.classList.add('purchased');
+        item.innerHTML += '<div style="color:var(--lime);font-size:11px;margin-top:4px;">✓ ACQUIRED</div>';
+        document.getElementById('shop-funds-display').textContent = gs.funds;
+        notify(`${relic.icon} ${relic.name} acquired!`);
+      } else if(gs.funds < relic.cost) {
+        notify('Not enough funds!','bad');
+      }
+    });
+    relicGrid.appendChild(item);
+  });
+  relicSection.appendChild(relicGrid);
+  body.appendChild(relicSection);
+
+  showScreen('shop-screen');
+}
+
+function leaveShop() {
+  advanceMap();
+}
+
+// ============================================================
+// FORMATION SELECT
+// ============================================================
+
+let selectedFormation = null;
+
+function buildFormationScreen() {
+  const grid = document.getElementById('formations-grid');
+  grid.innerHTML = '';
+  FORMATIONS.forEach(f => {
+    const card = document.createElement('div');
+    card.className = 'formation-card';
+    card.innerHTML = `
+      <div class="formation-tag ${f.tagClass}">${f.tag}</div>
+      <div class="formation-name">${f.name}</div>
+      <div class="formation-label">${f.label}</div>
+      <div class="formation-desc">${f.desc}</div>
+      <div class="formation-passive">⚡ ${f.passive}</div>
+    `;
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.formation-card').forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedFormation = f;
+      document.getElementById('start-run-btn').disabled = false;
+    });
+    grid.appendChild(card);
+  });
+}
+
+function startRun() {
+  if(!selectedFormation) return;
+  initState(selectedFormation);
+  showScreen('map-screen');
+  drawMap();
+}
+
+// ============================================================
+// UTILITY
+// ============================================================
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function notify(msg, type='') {
+  const container = document.getElementById('notif-container');
+  const el = document.createElement('div');
+  el.className = 'notif' + (type ? ' '+type : '');
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+function showHowToPlay() {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;`;
+  overlay.innerHTML = `
+    <div style="background:var(--pitch-mid);border:1px solid var(--ui-border);max-width:540px;width:100%;padding:36px;max-height:80vh;overflow-y:auto;">
+      <div style="font-family:'Bebas Neue';font-size:32px;letter-spacing:4px;color:var(--lime);margin-bottom:16px;">HOW TO PLAY</div>
+      <div style="font-size:13px;line-height:2;color:var(--paper-dim);">
+        <b style="color:var(--paper)">1. Choose your Formation</b><br>
+        Each formation is your character class with unique passives.<br><br>
+        <b style="color:var(--paper)">2. Navigate the Map</b><br>
+        Traverse match, event, shop and boss nodes each act.<br><br>
+        <b style="color:var(--paper)">3. Play Cards</b><br>
+        Each turn you have 3 Tempo to spend on tactical cards.<br><br>
+        <b style="color:var(--paper)">4. Build Chances</b><br>
+        Attack cards build Chance. Play SHOOT to convert Chance into goals.<br><br>
+        <b style="color:var(--paper)">5. Defend</b><br>
+        Defence cards reduce your opponent's chance of scoring.<br><br>
+        <b style="color:var(--paper)">6. End Turn</b><br>
+        After playing cards, End Turn to trigger the opponent's attack.<br><br>
+        <b style="color:var(--paper)">7. Win the Match</b><br>
+        9 turns. Most goals wins. Lose 3 times and the run is over.
+      </div>
+      <button class="btn btn-primary btn-sm" style="margin-top:20px;" onclick="this.closest('div[style]').parentElement.remove()">GOT IT</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+buildFormationScreen();
+</script>
+</body>
+</html>
