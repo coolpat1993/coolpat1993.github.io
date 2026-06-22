@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>Guesser — Daily Football Quiz</title>
+<style>
+  :root{
+    --bg:#0d1117;
+    --card:#161b22;
+    --blue:#3b82f6;
+    --blue-dark:#1d4ed8;
+    --green:#22c55e;
+    --red:#ef4444;
+    --grey:#30363d;
+    --text:#e6edf3;
+    --subtext:#8b949e;
+  }
+  *{box-sizing:border-box;}
+  html{
+    -webkit-text-size-adjust:100%;
+  }
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:max(20px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  }
+  .wrap{
+    width:100%;
+    max-width:520px;
+  }
+  header{
+    text-align:center;
+    margin-bottom:18px;
+  }
+  header h1{
+    font-family:'Courier New',monospace;
+    font-size:clamp(24px, 7vw, 30px);
+    font-weight:800;
+    margin:0 0 4px;
+    letter-spacing:3px;
+    text-transform:uppercase;
+  }
+  header .sub{
+    color:var(--subtext);
+    font-size:clamp(12px, 3vw, 14px);
+    padding:0 8px;
+    letter-spacing:0.3px;
+  }
+  .progress-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+    font-size:14px;
+    color:var(--subtext);
+  }
+  .dots{
+    display:flex;
+    gap:6px;
+  }
+  .dot{
+    width:11px;height:11px;border-radius:3px;
+    background:var(--grey);
+    border:1px solid #444c56;
+  }
+  .dot.solved{background:var(--green);border-color:var(--green);}
+  .dot.failed{background:var(--red);border-color:var(--red);}
+  .dot.current{box-shadow:0 0 0 2px var(--blue);}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--grey);
+    border-radius:16px;
+    padding:clamp(14px, 4vw, 20px);
+    margin-bottom:16px;
+  }
+  .card h2{
+    margin:0 0 12px;
+    font-size:14px;
+    color:var(--subtext);
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+  }
+  .clue{
+    background:linear-gradient(180deg,var(--blue),var(--blue-dark));
+    color:#fff;
+    border-radius:8px;
+    padding:13px 15px;
+    margin-bottom:10px;
+    font-size:15px;
+    line-height:1.4;
+    animation:pop 0.25s ease;
+    word-break:break-word;
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .clue-tile{
+    flex:0 0 auto;
+    width:24px;height:24px;
+    border-radius:5px;
+    background:rgba(255,255,255,0.18);
+    border:1px solid rgba(255,255,255,0.35);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Courier New',monospace;
+    font-weight:800;
+    font-size:13px;
+    margin-top:1px;
+  }
+  .clue-text{
+    flex:1;
+  }
+  .clue u{text-decoration-color:#bcd2ff;}
+  @keyframes pop{
+    from{opacity:0;transform:translateY(6px) scale(0.98);}
+    to{opacity:1;transform:translateY(0) scale(1);}
+  }
+  .guess-row{
+    display:flex;
+    gap:8px;
+    margin-top:14px;
+    flex-wrap:wrap;
+  }
+  .autocomplete-wrap{
+    position:relative;
+    flex:1 1 160px;
+    min-width:0;
+  }
+  input[type="text"]{
+    width:100%;
+    background:#0d1117;
+    border:1px solid var(--grey);
+    color:var(--text);
+    padding:13px 14px;
+    border-radius:10px;
+    font-size:16px;
+    outline:none;
+  }
+  input[type="text"]:focus{
+    border-color:var(--blue);
+  }
+  .suggestions{
+    position:absolute;
+    bottom:calc(100% + 6px);
+    left:0;
+    right:0;
+    background:#1c2128;
+    border:1px solid var(--grey);
+    border-radius:10px;
+    max-height:240px;
+    overflow-y:auto;
+    z-index:20;
+    display:none;
+    box-shadow:0 -8px 24px rgba(0,0,0,0.4);
+  }
+  .suggestions.open{
+    display:flex;
+    flex-direction:column-reverse;
+  }
+  .suggestion-item{
+    padding:12px 14px;
+    font-size:15px;
+    color:var(--text);
+    cursor:pointer;
+    border-bottom:1px solid #21262d;
+  }
+  .suggestion-item:last-child{
+    border-bottom:none;
+  }
+  .suggestion-item strong{
+    color:var(--blue);
+    font-weight:700;
+  }
+  .suggestion-item.active,
+  .suggestion-item:hover{
+    background:#262c36;
+  }
+  button{
+    background:var(--blue);
+    color:#fff;
+    border:none;
+    padding:13px 18px;
+    border-radius:10px;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background .15s;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+    min-height:46px;
+  }
+  button:hover{background:var(--blue-dark);}
+  button:disabled{
+    background:var(--grey);
+    cursor:not-allowed;
+  }
+  .guess-counter{
+    margin-top:10px;
+    font-size:13px;
+    color:var(--subtext);
+  }
+  .dup-warning{
+    font-size:13px;
+    color:#e3b341;
+    margin-top:8px;
+    height:0;
+    opacity:0;
+    overflow:hidden;
+    transition:opacity .15s;
+  }
+  .dup-warning.show{
+    height:auto;
+    opacity:1;
+  }
+  .dup-shake{
+    animation:shake .3s;
+    border-color:#e3b341 !important;
+  }
+  .history{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:10px;
+  }
+  .pill{
+    font-size:13px;
+    padding:6px 10px;
+    border-radius:6px;
+    background:#21262d;
+    border:1px solid var(--grey);
+    color:var(--subtext);
+    text-decoration:line-through;
+    font-family:'Courier New',monospace;
+  }
+  .pill.close{
+    border-color:#caa23a;
+    color:#e3b341;
+    text-decoration:none;
+  }
+  .result{
+    margin-top:14px;
+    padding:14px 16px;
+    border-radius:12px;
+    font-size:15px;
+    line-height:1.4;
+  }
+  .result.win{
+    background:rgba(34,197,94,0.12);
+    border:1px solid var(--green);
+    color:#a7f3c2;
+  }
+  .result.lose{
+    background:rgba(239,68,68,0.12);
+    border:1px solid var(--red);
+    color:#ffb4b0;
+  }
+  .next-btn{
+    margin-top:14px;
+    width:100%;
+    background:var(--green);
+  }
+  .next-btn:hover{background:#16a34a;}
+  .shake{animation:shake .3s;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-6px);}
+    75%{transform:translateX(6px);}
+  }
+  .summary{
+    text-align:center;
+  }
+  .summary .score{
+    font-size:42px;
+    font-weight:800;
+    margin:10px 0;
+    color:var(--green);
+  }
+  .summary-list{
+    text-align:left;
+    margin-top:18px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .summary-item{
+    background:#0d1117;
+    border:1px solid var(--grey);
+    border-radius:10px;
+    padding:10px 14px;
+    font-size:14px;
+    display:flex;
+    justify-content:space-between;
+  }
+  .restart-btn{
+    margin-top:18px;
+    width:100%;
+  }
+  footer{
+    text-align:center;
+    color:var(--subtext);
+    font-size:12px;
+    margin-top:20px;
+    padding:0 8px;
+  }
+
+  @media (max-width: 380px){
+    .guess-row{
+      flex-direction:column;
+    }
+    .guess-row button{
+      width:100%;
+    }
+    .progress-row{
+      font-size:12px;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>⚽ Guesser</h1>
+    <div class="sub">Daily football event quiz — guess the player</div>
+  </header>
+
+  <div class="progress-row">
+    <span id="progressLabel">Question 1 of 5</span>
+    <div class="dots" id="dots"></div>
+  </div>
+
+  <div id="game"></div>
+
+  <footer>Real football moments. 6 guesses per question — each wrong guess reveals a more specific clue.</footer>
+</div>
+
+<script>
+/* ---------------------------------------------------------
+   PLAYER LIST (for autofill) — big pool of real footballers
+--------------------------------------------------------- */
+const PLAYERS = [
+"Lionel Messi","Cristiano Ronaldo","Diego Maradona","Pele","Zinedine Zidane","Ronaldo Nazario","Ronaldinho",
+"Andres Iniesta","Xavi Hernandez","Andrea Pirlo","Roberto Baggio","Paolo Maldini","Franco Baresi","Fabio Cannavaro",
+"Gianluigi Buffon","Iker Casillas","David Beckham","Wayne Rooney","Steven Gerrard","Frank Lampard","John Terry",
+"Rio Ferdinand","Paul Scholes","Ryan Giggs","Eric Cantona","Thierry Henry","Patrick Vieira","Dennis Bergkamp",
+"Robert Pires","Sol Campbell","Ashley Cole","Didier Drogba","Frank Rijkaard","Marco van Basten","Ruud Gullit",
+"Johan Cruyff","Dennis Bergkamp","Marco van Basten","Ruud van Nistelrooy","Robin van Persie","Arjen Robben",
+"Wesley Sneijder","Edwin van der Sar","Clarence Seedorf","Patrick Kluivert","Luis Figo","Rui Costa","Deco",
+"Cristiano Ronaldo","Pepe","Sergio Ramos","Karim Benzema","Gareth Bale","Toni Kroos","Luka Modric",
+"James Rodriguez","Marcelo","Dani Carvajal","Raphael Varane","Isco","Marco Asensio","Vinicius Junior",
+"Rodrygo","Eduardo Camavinga","Federico Valverde","Jude Bellingham","Casemiro","Toni Kroos","Lucas Vazquez",
+"Robert Lewandowski","Thomas Muller","Manuel Neuer","Philipp Lahm","Bastian Schweinsteiger","Mesut Ozil",
+"Mario Gotze","Miroslav Klose","Lukas Podolski","Jurgen Klinsmann","Lothar Matthaus","Franz Beckenbauer",
+"Gerd Muller","Oliver Kahn","Michael Ballack","Per Mertesacker","Toni Kroos","Joshua Kimmich","Leon Goretzka",
+"Jamal Musiala","Florian Wirtz","Kai Havertz","Timo Werner","Serge Gnabry","Ilkay Gundogan",
+"Kylian Mbappe","Antoine Griezmann","Paul Pogba","N'Golo Kante","Olivier Giroud","Hugo Lloris","Raphael Varane",
+"Thierry Henry","Zinedine Zidane","Patrick Vieira","Marcel Desailly","Lilian Thuram","Fabien Barthez",
+"Youri Djorkaeff","Emmanuel Petit","David Trezeguet","Franck Ribery","Karim Benzema","Samir Nasri",
+"Eric Abidal","Ousmane Dembele","Adrien Rabiot","Aurelien Tchouameni","Eduardo Camavinga","Theo Hernandez",
+"Sergio Aguero","Diego Maradona","Lionel Messi","Gabriel Batistuta","Hernan Crespo","Carlos Tevez",
+"Javier Zanetti","Juan Roman Riquelme","Pablo Aimar","Esteban Cambiasso","Angel Di Maria","Lautaro Martinez",
+"Emiliano Martinez","Rodrigo De Paul","Julian Alvarez","Enzo Fernandez","Nicolas Otamendi",
+"Ronaldinho","Kaka","Adriano","Robinho","Roberto Carlos","Cafu","Rivaldo","Romario","Bebeto",
+"Dida","Lucio","Juan","Maicon","Dani Alves","Marcelo","Thiago Silva","David Luiz","Neymar","Casemiro",
+"Fabinho","Philippe Coutinho","Vinicius Junior","Rodrygo","Raphinha","Gabriel Jesus","Richarlison",
+"Diego Forlan","Edinson Cavani","Luis Suarez","Diego Godin","Fernando Muslera","Jose Maria Gimenez",
+"Federico Valverde","Darwin Nunez","Ronald Araujo",
+"David Villa","Fernando Torres","Andres Iniesta","Xavi Hernandez","Xabi Alonso","Carles Puyol",
+"Gerard Pique","Sergio Busquets","Cesc Fabregas","Pedro Rodriguez","Jordi Alba","Cesar Azpilicueta",
+"Isco","Koke","Saul Niguez","David Silva","Iker Casillas","Victor Valdes","Pepe Reina",
+"Diego Costa","Alvaro Morata","Rodri","Pedri","Gavi","Ansu Fati","Ferran Torres","Dani Olmo",
+"George Best","Bobby Charlton","Geoff Hurst","Bobby Moore","Gordon Banks","Gary Lineker","Peter Shilton",
+"Alan Shearer","Michael Owen","Steven Gerrard","David Beckham","Wayne Rooney","Frank Lampard",
+"Harry Kane","Raheem Sterling","Jadon Sancho","Marcus Rashford","Jack Grealish","Mason Mount",
+"Declan Rice","Bukayo Saka","Phil Foden","Jude Bellingham","Trent Alexander-Arnold","Kyle Walker",
+"Kevin De Bruyne","Eden Hazard","Romelu Lukaku","Vincent Kompany","Thibaut Courtois","Jan Vertonghen",
+"Toby Alderweireld","Axel Witsel","Youri Tielemans","Yannick Carrasco","Marc Wilmots",
+"Zlatan Ibrahimovic","Henrik Larsson","Freddie Ljungberg","Kim Kallstrom",
+"Luis Figo","Eusebio","Cristiano Ronaldo","Nani","Pepe","Joao Moutinho","Bruno Fernandes",
+"Bernardo Silva","Rui Patricio","William Carvalho","Renato Sanches","Joao Felix","Diogo Jota",
+"Rafael van der Vaart","Robin van Persie","Dirk Kuyt","Klaas-Jan Huntelaar","Memphis Depay",
+"Virgil van Dijk","Frenkie de Jong","Matthijs de Ligt","Georginio Wijnaldum","Donny van de Beek",
+"Cody Gakpo","Xavi Simons",
+"George Weah","Didier Drogba","Samuel Eto'o","Yaya Toure","Kolo Toure","Sadio Mane","Mohamed Salah",
+"Riyad Mahrez","Pierre-Emerick Aubameyang","Victor Osimhen","Achraf Hakimi",
+"Hidetoshi Nakata","Shinji Kagawa","Keisuke Honda","Takefusa Kubo","Takumi Minamino",
+"Park Ji-Sung","Son Heung-min","Tim Cahill","Harry Kewell",
+"Roger Milla","Andriy Shevchenko","Pavel Nedved","Hristo Stoichkov","Michael Laudrup","Peter Schmeichel",
+"Brian Laudrup","Preben Elkjaer","Allan Simonsen",
+"Diego Simeone","Gabriel Batistuta","Hristo Stoichkov","Davor Suker","Luka Modric","Mario Mandzukic",
+"Ivan Rakitic","Dejan Lovren","Marcelo Brozovic","Ivan Perisic","Josip Brekalo","Joško Gvardiol",
+"Robert Prosinecki","Zvonimir Boban",
+"Gareth Bale","Aaron Ramsey","Ryan Giggs","Ian Rush","John Charles",
+"Mark Hughes","Joe Allen","Ben Davies",
+"Pat Jennings","Norman Whiteside","George Best",
+"Roy Keane","Robbie Keane","Damien Duff","Shay Given",
+"Lev Yashin","Igor Netto","Andrei Arshavin","Andrei Shevchenko",
+"Sergei Bubka",
+"Sami Hyypia","Jari Litmanen",
+"Thomas Brolin","Henrik Larsson",
+"Marco Reus","Erling Haaland","Julian Brandt","Mats Hummels","Niklas Sule",
+"Vincent Kompany","Romelu Lukaku","Eden Hazard",
+"Diego Costa","Filipe Luis",
+"Bobby Robson","Diego Forlan",
+"Marco Materazzi","Fabio Grosso","Andrea Pirlo","Gennaro Gattuso","Alessandro Del Piero",
+"Filippo Inzaghi","Christian Vieri","Francesco Totti","Daniele De Rossi","Gianluca Zambrotta",
+"Mario Balotelli","Antonio Cassano","Claudio Marchisio","Marco Verratti","Nicolo Barella",
+"Federico Chiesa","Ciro Immobile","Lorenzo Insigne","Gianluigi Donnarumma","Leonardo Bonucci",
+"Giorgio Chiellini","Federico Bernardeschi",
+"Hugo Sanchez","Cuauhtemoc Blanco","Rafael Marquez","Javier Hernandez","Andres Guardado",
+"Carlos Vela","Hirving Lozano",
+"Carlos Valderrama","Faustino Asprilla","Rene Higuita","Radamel Falcao","James Rodriguez",
+"Juan Cuadrado","Luis Diaz",
+"Ivan Zamorano","Marcelo Salas","Alexis Sanchez","Arturo Vidal","Claudio Bravo",
+"Erling Haaland","Martin Odegaard","Ole Gunnar Solskjaer","John Carew",
+"Zlatan Ibrahimovic","Freddie Ljungberg",
+"Sergio Aguero","Carlos Tevez","Vincent Kompany","David Silva","Yaya Toure",
+"Mario Balotelli","Joe Hart","Raheem Sterling","Kevin De Bruyne","Erling Haaland",
+"Phil Foden","Jack Grealish","Bernardo Silva","Rodri","Ilkay Gundogan","Riyad Mahrez",
+"Steven Gerrard","Jamie Carragher","Fernando Torres","Luis Suarez","Mohamed Salah",
+"Sadio Mane","Roberto Firmino","Virgil van Dijk","Alisson Becker","Trent Alexander-Arnold",
+"Andrew Robertson","Jordan Henderson","James Milner","Dietmar Hamann",
+"Frank Lampard","John Terry","Didier Drogba","Petr Cech","Ashley Cole","Eden Hazard",
+"N'Golo Kante","Cesc Fabregas","Diego Costa","Olivier Giroud","Mason Mount","Kai Havertz",
+"Thiago Silva","Reece James","Cole Palmer",
+"Sol Campbell","Robert Pires","Thierry Henry","Patrick Vieira","Dennis Bergkamp","Cesc Fabregas",
+"Mesut Ozil","Alexis Sanchez","Pierre-Emerick Aubameyang","Bukayo Saka","Martin Odegaard",
+"Declan Rice","Gabriel Martinelli","Kai Havertz",
+"Harry Kane","Sonny (Son Heung-min)","Dele Alli","Christian Eriksen","Hugo Lloris",
+"Jan Vertonghen","Toby Alderweireld","Gareth Bale","Luka Modric (Spurs)",
+"Roy Keane","Cristiano Ronaldo","Wayne Rooney","Ryan Giggs","Paul Scholes","Rio Ferdinand",
+"Nemanja Vidic","Patrice Evra","Edwin van der Sar","David De Gea","Bruno Fernandes",
+"Marcus Rashford","Jadon Sancho","Casemiro","Raphael Varane",
+"Alan Shearer","Andy Cole","Yaya Toure (Newcastle?)",
+"Eric Cantona","Peter Schmeichel","Denis Irwin",
+"George Best","Bobby Charlton","Duncan Edwards","Matt Busby"
+];
+// dedupe
+const uniquePlayers = [...new Set(PLAYERS)].sort();
+const playerLookup = new Set(uniquePlayers.map(p => p.toLowerCase()));
+
+/* ---------------------------------------------------------
+   QUESTIONS — real football events, clues from vague -> specific
+--------------------------------------------------------- */
+
+const QUESTIONS = [
+  {
+    answer: "Javier Zanetti",
+    clues: [
+      "Spent almost his entire club career in one European country",
+      "Was known for his consistency, fitness and versatility",
+      "Captained one of Italy's biggest clubs for many years",
+      "Made over 800 appearances for that club",
+      "Won a historic treble in 2010",
+      "Captained Inter Milan to the Champions League title under José Mourinho"
+    ]
+  },
+  {
+    answer: "Michael Laudrup",
+    clues: [
+      "Widely admired by fellow professionals for his vision and creativity",
+      "Played for two fierce rivals during his club career",
+      "Won league titles in both Italy and Spain",
+      "Was a key figure in Barcelona's Dream Team",
+      "Later joined Real Madrid and immediately won another league title",
+      "Won La Liga with both Barcelona and Real Madrid in the 1990s"
+    ]
+  },
+  {
+    answer: "Gabriel Batistuta",
+    clues: [
+      "A prolific South American striker known for powerful finishing",
+      "Spent most of his career in Italy",
+      "Became a club legend despite rarely playing for title-winning teams",
+      "Held his country's international scoring record for many years",
+      "Finally won a Serie A title late in his career",
+      "Won the 2000–01 Serie A title while at Roma"
+    ]
+  },
+  {
+    answer: "Pavel Nedved",
+    clues: [
+      "A tireless midfielder known for his running power and long-range shooting",
+      "Left his home country to establish himself in Italian football",
+      "Played for both Lazio and Juventus",
+      "Reached a Champions League Final with Juventus",
+      "Won the Ballon d'Or in 2003",
+      "Missed the 2003 Champions League Final through suspension after a semi-final booking"
+    ]
+  },
+  {
+    answer: "Clarence Seedorf",
+    clues: [
+      "A midfielder renowned for his strength, technique and intelligence",
+      "Played in the Netherlands, Spain and Italy",
+      "Represented several European giants during his career",
+      "Won the Champions League multiple times",
+      "Achieved that feat with three different clubs",
+      "Won the Champions League with Ajax, Real Madrid and AC Milan"
+    ]
+  }
+];
+
+/* ---------------------------------------------------------
+   GAME STATE
+--------------------------------------------------------- */
+const MAX_GUESSES = 6;
+let qIndex = 0;
+let results = []; // {answer, guessesUsed, solved}
+const state = QUESTIONS.map(()=>({clueLevel:1, guesses:[], finished:false}));
+
+const gameEl = document.getElementById('game');
+const dotsEl = document.getElementById('dots');
+const progressLabel = document.getElementById('progressLabel');
+
+function showNotOnListWarning(){
+  const input = document.getElementById('guessInput');
+  const warn = document.getElementById('dupWarning');
+  if(warn){
+    warn.textContent = "Not a recognized player — pick one from the suggestions.";
+    warn.classList.add('show');
+  }
+  if(input){
+    input.classList.add('dup-shake');
+    setTimeout(()=>input.classList.remove('dup-shake'), 300);
+  }
+  clearTimeout(window._dupTimer);
+  window._dupTimer = setTimeout(()=>{ if(warn){ warn.classList.remove('show'); } }, 2400);
+}
+
+function showDuplicateWarning(){
+  const input = document.getElementById('guessInput');
+  const warn = document.getElementById('dupWarning');
+  if(warn){
+    warn.textContent = "Already guessed that — try someone else.";
+    warn.classList.add('show');
+  }
+  input.classList.add('dup-shake');
+  setTimeout(()=>input.classList.remove('dup-shake'), 300);
+  clearTimeout(window._dupTimer);
+  window._dupTimer = setTimeout(()=>{ if(warn){ warn.classList.remove('show'); } }, 2200);
+}
+
+function normalize(str){
+  return str.toLowerCase().trim().replace(/[^a-z\s]/g,'');
+}
+
+function renderDots(){
+  dotsEl.innerHTML = '';
+  QUESTIONS.forEach((q,i)=>{
+    const d = document.createElement('div');
+    d.className = 'dot';
+    if(i === qIndex) d.classList.add('current');
+    if(state[i].finished){
+      d.classList.add(state[i].solved ? 'solved' : 'failed');
+    }
+    dotsEl.appendChild(d);
+  });
+}
+
+function render(){
+  renderDots();
+  progressLabel.textContent = `Question ${qIndex+1} of ${QUESTIONS.length}`;
+
+  if(qIndex >= QUESTIONS.length){
+    renderSummary();
+    return;
+  }
+
+  const q = QUESTIONS[qIndex];
+  const s = state[qIndex];
+
+  let html = `<div class="card">`;
+  html += `<h2>Guess the player / event</h2>`;
+
+  for(let i=0;i<s.clueLevel;i++){
+    html += `<div class="clue"><span class="clue-tile">${i+1}</span><span class="clue-text">${q.clues[i]}</span></div>`;
+  }
+
+  if(!s.finished){
+    html += `
+      <div class="guess-row">
+        <div class="autocomplete-wrap">
+          <input type="text" id="guessInput" placeholder="Type a player name…" autocomplete="off" autocapitalize="words" spellcheck="false"/>
+          <div class="suggestions" id="suggestions"></div>
+        </div>
+        <button id="submitGuess">Guess</button>
+      </div>
+      <div class="dup-warning" id="dupWarning"></div>
+      <div class="guess-counter">Guesses left: ${MAX_GUESSES - s.guesses.length} / ${MAX_GUESSES}</div>
+    `;
+  }
+
+  if(s.guesses.length){
+    html += `<div class="history">`;
+    s.guesses.forEach(g=>{
+      html += `<span class="pill">${g}</span>`;
+    });
+    html += `</div>`;
+  }
+
+  if(s.finished){
+    if(s.solved){
+      html += `<div class="result win">✅ Correct! It was <strong>${q.answer}</strong>, solved in ${s.guesses.length} guess${s.guesses.length===1?'':'es'}.</div>`;
+    } else {
+      html += `<div class="result lose">❌ Out of guesses. The answer was <strong>${q.answer}</strong>.</div>`;
+    }
+    html += `<button class="next-btn" id="nextBtn">${qIndex === QUESTIONS.length-1 ? 'See results' : 'Next question →'}</button>`;
+  }
+
+  html += `</div>`;
+  gameEl.innerHTML = html;
+
+  if(!s.finished){
+    const input = document.getElementById('guessInput');
+    const btn = document.getElementById('submitGuess');
+    const suggestionsBox = document.getElementById('suggestions');
+    let activeIndex = -1;
+    let currentMatches = [];
+
+    input.focus();
+
+    function closeSuggestions(){
+      suggestionsBox.innerHTML = '';
+      suggestionsBox.classList.remove('open');
+      currentMatches = [];
+      activeIndex = -1;
+    }
+
+    function renderSuggestions(query){
+      const q = query.trim().toLowerCase();
+      if(!q){ closeSuggestions(); return; }
+      currentMatches = uniquePlayers.filter(p => p.toLowerCase().includes(q)).slice(0, 8);
+      if(!currentMatches.length){ closeSuggestions(); return; }
+      activeIndex = -1;
+      suggestionsBox.innerHTML = currentMatches.map((p,i)=>
+        `<div class="suggestion-item" data-index="${i}">${highlightMatch(p, q)}</div>`
+      ).join('');
+      suggestionsBox.classList.add('open');
+    }
+
+    function highlightMatch(name, q){
+      const idx = name.toLowerCase().indexOf(q);
+      if(idx === -1) return name;
+      return name.slice(0,idx) + '<strong>' + name.slice(idx, idx+q.length) + '</strong>' + name.slice(idx+q.length);
+    }
+
+    function selectSuggestion(name){
+      input.value = name;
+      closeSuggestions();
+      input.focus();
+    }
+
+    input.addEventListener('input', ()=> renderSuggestions(input.value));
+
+    input.addEventListener('keydown', e=>{
+      const items = suggestionsBox.querySelectorAll('.suggestion-item');
+      if(e.key === 'ArrowDown' && items.length){
+        e.preventDefault();
+        activeIndex = (activeIndex + 1) % items.length;
+        items.forEach((it,i)=>it.classList.toggle('active', i===activeIndex));
+        items[activeIndex].scrollIntoView({block:'nearest'});
+      } else if(e.key === 'ArrowUp' && items.length){
+        e.preventDefault();
+        activeIndex = (activeIndex - 1 + items.length) % items.length;
+        items.forEach((it,i)=>it.classList.toggle('active', i===activeIndex));
+        items[activeIndex].scrollIntoView({block:'nearest'});
+      } else if(e.key === 'Enter'){
+        e.preventDefault();
+        if(activeIndex >= 0 && currentMatches[activeIndex]){
+          selectSuggestion(currentMatches[activeIndex]);
+        } else {
+          handleGuess(input.value);
+        }
+      } else if(e.key === 'Escape'){
+        closeSuggestions();
+      }
+    });
+
+    suggestionsBox.addEventListener('mousedown', e=>{
+      const item = e.target.closest('.suggestion-item');
+      if(!item) return;
+      e.preventDefault();
+      const idx = Number(item.dataset.index);
+      selectSuggestion(currentMatches[idx]);
+    });
+
+    document.addEventListener('click', function outsideClick(e){
+      if(!input.contains(e.target) && !suggestionsBox.contains(e.target)){
+        closeSuggestions();
+      }
+    });
+
+    btn.addEventListener('click', ()=>{
+      closeSuggestions();
+      handleGuess(input.value);
+    });
+  } else {
+    document.getElementById('nextBtn').addEventListener('click', ()=>{
+      qIndex++;
+      render();
+    });
+  }
+}
+
+function handleGuess(raw){
+  const val = raw.trim();
+  if(!val) return;
+  const q = QUESTIONS[qIndex];
+  const s = state[qIndex];
+  if(s.finished) return;
+
+  if(!playerLookup.has(val.toLowerCase())){
+    showNotOnListWarning();
+    return;
+  }
+
+  const alreadyGuessed = s.guesses.some(g => normalize(g) === normalize(val));
+  if(alreadyGuessed){
+    showDuplicateWarning();
+    return;
+  }
+
+  s.guesses.push(val);
+
+  if(normalize(val) === normalize(q.answer)){
+    s.finished = true;
+    s.solved = true;
+    results[qIndex] = {answer:q.answer, guessesUsed:s.guesses.length, solved:true};
+    render();
+    return;
+  }
+
+  if(s.guesses.length >= MAX_GUESSES){
+    s.finished = true;
+    s.solved = false;
+    results[qIndex] = {answer:q.answer, guessesUsed:s.guesses.length, solved:false};
+    render();
+    return;
+  }
+
+  // wrong guess: reveal next clue
+  if(s.clueLevel < q.clues.length){
+    s.clueLevel++;
+  }
+  render();
+
+  const card = document.querySelector('.card');
+  if(card){
+    card.classList.add('shake');
+    setTimeout(()=>card.classList.remove('shake'), 300);
+  }
+}
+
+function renderSummary(){
+  const solvedCount = results.filter(r=>r.solved).length;
+  let html = `<div class="card summary">`;
+  html += `<h2>Final score</h2>`;
+  html += `<div class="score">${solvedCount} / ${QUESTIONS.length}</div>`;
+  html += `<div class="summary-list">`;
+  results.forEach((r,i)=>{
+    html += `<div class="summary-item">
+      <span>Q${i+1}: ${r.answer}</span>
+      <span>${r.solved ? '✅ '+r.guessesUsed+'/'+MAX_GUESSES : '❌ failed'}</span>
+    </div>`;
+  });
+  html += `</div>`;
+  html += `<button class="restart-btn" id="restartBtn">Play again</button>`;
+  html += `</div>`;
+  gameEl.innerHTML = html;
+  document.getElementById('restartBtn').addEventListener('click', ()=>{
+    qIndex = 0;
+    results = [];
+    state.forEach(s=>{ s.clueLevel = 1; s.guesses = []; s.finished = false; s.solved = false; });
+    render();
+  });
+}
+
+render();
+</script>
+</body>
+</html>
