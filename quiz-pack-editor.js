@@ -1882,7 +1882,6 @@
     return {
       pack_date: state.packDate || elements.quizDateInput.value || "",
       questions: state.questions,
-      results: state.results,
       alt_questions: serializeAltQuestions(state.altQuestions)
     };
   }
