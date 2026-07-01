@@ -1515,11 +1515,13 @@
       const answerCode = sanitizeLetterShortAnswer(next.short_answer);
       const answerIndex = answerCode ? answerCode.charCodeAt(0) - 65 : -1;
 
-      if (answerIndex >= 0 && answerIndex < options.length) {
-        next.long_answer = options[answerIndex];
-      } else if (options.length > 0) {
-        next.short_answer = "A";
-        next.long_answer = options[0];
+      if (next.long_answer.length === 0){
+        if (answerIndex >= 0 && answerIndex < options.length) {
+          next.long_answer = options[answerIndex];
+        } else if (options.length > 0) {
+          next.short_answer = "A";
+          next.long_answer = options[0];
+        }
       }
     }
 
