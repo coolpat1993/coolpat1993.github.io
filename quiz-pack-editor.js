@@ -1541,7 +1541,7 @@
           .filter(Boolean);
 
         if (ordered.length === options.length) {
-          next.long_answer = ordered.join(" -> ");
+          next.long_answer = ordered.join(", ");
         }
       }
     }
@@ -1603,7 +1603,7 @@
     "- Prefer broad American knowledge.",
     "- Keep wording concise.",
     "- Ensure short_answer exactly matches the correct answer.",
-    "- For multiple choice (M) questions, use the long_answer for extra information about the question.",
+    "- For multiple choice (M) questions, use the long_answer for extra information about the question. (example - 'How many U.S. states begin with the letter 'M'?' short_answer: '8', long_answer: 'Maine, Maryland, Massachusetts, Michigan, Minnesota, Mississippi, Missouri, Montana')",
 
     "Type rules:",
     "- M: options must be plausible; short_answer must be the correct option letter.",
