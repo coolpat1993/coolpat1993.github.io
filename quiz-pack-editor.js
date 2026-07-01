@@ -1602,6 +1602,7 @@
     "- Prefer broad American knowledge.",
     "- Keep wording concise.",
     "- Ensure short_answer exactly matches the correct answer.",
+    "- For multiple choice (M) questions, use the long_answer for extra information about the question.",
 
     "Type rules:",
     "- M: options must be plausible; short_answer must be the correct option letter.",
