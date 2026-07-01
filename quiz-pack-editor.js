@@ -1588,6 +1588,7 @@
     "5. Preserve approximate difficulty.",
     "6. Preserve type_code whenever practical.",
     "7. Only rewrite completely when localization cannot produce a natural US question.",
+    "8. Attempt to preserve the original question's writing style for question, short_answer and the long answer, including punctuation, capitalization, and formatting.",
 
     "Requirements:",
     "- Every question must have exactly one correct answer.",
