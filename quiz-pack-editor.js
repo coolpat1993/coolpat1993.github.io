@@ -1680,7 +1680,7 @@
     const messages = buildOpenAiMessages(items);
     const requestBody = {
       model: OPENAI_MODEL,
-      temperature: 0.3,
+      temperature: 1,
       response_format: { type: "json_object" },
       messages
     };
