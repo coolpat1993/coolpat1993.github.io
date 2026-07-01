@@ -7,7 +7,7 @@
   const UPLOAD_API_KEY_STORAGE_KEY = "quiz-pack-editor.upload-api-key";
   const OPENAI_API_KEY_STORAGE_KEY = "quiz-pack-editor.openai-api-key";
   const OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
-  const OPENAI_MODEL = "gpt-4.1-mini";
+  const OPENAI_MODEL = "gpt-5.5";
   const QUIZ_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
   const TYPE_CODES = ["L", "M", "N", "S"];
   const ANSWER_CODES = ["A", "B", "C", "D", "E", "F"];
@@ -1615,6 +1615,9 @@
     "- short_answer is correct",
     "- the question would be understandable to an average American",
     "- if any check fails, replace the entire question",
+
+    "Return ONLY valid JSON in this exact format:",
+    "{\"items\":[{\"id\":\"string\",\"us_alt\":object}]}"
   ].join(" ");
 
   const user = {
@@ -1680,7 +1683,7 @@
     const messages = buildOpenAiMessages(items);
     const requestBody = {
       model: OPENAI_MODEL,
-      temperature: 0.3,
+      temperature: 1,
       response_format: { type: "json_object" },
       messages
     };
@@ -1720,6 +1723,8 @@
       payload = {};
     }
 
+    console.log(JSON.stringify(payload, null, 2));
+
     if (!response.ok) {
       const errorCode = String(payload?.error?.code || "");
       const errorMessage = String(payload?.error?.message || `HTTP ${response.status}`);
@@ -1740,6 +1745,8 @@
     } catch {
       throw new Error("OpenAI returned invalid JSON.");
     }
+
+    console.log("OpenAI parsed response:", parsed);
 
     const itemsArray = Array.isArray(parsed?.items) ? parsed.items : [];
     if (itemsArray.length === 0) {
