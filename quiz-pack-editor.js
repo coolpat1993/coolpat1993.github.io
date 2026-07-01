@@ -7,7 +7,7 @@
   const UPLOAD_API_KEY_STORAGE_KEY = "quiz-pack-editor.upload-api-key";
   const OPENAI_API_KEY_STORAGE_KEY = "quiz-pack-editor.openai-api-key";
   const OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
-  const OPENAI_MODEL = "gpt-5.5";
+  const OPENAI_MODEL = "gpt-5.5-mini";
   const QUIZ_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
   const TYPE_CODES = ["L", "M", "N", "S"];
   const ANSWER_CODES = ["A", "B", "C", "D", "E", "F"];
