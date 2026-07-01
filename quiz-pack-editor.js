@@ -7,7 +7,7 @@
   const UPLOAD_API_KEY_STORAGE_KEY = "quiz-pack-editor.upload-api-key";
   const OPENAI_API_KEY_STORAGE_KEY = "quiz-pack-editor.openai-api-key";
   const OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
-  const OPENAI_MODEL = "gpt-4.1-mini";
+  const OPENAI_MODEL = "gpt-5.5";
   const QUIZ_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
   const TYPE_CODES = ["L", "M", "N", "S"];
   const ANSWER_CODES = ["A", "B", "C", "D", "E", "F"];
@@ -1564,58 +1564,117 @@
     return next;
   }
 
-  function buildOpenAiMessages(items) {
-    const system = [
-      "You are generating NEW US quiz alternatives for UK-only questions.",
-      "Primary goal: every generated US question and answer pair must be correct.",
-      "The US question does NOT need to be closely related to the UK source.",
-      "Keep only the category and approximate difficulty; topic/entity can be completely different.",
-      "Prioritize broad US familiarity and low ambiguity.",
-      "Write specific clues with a single clear answer.",
-      "Avoid vague wording like 'popular', 'well-known', 'famous for', or 'known for' unless a unique identifier is also present.",
-      "Avoid UK-only references.",
-      "Slogan, mascot, jingle, or campaign clues are allowed only when they are specific, widely recognized in the US, and point to one clear brand/entity.",
-      "Prefer stable facts with clear, verifiable answers over niche or arguable facts.",
-      "If uncertain about any fact, replace it with a simpler US fact you are certain about.",
-      "Never guess.",
-      "Ensure short_answer is fully correct for q and type_code.",
-      "For M questions: options must be plausible and short_answer must point to the correct option letter.",
-      "For S questions: options must be the answer items and short_answer must represent the correct order.",
-      "For N questions: short_answer must be a valid numeric string.",
-      "Return valid JSON only with shape: {\"items\":[{\"id\":string,\"us_alt\":object}]}"
-    ].join(" ");
+ function buildOpenAiMessages(items) {
+  const system = [
+    "You are generating American English versions of quiz questions.",
 
-    const user = {
-      task: "Generate accurate US alternative questions for the provided UK-only items.",
-      constraints: {
-        locale_target: "en-US",
-        preserve_type_code: "prefer_but_not_required",
-        preserve_category: true,
-        preserve_difficulty: "approximate_easy_to_medium",
-        prioritize_wide_american_appeal: true,
-        keep_answer_correct: true,
-        allow_non_1_to_1_rewrites: "strong",
-        require_similarity_to_source: false,
-        prefer_new_topic_over_paraphrase: true,
-        avoid_uk_specific_entities: true,
-        allow_specific_unambiguous_us_slogan_clues: true,
-        avoid_generic_brand_popularity_clues: true,
-        prefer_objective_facts: true,
-        require_unambiguous_answers: true,
-        require_specific_unique_clues: true,
-        avoid_vague_popularity_wording: true,
-        require_high_factual_confidence: true,
-        never_guess: true,
-        output_json_only: true
-      },
-      questions: items
-    };
+    "For each input question, FIRST decide whether it can simply be localized.",
 
-    return [
-      { role: "system", content: system },
-      { role: "user", content: JSON.stringify(user) }
-    ];
-  }
+    "If localization is sufficient:",
+    "- Preserve the original question.",
+    "- Make only the minimum changes needed for American English.",
+    "- Convert UK spelling and wording (colour→color, centre→center, petrol→gas, lift→elevator, motorway→highway/interstate, etc.).",
+    "- Preserve the original answer whenever possible.",
+
+    "If localization is NOT sufficient because the question depends on UK-specific culture, TV, politics, geography, brands, sport, celebrities, products, advertising or institutions:",
+    "- Generate a completely new US question instead.",
+    "- The new question does NOT need to resemble the original beyond category and approximate difficulty.",
+
+    "Priority order:",
+    "1. Every question and answer must be factually correct.",
+    "2. The question must make sense to an average American.",
+    "3. The answer must be unambiguous.",
+    "4. Preserve category.",
+    "5. Preserve approximate difficulty.",
+    "6. Preserve type_code whenever practical.",
+    "7. Only rewrite completely when localization cannot produce a natural US question.",
+
+    "Requirements:",
+    "- Every question must have exactly one correct answer.",
+    "- Every clue must be true.",
+    "- Never guess.",
+    "- If you are uncertain about ANY fact, replace the question with a simpler fact you know is correct.",
+    "- Prefer objective, stable facts over recent events or opinions.",
+    "- Avoid questions whose answer depends on popularity, reputation, trends or public opinion.",
+    "- Avoid vague wording such as 'popular', 'famous for', 'well-known', or 'known for' unless the clue uniquely identifies one answer.",
+    "- Avoid niche trivia.",
+    "- Avoid advertising campaigns, slogans, mascots or jingles unless they are extremely well-known across the United States and identify only one answer.",
+    "- Prefer broad American knowledge.",
+    "- Keep wording concise.",
+    "- Ensure short_answer exactly matches the correct answer.",
+
+    "Type rules:",
+    "- M: options must be plausible; short_answer must be the correct option letter.",
+    "- S: options are the answer items; short_answer must represent the correct order.",
+    "- N: short_answer must be a valid numeric string.",
+    "- L and other text answers: short_answer must exactly match the intended answer.",
+
+    "Before producing each question, verify mentally that:",
+    "- every fact is true",
+    "- only one answer fits",
+    "- short_answer is correct",
+    "- the question would be understandable to an average American",
+    "- if any check fails, replace the entire question",
+  ].join(" ");
+
+  const user = {
+    task: "Generate accurate American English quiz questions.",
+
+    workflow: [
+      "Step 1: Determine whether the original question already works in the United States.",
+      "Step 2: If yes, localize only spelling or wording.",
+      "Step 3: If no, generate a completely new US question.",
+      "Step 4: Verify factual accuracy before returning."
+    ],
+
+    constraints: {
+      locale_target: "en-US",
+
+      preserve_category: true,
+      preserve_difficulty: "approximate_easy_to_medium",
+
+      preserve_type_code: "prefer",
+
+      prioritize_localization_over_rewrite: true,
+      rewrite_only_if_necessary: true,
+
+      prioritize_wide_american_appeal: true,
+      avoid_uk_specific_entities: true,
+
+      allow_non_1_to_1_rewrites: true,
+
+      require_unambiguous_answers: true,
+      require_specific_unique_clues: true,
+
+      avoid_vague_popularity_wording: true,
+      avoid_subjective_questions: true,
+      avoid_niche_trivia: true,
+
+      prefer_objective_facts: true,
+      prefer_stable_facts: true,
+
+      keep_answer_correct: true,
+      require_high_factual_confidence: true,
+      never_guess: true,
+
+      output_json_only: true
+    },
+
+    questions: items
+  };
+
+  return [
+    {
+      role: "system",
+      content: system
+    },
+    {
+      role: "user",
+      content: JSON.stringify(user)
+    }
+  ];
+}
+
 
   async function requestUsAltsFromOpenAi(items, apiKey) {
     const messages = buildOpenAiMessages(items);
