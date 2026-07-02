@@ -1712,6 +1712,23 @@
     } catch (error) {
       const message = String(error?.message || "");
       if (message === "Failed to fetch") {
+        try {
+          localStorage.removeItem(OPENAI_API_KEY_STORAGE_KEY);
+        } catch {}
+
+        // Clear in-memory key and notify the user
+        setOpenAiApiKey("");
+        setStatus(
+          "OpenAI request blocked in browser (CORS/network). Paste a valid OpenAI API key to retry.",
+          true
+        );
+
+        // Prompt the user to paste a key and retry once if they provide one
+        const retriedKey = requestOpenAiApiKeyFromUser();
+        if (retriedKey) {
+          return await requestUsAltsFromOpenAi(items, retriedKey);
+        }
+
         throw new Error(
           "OpenAI request blocked in browser (CORS/network). Direct client-side calls to api.openai.com from this page origin are blocked. Use a server-side proxy endpoint and call that endpoint from the editor."
         );
