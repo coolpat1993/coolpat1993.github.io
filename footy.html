@@ -60,10 +60,10 @@
   /* ---------- TITLE ---------- */
   #screen-title{align-items:center;justify-content:center;text-align:center;gap:10px;position:relative;}
   #screen-title::before{
-    content:"";position:absolute;left:50%;top:38%;width:1px;height:60%;background:var(--line);transform:translateX(-50%);
+    content:"";position:absolute;left:50%;top:50%;width:1px;height:50%;background:var(--line);transform:translateX(-50%);
   }
   #screen-title::after{
-    content:"";position:absolute;left:50%;top:38%;width:130px;height:130px;border:1px solid var(--line);border-radius:50%;transform:translate(-50%,-50%);
+    content:"";position:absolute;left:50%;top:50%;width:120px;height:120px;border:1px solid var(--line);border-radius:50%;transform:translate(-50%,-50%);
   }
   .kickoff-badge{
     font-size:12px;letter-spacing:4px;color:var(--gold);font-weight:800;
@@ -93,6 +93,8 @@
   .btn.danger{background:var(--crimson);color:#2a0906;box-shadow:0 4px 0 #7c2a24;}
   .btn:disabled{opacity:0.35;cursor:not-allowed;}
   .btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  .btn-stack{flex-direction:column;align-items:center;}
+  .btn-stack .btn{min-width:180px;max-width:360px;width:100%;}
 
   /* ---------- MANAGER SELECT ---------- */
   #screen-managers{gap:12px;}
@@ -116,7 +118,7 @@
   }
   .map-track{
     flex:1;display:flex;flex-direction:column-reverse;gap:6px;
-    padding:10px 6px;position:relative;
+    padding:0px 6px;position:relative;
   }
   .map-track::before{
     content:"";position:absolute;left:50%;top:10px;bottom:10px;width:2px;
@@ -314,8 +316,35 @@
     <div class="title-crest">⚽</div>
     <div class="titlemain">FOOTBALL<br>DECK</div>
     <div class="titlesub">Every match is a card battle.</div>
-    <div class="btn-row">
+    <div class="btn-row btn-stack">
       <button class="btn" onclick="goTo('screen-managers')">Kick Off</button>
+      <button class="btn secondary" onclick="goTo('screen-howto')">How To Play</button>
+    </div>
+  </div>
+
+  <!-- HOW TO PLAY -->
+  <div class="screen center-screen" id="screen-howto" style="justify-content:center;padding:20px;">
+    <div class="eyebrow">How To Play</div>
+    <h2 style="font-size:20px;">Quick Guide</h2>
+    <div class="event-text" style="max-width:440px;line-height:1.4;">
+      Play cards from your hand each turn using Energy (3 per turn). Attack cards score goals by reducing the
+      opponent's Pressure (HP); reach the required goals to win a match. Use Defence and Tactical cards to
+      manage Block and setup combos. Between matches you can pick rewards, visit shops and manage your deck.
+    </div>
+    <div class="event-text" style="max-width:440px;line-height:1.4;text-align:left;">
+      <strong>Buffs & Debuffs — Quick Keywords</strong>
+      <div style="margin-top:8px;font-size:13px;color:var(--chalk-dim);line-height:1.35;">
+        <div><strong>Momentum (Buff):</strong> Increases your attack effectiveness; stacks add small bonuses.</div>
+        <div><strong>Vulnerable / Defensive Gap (Debuff on enemy):</strong> Enemy takes increased damage.</div>
+        <div><strong>Weak / Under Pressure (Debuff on player):</strong> Reduces damage dealt by attacks.</div>
+        <div><strong>Frail / Disorganised:</strong> Reduces the effectiveness of Block (defence).</div>
+        <div><strong>Fatigue:</strong> Deals damage over time at end of turns.</div>
+        <div><strong>Shaken:</strong> Temporarily reduces the opponent's next attack (or their next action effectiveness).</div>
+      </div>
+    </div>
+    <div class="btn-row btn-stack">
+      <button class="btn secondary" onclick="goTo('screen-title')">Back</button>
+      <button class="btn" onclick="goTo('screen-managers')">Start Run</button>
     </div>
   </div>
 
@@ -490,7 +519,7 @@ const CARD_DB = {
 /* ---------- PLAYER RELICS ---------- */
 const RELIC_DB = {
   debruyne:{name:"Kevin De Bruyne",desc:"First attack card each turn costs 1 less."},
-  haaland:{name:"Erling Haaland",desc:"Attack cards deal +25% damage."},
+  haaland:{name:"Erling Haaland",desc:"Attack cards deal +10% damage."},
   kante:{name:"N'Golo Kanté",desc:"Gain 1 Momentum whenever you gain Block."},
   vandijk:{name:"Virgil van Dijk",desc:"Start each match with +10 Block."},
   saka:{name:"Bukayo Saka",desc:"Draw +1 card after scoring a goal."},
@@ -754,7 +783,7 @@ function playCard(idx){
 function computeDamageValue(base, opts={}){
   const inCombat = opts.combat!==false && !!state.combat && !state.combat.combatOver;
   let dmg = base;
-  if(state.run.relics.includes('haaland')) dmg = Math.round(dmg*1.25);
+  if(state.run.relics.includes('haaland')) dmg = Math.round(dmg*1.10);
   if(inCombat){
     if(state.combat.player.statuses.weak) dmg = Math.round(dmg*0.75);
     if(state.combat.player.statuses.momentum) dmg += state.combat.player.statuses.momentum*2;
