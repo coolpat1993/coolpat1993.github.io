@@ -194,7 +194,7 @@
     background:linear-gradient(160deg,#e9e1cd,var(--tan));
     color:#231a0e;
     border:2px solid #7a6339;
-    margin-left:-6px;position:relative;
+    margin-left:-0px;position:relative;
     display:flex;flex-direction:column;
     padding:6px 6px 5px;
     box-shadow:0 6px 14px rgba(0,0,0,0.45);
@@ -210,12 +210,12 @@
     width:22px;height:9px;border-radius:3px;background:#8f8570;border:1px solid #5c5646;
   }
   .card-cost{
-    position:absolute;top:5px;left:5px;width:20px;height:20px;border-radius:50%;
+    position:absolute;top:0px;left:0px;width:20px;height:20px;border-radius:50%;
     background:var(--navy);color:#fff;font-size:12px;font-weight:900;
     display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.3);
   }
   .card-type-tag{
-    position:absolute;top:5px;right:5px;font-size:12px;
+    position:absolute;top:1px;right:1px;font-size:12px;
   }
   .card-name{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.2px;margin-top:20px;line-height:1.05;}
   .card-desc{font-size:9.5px;line-height:1.25;margin-top:4px;font-weight:600;color:#3b301b;flex:1;}
@@ -514,6 +514,46 @@ const CARD_DB = {
     effect:(ctx)=>{ addStatus(state.combat.player,'momentum',2); }},
   total_football:{name:"Total Football",type:"tactical",cost:2,icon:"🌀",desc:"Draw 2 cards. Gain 1 Momentum.",
     effect:(ctx)=>{ drawCards(2); addStatus(state.combat.player,'momentum',1); }},
+  /* ---------- EXPANSION CARDS (25 new cards) ---------- */
+  rapid_pass:{name:"Rapid Pass",type:"attack",cost:0,icon:"➡️",dmg:4,extra:"If previous card played was an Attack, draw 1.",
+    effect:(ctx)=>{ dealDamage(ctx,4); const dp = state.combat.discardPile; const last = dp[dp.length-1]; if(last && CARD_DB[last] && CARD_DB[last].type==='attack'){ drawCards(1); } }},
+  clinical_finisher:{name:"Clinical Finisher",type:"attack",cost:1,icon:"🎯",dmg:8,extra:"Consume 1 Momentum to deal +10 dmg.",
+    effect:(ctx)=>{ const p = state.combat.player; if(p.statuses.momentum && p.statuses.momentum>0){ addStatus(p,'momentum',-1); dealDamage(ctx,18); } else { dealDamage(ctx,8); } }},
+  combo_cross:{name:"Combo Cross",type:"attack",cost:1,icon:"✳️",dmg:6,extra:"If the previous card was an Attack, deal 10 instead.",
+    effect:(ctx)=>{ const dp = state.combat.discardPile; const last = dp[dp.length-1]; if(last && CARD_DB[last] && CARD_DB[last].type==='attack'){ dealDamage(ctx,10); } else { dealDamage(ctx,6); } }},
+  momentum_strike:{name:"Momentum Strike",type:"attack",cost:2,icon:"🚩",dmg:10,extra:"Consume all Momentum: +3 dmg per stack.",
+    effect:(ctx)=>{ const p = state.combat.player; const m = p.statuses.momentum||0; if(m>0){ addStatus(p,'momentum',-m); dealDamage(ctx,10 + m*3); } else { dealDamage(ctx,10); } }},
+  press_shot:{name:"Press Shot",type:"attack",cost:1,icon:"📣",dmg:5,extra:"If enemy has Fatigue, draw 1.",
+    effect:(ctx)=>{ dealDamage(ctx,5); if(ctx.enemy.statuses.fatigue) drawCards(1); }},
+  break_lines:{name:"Break The Lines",type:"attack",cost:1,icon:"🔓",dmg:6,extra:"If enemy has Block, clear up to 8 Block and add it to this hit.",
+    effect:(ctx)=>{ const stolen = Math.min(8, ctx.enemy.block||0); ctx.enemy.block = Math.max(0,(ctx.enemy.block||0) - stolen); dealDamage(ctx,6 + stolen); }},
+  late_run:{name:"Late Run",type:"tactical",cost:1,icon:"🏃‍♂️",desc:"Draw 1. If you have no Momentum, gain 1.",
+    effect:(ctx)=>{ drawCards(1); const p = state.combat.player; if(!p.statuses.momentum) addStatus(p,'momentum',1); }},
+  recycle_play:{name:"Recycling Play",type:"tactical",cost:1,icon:"🔁",desc:"Return a card from discard to draw and draw 1.",
+    effect:(ctx)=>{ const c = state.combat; if(c.discardPile.length===0) return; const card = c.discardPile.pop(); c.drawPile.push(card); c.drawPile = shuffle(c.drawPile); drawCards(1); }},
+  switch_play:{name:"Switch Play",type:"tactical",cost:1,icon:"↔️",desc:"Shuffle your hand into draw, draw 3.",
+    effect:(ctx)=>{ const c = state.combat; c.discardPile.push(...c.hand); c.hand = []; c.drawPile = shuffle(c.drawPile.concat(c.discardPile)); c.discardPile = []; drawCards(3); }},
+  overload:{name:"Overload",type:"tactical",cost:2,icon:"⚡",desc:"Draw 3, then discard 2 at random.",
+    effect:(ctx)=>{ drawCards(3); const c = state.combat; for(let i=0;i<2;i++){ if(c.hand.length===0) break; const idx = Math.floor(Math.random()*c.hand.length); c.discardPile.push(c.hand.splice(idx,1)[0]); } }},
+  finishing_move:{name:"Finishing Move",type:"tactical",cost:2,icon:"🏁",desc:"Consume 2 Momentum to deal 20, otherwise deal 8.",
+    effect:(ctx)=>{ const p = state.combat.player; const m = p.statuses.momentum||0; if(m>=2){ addStatus(p,'momentum',-2); dealDamage(ctx,20); } else { dealDamage(ctx,8); } }},
+  clinical_sub:{name:"Clinical Sub",type:"tactical",cost:1,icon:"🔄",desc:"Add a random Attack card to your deck.",
+    effect:(ctx)=>{ const atks = Object.keys(CARD_DB).filter(k=>CARD_DB[k].type==='attack'); const pick = atks[Math.floor(Math.random()*atks.length)]; state.run.deck.push(pick); }},
+  press_the_box:{name:"Press The Box",type:"tactical",cost:1,icon:"🔊",desc:"Apply 1 Fatigue to enemy. Gain 1 Momentum.",
+    effect:(ctx)=>{ addStatus(ctx.enemy,'fatigue',1); addStatus(state.combat.player,'momentum',1); }},
+  reactive_tackle:{name:"Reactive Tackle",type:"defence",cost:1,icon:"🦵",block:5,extra:"If enemy is Vulnerable, deal 8.",
+    effect:(ctx)=>{ gainBlock(5); if(ctx.enemy.statuses.vulnerable) dealDamage(ctx,8); }},
+  counterstrike:{name:"Counterstrike",type:"defence",cost:1,icon:"⚔️",block:7,extra:"If enemy intends to attack, deal 10.",
+    effect:(ctx)=>{ gainBlock(7); const intent = state.combat.currentIntent; if(intent && intent.type==='attack') dealDamage(ctx,10); }},
+  measured_build:{name:"Measured Build",type:"tactical",cost:1,icon:"⚙️",desc:"Gain 1 Momentum and draw 1 if you have Weak.",
+    effect:(ctx)=>{ addStatus(state.combat.player,'momentum',1); if(state.combat.player.statuses.weak) drawCards(1); }},
+  /* ---------- ZERO-COST CARDS ---------- */
+  parry:{name:"Parry",type:"defence",cost:0,icon:"🛡️",block:3,extra:"If enemy intends to attack, deal 6.",
+    effect:(ctx)=>{ gainBlock(3); const intent = state.combat.currentIntent; if(intent && intent.type==='attack') dealDamage(ctx,6); }},
+  hustle:{name:"Hustle",type:"tactical",cost:0,icon:"💨",desc:"50% chance to gain 1 Momentum, guarenteed if weak.",
+    effect:(ctx)=>{ const p = state.combat.player; if(p.statuses.weak || Math.random() < 0.5) addStatus(p,'momentum',1); if(p.statuses.weak) drawCards(1); }},
+  scout_pass:{name:"Scout Pass",type:"tactical",cost:0,icon:"🔍",desc:"If enemy has Fatigue, apply 1 Defensive Gap, otherwise draw 1.",
+    effect:(ctx)=>{ if(ctx.enemy.statuses.fatigue) addStatus(ctx.enemy,'vulnerable',1); else drawCards(1); }},
 };
 
 /* ---------- PLAYER RELICS ---------- */
