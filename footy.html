@@ -217,6 +217,11 @@
   }
   .card-name{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.2px;margin-top:20px;line-height:1.05;}
   .card-desc{font-size:9.5px;line-height:1.25;margin-top:4px;font-weight:600;color:#3b301b;flex:1;}
+  .stat-num.buffed{color:#1f7a34;}
+  .stat-num.nerfed{color:#a8231a;}
+  .stat-delta{font-size:8.5px;font-weight:800;margin-left:1px;}
+  .stat-delta.buffed{color:#1f7a34;}
+  .stat-delta.nerfed{color:#a8231a;}
   .card-foot{font-size:8px;letter-spacing:1px;text-transform:uppercase;font-weight:800;color:#6b5a34;border-top:1px dashed #7a6339;padding-top:3px;}
   .card.attack{background:linear-gradient(160deg,#f2ded8,#e3b3a9);border-color:#8a4438;}
   .card.attack .card-foot{color:#8a3a30;}
@@ -436,38 +441,50 @@
 
 /* ---------- CARD DATABASE ---------- */
 const CARD_DB = {
-  through_ball:{name:"Through Ball",type:"attack",cost:1,icon:"⚡",desc:"Deal 9 dmg. Apply 1 Defensive Gap.",
-    effect:(ctx)=>{ dealDamage(ctx,9); addStatus(ctx.enemy,'vulnerable',1); }},
-  cross:{name:"Cross",type:"attack",cost:1,icon:"↗️",desc:"Deal 7 damage.",
+  through_ball:{name:"Through Ball",type:"attack",cost:1,icon:"⚡",dmg:6,extra:"Apply 1 Defensive Gap.",
+    effect:(ctx)=>{ dealDamage(ctx,6); addStatus(ctx.enemy,'vulnerable',1); }},
+  cross:{name:"Cross",type:"attack",cost:1,icon:"↗️",dmg:7,
     effect:(ctx)=>{ dealDamage(ctx,7); }},
-  long_shot:{name:"Long Shot",type:"attack",cost:2,icon:"🎯",desc:"Deal 15 damage.",
-    effect:(ctx)=>{ dealDamage(ctx,15); }},
-  one_two:{name:"One-Two",type:"attack",cost:1,icon:"🔁",desc:"Deal 5 dmg. Draw a card.",
+  long_shot:{name:"Long Shot",type:"attack",cost:2,icon:"🎯",dmg:15,extra:"Draw a card.",
+    effect:(ctx)=>{ dealDamage(ctx,15); drawCards(1); }},
+  one_two:{name:"One-Two",type:"attack",cost:1,icon:"🔁",dmg:5,extra:"Draw a card.",
     effect:(ctx)=>{ dealDamage(ctx,5); drawCards(1); }},
-  volley:{name:"Volley",type:"attack",cost:2,icon:"💥",desc:"Deal 20 damage.",
+  volley:{name:"Volley",type:"attack",cost:2,icon:"💥",dmg:20,
     effect:(ctx)=>{ dealDamage(ctx,20); }},
-  cut_inside:{name:"Cut Inside",type:"attack",cost:1,icon:"↩️",desc:"Deal 6 dmg. Gain 1 Momentum.",
+  cut_inside:{name:"Cut Inside",type:"attack",cost:1,icon:"↩️",dmg:6,extra:"Gain 1 Momentum.",
     effect:(ctx)=>{ dealDamage(ctx,6); addStatus(state.combat.player,'momentum',1); }},
+  driven_shot:{name:"Driven Shot",type:"attack",cost:2,icon:"🚀",dmg:16,
+    effect:(ctx)=>{ dealDamage(ctx,16); }},
+  overlap_run:{name:"Overlap Run",type:"attack",cost:1,icon:"🏃‍♂️",dmg:4,extra:"Draw a card.",
+    effect:(ctx)=>{ dealDamage(ctx,4); drawCards(1); }},
+  false_nine:{name:"False Nine",type:"attack",cost:1,icon:"🎭",dmg:5,extra:"If they have a Defensive Gap, deal 14 instead.",
+    effect:(ctx)=>{ if(ctx.enemy.statuses.vulnerable){ dealDamage(ctx,14); } else { dealDamage(ctx,5); } }},
 
-  sliding_tackle:{name:"Sliding Tackle",type:"defence",cost:1,icon:"🛡️",desc:"Gain 8 Block.",
+  sliding_tackle:{name:"Sliding Tackle",type:"defence",cost:1,icon:"🛡️",block:8,
     effect:(ctx)=>{ gainBlock(8); }},
-  low_block:{name:"Low Block",type:"defence",cost:2,icon:"🧱",desc:"Gain 15 Block.",
+  low_block:{name:"Low Block",type:"defence",cost:2,icon:"🧱",block:15,
     effect:(ctx)=>{ gainBlock(15); }},
-  interception:{name:"Interception",type:"defence",cost:1,icon:"✋",desc:"Gain 5 Block. Draw a card.",
+  interception:{name:"Interception",type:"defence",cost:1,icon:"✋",block:5,extra:"Draw a card.",
     effect:(ctx)=>{ gainBlock(5); drawCards(1); }},
-  goalkeeper_save:{name:"GK Save",type:"defence",cost:2,icon:"🧤",desc:"Gain 12 Block. Apply 1 Fatigue to them.",
+  goalkeeper_save:{name:"GK Save",type:"defence",cost:2,icon:"🧤",block:12,extra:"Apply 1 Fatigue to them.",
     effect:(ctx)=>{ gainBlock(12); addStatus(ctx.enemy,'fatigue',1); }},
+  offside_trap:{name:"Offside Trap",type:"defence",cost:1,icon:"🚩",block:6,extra:"Apply 1 Under Pressure to them.",
+    effect:(ctx)=>{ gainBlock(6); addStatus(ctx.enemy,'weak',1); }},
+  solid_backline:{name:"Solid Backline",type:"defence",cost:2,icon:"🧊",block:18,
+    effect:(ctx)=>{ gainBlock(18); }},
 
-  counter_attack:{name:"Counter Attack",type:"tactical",cost:1,icon:"🏃",desc:"If you have Block, deal 12 dmg.",
+  counter_attack:{name:"Counter Attack",type:"tactical",cost:1,icon:"🏃",dmg:12,extra:"Requires Block, or it fizzles.",
     effect:(ctx)=>{ if(state.combat.player.block>0){ dealDamage(ctx,12); } else { log("No block — Counter Attack fizzles."); } }},
   possession_play:{name:"Possession Play",type:"tactical",cost:1,icon:"🔄",desc:"Draw 2 cards.",
     effect:(ctx)=>{ drawCards(2); }},
-  park_the_bus:{name:"Park The Bus",type:"tactical",cost:2,icon:"🚌",desc:"Gain 20 Block.",
+  park_the_bus:{name:"Park The Bus",type:"tactical",cost:2,icon:"🚌",block:20,
     effect:(ctx)=>{ gainBlock(20); }},
-  all_out_attack:{name:"All-Out Attack",type:"tactical",cost:1,icon:"🔥",desc:"Deal 10 dmg. Lose all Block.",
+  all_out_attack:{name:"All-Out Attack",type:"tactical",cost:1,icon:"🔥",dmg:10,extra:"Lose all Block.",
     effect:(ctx)=>{ dealDamage(ctx,10); state.combat.player.block=0; }},
   formation_change:{name:"Formation Change",type:"tactical",cost:1,icon:"📋",desc:"Gain 2 Momentum.",
     effect:(ctx)=>{ addStatus(state.combat.player,'momentum',2); }},
+  total_football:{name:"Total Football",type:"tactical",cost:2,icon:"🌀",desc:"Draw 2 cards. Gain 1 Momentum.",
+    effect:(ctx)=>{ drawCards(2); addStatus(state.combat.player,'momentum',1); }},
 };
 
 /* ---------- PLAYER RELICS ---------- */
@@ -728,22 +745,58 @@ function playCard(idx){
   checkEnemyDefeat();
 }
 
-function dealDamage(ctx, base){
+/* computeDamageValue / computeBlockValue are shared between the real effect
+   resolution (dealDamage/gainBlock) and the card-preview rendering, so the
+   number shown on a card always matches what actually happens when played. */
+function computeDamageValue(base, opts={}){
+  const inCombat = opts.combat!==false && !!state.combat && !state.combat.combatOver;
   let dmg = base;
   if(state.run.relics.includes('haaland')) dmg = Math.round(dmg*1.25);
-  if(state.combat.player.statuses.weak) dmg = Math.round(dmg*0.75);
-  if(state.combat.player.statuses.momentum) dmg += state.combat.player.statuses.momentum*2;
-  if(ctx.enemy.statuses.vulnerable) dmg = Math.round(dmg*1.5);
+  if(inCombat){
+    if(state.combat.player.statuses.weak) dmg = Math.round(dmg*0.75);
+    if(state.combat.player.statuses.momentum) dmg += state.combat.player.statuses.momentum*2;
+    if(state.combat.enemy.statuses.vulnerable) dmg = Math.round(dmg*1.5);
+  }
+  return dmg;
+}
+function computeBlockValue(base, opts={}){
+  const inCombat = opts.combat!==false && !!state.combat && !state.combat.combatOver;
+  let b = base;
+  if(inCombat && state.combat.player.statuses.frail) b = Math.round(b*0.75);
+  return b;
+}
+function dealDamage(ctx, base){
+  const dmg = computeDamageValue(base);
   ctx.enemy.hp = Math.max(0, ctx.enemy.hp - dmg);
   spawnFloaty('-'+dmg, 'en-hp-fill', '#ff8f87');
 }
 function gainBlock(amount){
   const p = state.combat.player;
-  let b = amount;
-  if(p.statuses.frail) b = Math.round(b*0.75);
+  const b = computeBlockValue(amount);
   p.block += b;
   if(state.run.relics.includes('kante')) addStatus(p,'momentum',1);
   spawnFloaty('+'+b+' blk','p-hp-fill','#9fd1e6');
+}
+function formatNumberPreview(base, final){
+  if(final === base) return `<span class="stat-num">${final}</span>`;
+  const diff = final - base;
+  const cls = diff>0 ? 'buffed' : 'nerfed';
+  return `<span class="stat-num ${cls}">${final}</span><span class="stat-delta ${cls}"></span>`;
+}
+function cardDescHtml(cardId, opts={}){
+  const def = CARD_DB[cardId];
+  const parts = [];
+  if(def.dmg != null){
+    const final = computeDamageValue(def.dmg, opts);
+    parts.push(`Deal ${formatNumberPreview(def.dmg, final)} dmg.`);
+  }
+  if(def.block != null){
+    const final = computeBlockValue(def.block, opts);
+    parts.push(`Gain ${formatNumberPreview(def.block, final)} Block.`);
+  }
+  if(def.extra) parts.push(def.extra);
+  if(parts.length===0) return def.desc || '';
+  return parts.join(' ');
 }
 function spawnFloaty(text, anchorId, color){
   const anchor = document.getElementById(anchorId);
@@ -897,7 +950,7 @@ function renderCombat(){
       <div class="card-cost">${cost}</div>
       <div class="card-type-tag">${def.icon}</div>
       <div class="card-name">${def.name}</div>
-      <div class="card-desc">${def.desc}</div>
+      <div class="card-desc">${cardDescHtml(cardId)}</div>
       <div class="card-foot">${def.type}</div>
     `;
     handWrap.appendChild(div);
@@ -925,7 +978,7 @@ function showReward(){
       <div class="card-cost">${def.cost}</div>
       <div class="card-type-tag">${def.icon}</div>
       <div class="card-name">${def.name}</div>
-      <div class="card-desc">${def.desc}</div>
+      <div class="card-desc">${cardDescHtml(cardId,{combat:false})}</div>
       <div class="card-foot">${def.type}</div>
     `;
     wrap.appendChild(div);
@@ -985,7 +1038,7 @@ function renderShop(){
     row.innerHTML = `
       <div>
         <div class="si-name">${def.icon} ${def.name}</div>
-        <div class="si-desc">${def.desc}</div>
+        <div class="si-desc">${cardDescHtml(opt.id,{combat:false})}</div>
       </div>
       <button class="buy-btn" ${state.run.coins<opt.price?'disabled':''}>${opt.price}🪙</button>
     `;
