@@ -249,7 +249,7 @@
 
   .floaty{
     position:absolute;font-weight:900;font-size:20px;pointer-events:none;
-    animation:floatUp 0.9s ease forwards;text-shadow:0 2px 4px rgba(0,0,0,0.6);
+    animation:floatUp 1.8s ease forwards;text-shadow:0 2px 4px rgba(0,0,0,0.6);
     z-index:20;
   }
   @keyframes floatUp{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-46px);}}
@@ -574,7 +574,7 @@ const MANAGERS = [
     relic:'haaland',
     deck:['cross','cross','long_shot','long_shot','cut_inside','sliding_tackle','sliding_tackle','counter_attack','counter_attack','volley']},
   {id:'press',name:'The Press Boss',style:'Disruption • Fatigue stacking • resilient',
-    relic:'saka',
+    relic:'vandijk',
     deck:['through_ball','through_ball','cross','goalkeeper_save','sliding_tackle','sliding_tackle','park_the_bus','formation_change','interception','one_two']},
 ];
 
@@ -887,7 +887,8 @@ function spawnFloaty(text, anchorId, color){
   f.style.top = (rect.top - appRect.top - 6)+'px';
   f.textContent = text;
   document.getElementById('app').appendChild(f);
-  setTimeout(()=>f.remove(),950);
+  // keep damage / block floaties visible a bit longer for readability
+  setTimeout(()=>f.remove(),1800);
 }
 
 /* ---------- ENEMY INTENT / TURN ---------- */
@@ -912,7 +913,11 @@ function checkEnemyDefeat(){
       const scale = 1.3;
       c.enemy.maxHp = Math.round(c.team.baseHp * Math.pow(scale, c.goalsScored));
       c.enemy.hp = c.enemy.maxHp;
-      c.enemy.statuses = {};
+      // Preserve temporary 'shaken' status applied by scoring a goal so the
+      // opponent's next attack deals 50% damage. Previously we wiped all
+      // statuses here which removed 'shaken' immediately.
+      if(!c.enemy.statuses) c.enemy.statuses = {};
+      // reset block only
       c.enemy.block = 0;
     }
   }
