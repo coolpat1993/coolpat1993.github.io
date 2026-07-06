@@ -474,11 +474,11 @@ const CARD_DB = {
     effect:(ctx)=>{ dealDamage(ctx,6); addStatus(ctx.enemy,'vulnerable',1); }},
   cross:{name:"Cross",type:"attack",cost:1,icon:"↗️",dmg:7,
     effect:(ctx)=>{ dealDamage(ctx,7); }},
-  long_shot:{name:"Long Shot",type:"attack",cost:2,icon:"🎯",dmg:15,extra:"Draw a card.",
-    effect:(ctx)=>{ dealDamage(ctx,15); drawCards(1); }},
+  long_shot:{name:"Long Shot",type:"attack",cost:2,icon:"🎯",dmg:12,extra:"Draw a card.",
+    effect:(ctx)=>{ dealDamage(ctx,12); drawCards(1); }},
   one_two:{name:"One-Two",type:"attack",cost:1,icon:"🔁",dmg:5,extra:"Draw a card.",
     effect:(ctx)=>{ dealDamage(ctx,5); drawCards(1); }},
-  volley:{name:"Volley",type:"attack",cost:2,icon:"💥",dmg:20,
+  volley:{name:"Volley",type:"attack",cost:2,icon:"💥",dmg:20,momentumCost:1,
     effect:(ctx)=>{ dealDamage(ctx,20); }},
   cut_inside:{name:"Cut Inside",type:"attack",cost:1,icon:"↩️",dmg:6,extra:"Gain 1 Momentum.",
     effect:(ctx)=>{ dealDamage(ctx,6); addStatus(state.combat.player,'momentum',1); }},
@@ -518,11 +518,13 @@ const CARD_DB = {
   rapid_pass:{name:"Rapid Pass",type:"attack",cost:0,icon:"➡️",dmg:4,extra:"If previous card played was an Attack, draw 1.",
     effect:(ctx)=>{ dealDamage(ctx,4); const dp = state.combat.discardPile; const last = dp[dp.length-1]; if(last && CARD_DB[last] && CARD_DB[last].type==='attack'){ drawCards(1); } }},
   clinical_finisher:{name:"Clinical Finisher",type:"attack",cost:1,icon:"🎯",dmg:8,extra:"Consume 1 Momentum to deal +10 dmg.",
-    effect:(ctx)=>{ const p = state.combat.player; if(p.statuses.momentum && p.statuses.momentum>0){ addStatus(p,'momentum',-1); dealDamage(ctx,18); } else { dealDamage(ctx,8); } }},
+    momentumCost:1,
+    effect:(ctx)=>{ const p = state.combat.player; const hasM = p.statuses.momentum && p.statuses.momentum>0; if(hasM){ dealDamage(ctx,18); addStatus(p,'momentum',-1); } else { dealDamage(ctx,8); } }},
   combo_cross:{name:"Combo Cross",type:"attack",cost:1,icon:"✳️",dmg:6,extra:"If the previous card was an Attack, deal 10 instead.",
     effect:(ctx)=>{ const dp = state.combat.discardPile; const last = dp[dp.length-1]; if(last && CARD_DB[last] && CARD_DB[last].type==='attack'){ dealDamage(ctx,10); } else { dealDamage(ctx,6); } }},
   momentum_strike:{name:"Momentum Strike",type:"attack",cost:2,icon:"🚩",dmg:10,extra:"Consume all Momentum: +3 dmg per stack.",
-    effect:(ctx)=>{ const p = state.combat.player; const m = p.statuses.momentum||0; if(m>0){ addStatus(p,'momentum',-m); dealDamage(ctx,10 + m*3); } else { dealDamage(ctx,10); } }},
+    momentumCost:1,
+    effect:(ctx)=>{ const p = state.combat.player; const m = p.statuses.momentum||0; if(m>0){ dealDamage(ctx,10 + m*3); addStatus(p,'momentum',-m); } else { dealDamage(ctx,10); } }},
   press_shot:{name:"Press Shot",type:"attack",cost:1,icon:"📣",dmg:5,extra:"If enemy has Fatigue, draw 1.",
     effect:(ctx)=>{ dealDamage(ctx,5); if(ctx.enemy.statuses.fatigue) drawCards(1); }},
   break_lines:{name:"Break The Lines",type:"attack",cost:1,icon:"🔓",dmg:6,extra:"If enemy has Block, clear up to 8 Block and add it to this hit.",
@@ -536,7 +538,8 @@ const CARD_DB = {
   overload:{name:"Overload",type:"tactical",cost:2,icon:"⚡",desc:"Draw 3, then discard 2 at random.",
     effect:(ctx)=>{ drawCards(3); const c = state.combat; for(let i=0;i<2;i++){ if(c.hand.length===0) break; const idx = Math.floor(Math.random()*c.hand.length); c.discardPile.push(c.hand.splice(idx,1)[0]); } }},
   finishing_move:{name:"Finishing Move",type:"tactical",cost:2,icon:"🏁",desc:"Consume 2 Momentum to deal 20, otherwise deal 8.",
-    effect:(ctx)=>{ const p = state.combat.player; const m = p.statuses.momentum||0; if(m>=2){ addStatus(p,'momentum',-2); dealDamage(ctx,20); } else { dealDamage(ctx,8); } }},
+    momentumCost:1,
+    effect:(ctx)=>{ const p = state.combat.player; const m = p.statuses.momentum||0; if(m>=2){ dealDamage(ctx,20); addStatus(p,'momentum',-2); } else { dealDamage(ctx,8); if(m>0) addStatus(p,'momentum',-1); } }},
   clinical_sub:{name:"Clinical Sub",type:"tactical",cost:1,icon:"🔄",desc:"Add a random Attack card to your deck.",
     effect:(ctx)=>{ const atks = Object.keys(CARD_DB).filter(k=>CARD_DB[k].type==='attack'); const pick = atks[Math.floor(Math.random()*atks.length)]; state.run.deck.push(pick); }},
   press_the_box:{name:"Press The Box",type:"tactical",cost:1,icon:"🔊",desc:"Apply 1 Fatigue to enemy. Gain 1 Momentum.",
@@ -802,6 +805,11 @@ function playCard(idx){
   if(c.combatOver) return;
   const cardId = c.hand[idx];
   const def = CARD_DB[cardId];
+  // enforce Momentum cost (require minimum stacks to play)
+  if(def.momentumCost && ((c.player.statuses.momentum||0) < def.momentumCost)){
+    log("Not enough Momentum to play " + def.name);
+    return;
+  }
   const cost = costOf(cardId, idx);
   if(cost > c.player.energy) return;
 
