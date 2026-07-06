@@ -664,6 +664,7 @@ function addStatus(entity, key, amount){
 const STATUS_META = {
   vulnerable:{label:'Defensive Gap',cls:'debuff'},
   weak:{label:'Under Pressure',cls:'debuff'},
+  shaken:{label:'Shaken',cls:'debuff'},
   frail:{label:'Disorganised',cls:'debuff'},
   fatigue:{label:'Fatigue',cls:'debuff'},
   momentum:{label:'Momentum',cls:'buff'},
@@ -676,7 +677,7 @@ function startCombat(team){
     team,
     goalsScored:0,
     goalsNeeded:team.goals,
-    enemy:{ hp:team.baseHp, maxHp:team.baseHp, statuses:{} },
+    enemy:{ hp:team.baseHp, maxHp:team.baseHp, statuses:{}, block:0 },
     player:{ hp:state.run.hp, maxHp:state.run.maxHp, block:hasVanDijk?10:0, energy:3, maxEnergy:3, statuses:{} },
     drawPile:[], discardPile:[], hand:[],
     turn:1,
@@ -685,6 +686,8 @@ function startCombat(team){
   };
   state.combat.drawPile = shuffle([...state.run.deck]);
   goTo('screen-combat');
+  // apply any pending one-off run effects (eg. media pressure 'Go on the attack')
+  if(state.run.pendingMomentum){ addStatus(state.combat.player,'momentum', state.run.pendingMomentum); delete state.run.pendingMomentum; }
   drawCards(5);
   rollEnemyIntent();
   renderCombat();
@@ -767,8 +770,13 @@ function computeBlockValue(base, opts={}){
 }
 function dealDamage(ctx, base){
   const dmg = computeDamageValue(base);
-  ctx.enemy.hp = Math.max(0, ctx.enemy.hp - dmg);
-  spawnFloaty('-'+dmg, 'en-hp-fill', '#ff8f87');
+  const enemyBlock = ctx.enemy.block || 0;
+  const absorbed = Math.min(enemyBlock, dmg);
+  const remaining = Math.max(0, dmg - enemyBlock);
+  ctx.enemy.block = Math.max(0, enemyBlock - dmg);
+  ctx.enemy.hp = Math.max(0, ctx.enemy.hp - remaining);
+  if(absorbed>0) spawnFloaty('-'+absorbed+' blk','en-hp-fill','#9fd1e6');
+  if(remaining>0) spawnFloaty('-'+remaining, 'en-hp-fill', '#ff8f87');
 }
 function gainBlock(amount){
   const p = state.combat.player;
@@ -825,6 +833,8 @@ function checkEnemyDefeat(){
   if(c.combatOver) return;
   if(c.enemy.hp <= 0){
     c.goalsScored++;
+    // scoring a goal unsettles the opponent — next attack is halved
+    addStatus(c.enemy,'shaken',1);
     showGoalFlash();
     if(state.run.relics.includes('saka')) drawCards(1);
     if(c.goalsScored >= c.goalsNeeded){
@@ -834,6 +844,7 @@ function checkEnemyDefeat(){
       c.enemy.maxHp = Math.round(c.team.baseHp * Math.pow(scale, c.goalsScored));
       c.enemy.hp = c.enemy.maxHp;
       c.enemy.statuses = {};
+      c.enemy.block = 0;
     }
   }
   renderCombat();
@@ -857,7 +868,7 @@ function endPlayerTurn(){
   checkEnemyDefeat();
   if(c.player.hp<=0){ loseCombat(); return; }
   // tick down statuses at start of new player turn
-  decayStatus(c.player,'weak'); decayStatus(c.player,'frail'); decayStatus(c.enemy,'weak'); decayStatus(c.enemy,'vulnerable'); decayStatus(c.enemy,'frail');
+  decayStatus(c.player,'weak'); decayStatus(c.player,'frail'); decayStatus(c.enemy,'weak'); decayStatus(c.enemy,'vulnerable'); decayStatus(c.enemy,'frail'); decayStatus(c.enemy,'shaken');
   c.player.block = 0;
   c.player.energy = c.player.maxEnergy;
   c.usedDeBruyneThisTurn = false;
@@ -877,13 +888,15 @@ function resolveEnemyIntent(){
   if(intent.type==='attack'){
     let dmg = intent.value;
     if(c.enemy.statuses.weak) dmg = Math.round(dmg*0.75);
+    if(c.enemy.statuses.shaken) dmg = Math.round(dmg*0.5);
     let remaining = Math.max(0, dmg - c.player.block);
     c.player.block = Math.max(0, c.player.block - dmg);
     c.player.hp = Math.max(0, c.player.hp - remaining);
     state.run.hp = c.player.hp;
     if(remaining>0) spawnFloaty('-'+remaining,'p-hp-fill','#ff8f87');
   } else if(intent.type==='block'){
-    // enemy just fortifies narratively — represented as reduced vulnerability next reset (no extra HP mechanic to keep it simple)
+    // enemy fortifies: give them temporary block that will absorb player damage
+    c.enemy.block = (c.enemy.block||0) + intent.value;
   } else if(intent.type==='debuff'){
     addStatus(c.player, intent.status, intent.value);
   }
@@ -929,6 +942,12 @@ function renderCombat(){
 
   document.getElementById('en-statuses').innerHTML = renderStatusChips(c.enemy.statuses);
   document.getElementById('p-statuses').innerHTML = renderStatusChips(c.player.statuses);
+
+  // show enemy block as a status chip when present
+  if(c.enemy.block && c.enemy.block>0){
+    const wrap = document.getElementById('en-statuses');
+    wrap.innerHTML += `<div class="status-chip">Block ${c.enemy.block}</div>`;
+  }
 
   document.getElementById('p-energy').textContent = c.player.energy;
   document.getElementById('p-block').textContent = c.player.block;
@@ -1023,6 +1042,12 @@ function startEvent(){
 
 /* ---------- SHOP ---------- */
 function startShop(){
+  // generate shop options for this visit if not present
+  if(!state.run.shopOptions || state.run.shopOptions.length===0){
+    const cardOptions = shuffle(Object.keys(CARD_DB)).slice(0,4).map(id=>({type:'card',id,price:10+CARD_DB[id].cost*4}));
+    const healOption = {type:'heal',id:'physio',price:15};
+    state.run.shopOptions = [...cardOptions, healOption];
+  }
   renderShop();
   goTo('screen-shop');
 }
@@ -1030,45 +1055,45 @@ function renderShop(){
   document.getElementById('shop-coins').textContent = state.run.coins;
   const wrap = document.getElementById('shop-items');
   wrap.innerHTML = '';
-  const cardOptions = shuffle(Object.keys(CARD_DB)).slice(0,4).map(id=>({id,price:10+CARD_DB[id].cost*4}));
-  cardOptions.forEach(opt=>{
-    const def = CARD_DB[opt.id];
+  (state.run.shopOptions||[]).forEach((opt, idx)=>{
     const row = document.createElement('div');
     row.className = 'shop-item';
-    row.innerHTML = `
-      <div>
-        <div class="si-name">${def.icon} ${def.name}</div>
-        <div class="si-desc">${cardDescHtml(opt.id,{combat:false})}</div>
-      </div>
-      <button class="buy-btn" ${state.run.coins<opt.price?'disabled':''}>${opt.price}🪙</button>
-    `;
-    row.querySelector('button').onclick = ()=>{
-      if(state.run.coins>=opt.price){
-        state.run.coins -= opt.price;
-        state.run.deck.push(opt.id);
-        renderShop();
-      }
-    };
+    if(opt.type==='card'){
+      const def = CARD_DB[opt.id];
+      row.innerHTML = `
+        <div>
+          <div class="si-name">${def.icon} ${def.name}</div>
+          <div class="si-desc">${cardDescHtml(opt.id,{combat:false})}</div>
+        </div>
+        <button class="buy-btn" ${state.run.coins<opt.price?'disabled':''}>${opt.price}🪙</button>
+      `;
+      row.querySelector('button').onclick = ()=>{
+        if(state.run.coins>=opt.price){
+          state.run.coins -= opt.price;
+          state.run.deck.push(opt.id);
+          state.run.shopOptions.splice(idx,1);
+          renderShop();
+        }
+      };
+    } else if(opt.type==='heal'){
+      row.innerHTML = `
+        <div>
+          <div class="si-name">🩹 Physio Session</div>
+          <div class="si-desc">Heal 20 Pressure (HP).</div>
+        </div>
+        <button class="buy-btn" ${state.run.coins<opt.price?'disabled':''}>${opt.price}🪙</button>
+      `;
+      row.querySelector('button').onclick = ()=>{
+        if(state.run.coins>=opt.price){
+          state.run.coins -= opt.price;
+          state.run.hp = Math.min(state.run.maxHp, state.run.hp+20);
+          state.run.shopOptions.splice(idx,1);
+          renderShop();
+        }
+      };
+    }
     wrap.appendChild(row);
   });
-  const healRow = document.createElement('div');
-  healRow.className = 'shop-item';
-  const healPrice = 15;
-  healRow.innerHTML = `
-    <div>
-      <div class="si-name">🩹 Physio Session</div>
-      <div class="si-desc">Heal 20 Pressure (HP).</div>
-    </div>
-    <button class="buy-btn" ${state.run.coins<healPrice?'disabled':''}>${healPrice}🪙</button>
-  `;
-  healRow.querySelector('button').onclick = ()=>{
-    if(state.run.coins>=healPrice){
-      state.run.coins -= healPrice;
-      state.run.hp = Math.min(state.run.maxHp, state.run.hp+20);
-      renderShop();
-    }
-  };
-  wrap.appendChild(healRow);
 }
 function leaveShop(){ advanceMap(); }
 
