@@ -12,7 +12,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -31,11 +31,16 @@ jobs:
     needs: build
     environment:
       name: github-pages
+      url: ${{ (steps.deploy_attempt_1.outcome == 'success' && steps.deploy_attempt_1.outputs.page_url) || (steps.deploy_attempt_2.outcome == 'success' && steps.deploy_attempt_2.outputs.page_url) || (steps.deploy_attempt_3.outcome == 'success' && steps.deploy_attempt_3.outputs.page_url) || '' }}
     steps:
       - name: Deploy to GitHub Pages (attempt 1)
         id: deploy_attempt_1
         continue-on-error: true
         uses: actions/deploy-pages@v5
+
+      - name: Wait before retry
+        if: steps.deploy_attempt_1.outcome == 'failure'
+        run: sleep 15
 
       - name: Deploy to GitHub Pages (attempt 2)
         id: deploy_attempt_2
@@ -43,7 +48,12 @@ jobs:
         continue-on-error: true
         uses: actions/deploy-pages@v5
 
+      - name: Wait before final retry
+        if: steps.deploy_attempt_2.outcome == 'failure'
+        run: sleep 30
+
       - name: Deploy to GitHub Pages (attempt 3)
         id: deploy_attempt_3
-        if: steps.deploy_attempt_1.outcome == 'failure' && steps.deploy_attempt_2.outcome == 'failure'
+        if: steps.deploy_attempt_2.outcome == 'failure'
         uses: actions/deploy-pages@v5
+
