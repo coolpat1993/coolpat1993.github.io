@@ -867,6 +867,37 @@
     updateSequencePreviewInModal(index, editableQuestion);
   }
 
+  function scrambleSequenceOptionsSilent(index, region) {
+    const editableQuestion = getEditableQuestionForRegion(index, region);
+    if (!editableQuestion) {
+      return;
+    }
+
+    const answerList = getSequenceAnswerListFromModal(index);
+    if (answerList.length < 2) {
+      return;
+    }
+
+    const entries = answerList.map((label, position) => ({ label, position }));
+    const shuffled = [...entries];
+
+    for (let i = shuffled.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    editableQuestion.options = shuffled.map((item) => item.label);
+    editableQuestion.short_answer = entries
+      .map((item) => {
+        const shuffledIndex = shuffled.findIndex((candidate) => candidate.position === item.position);
+        return ANSWER_CODES[shuffledIndex] || "";
+      })
+      .join("");
+
+    sanitizeQuestionByType(editableQuestion);
+    refreshCard(index);
+  }
+
   function getSequencePreviewText(question) {
     const codes = String(question?.short_answer || "")
       .toUpperCase()
@@ -1190,6 +1221,19 @@
   }
 
   function closeQuestionModal() {
+    // If editing a sequence question and its short_answer remains sequential (A..),
+    // scramble it silently before closing so users who hit Done get a scrambled order.
+    if (currentModalIndex >= 0) {
+      const editableQuestion = getEditableQuestionForRegion(currentModalIndex, currentModalRegion);
+      if (editableQuestion && normalizeTypeCode(editableQuestion.type_code) === "S") {
+        const optionCount = Array.isArray(editableQuestion.options) ? editableQuestion.options.length : 0;
+        const currentShort = String(editableQuestion.short_answer || "").toUpperCase().replace(/[^A-F]/g, "");
+        if (currentShort === buildSequentialAnswerCode(optionCount)) {
+          scrambleSequenceOptionsSilent(currentModalIndex, currentModalRegion);
+        }
+      }
+    }
+
     elements.questionModal.hidden = true;
     if (currentModalIndex >= 0) {
       refreshCard(currentModalIndex);
@@ -1357,13 +1401,16 @@
         return;
       }
 
-      const nextOptions = Array.isArray(editableQuestion.options)
-        ? editableQuestion.options.slice(0, MAX_CHOICE_OPTIONS)
-        : [];
+      // Preserve empty slots while editing so inputs don't shift positions.
+      const nextOptions = Array(MAX_CHOICE_OPTIONS).fill("");
+      if (Array.isArray(editableQuestion.options)) {
+        for (let i = 0; i < Math.min(editableQuestion.options.length, MAX_CHOICE_OPTIONS); i += 1) {
+          nextOptions[i] = String(editableQuestion.options[i] || "");
+        }
+      }
       nextOptions[optionIndex] = String(target.value || "");
-      editableQuestion.options = trimTrailingEmptyOptions(nextOptions)
-        .map((item) => item.trim())
-        .filter(Boolean);
+      // Keep blank entries here; trailing-empty trimming happens during full sanitization/serialize.
+      editableQuestion.options = nextOptions.map((item) => String(item || "").trim()).slice(0, MAX_CHOICE_OPTIONS);
       editableQuestion.short_answer = sanitizeMultipleChoiceShortAnswer(editableQuestion);
 
       refreshCard(index);
