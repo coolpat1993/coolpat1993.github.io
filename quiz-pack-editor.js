@@ -371,7 +371,7 @@
 
         items.push({
           alt_id: String(altId),
-          ...question
+          ...sanitizeQuestionByType({ ...question })
         });
         return items;
       }, []);
@@ -2012,10 +2012,10 @@
     }
   }
 
-    function getCurrentPack() {
+  function getCurrentPack() {
     return {
       pack_date: state.packDate || elements.quizDateInput.value || "",
-      questions: state.questions,
+      questions: state.questions.map((question) => sanitizeQuestionByType({ ...question })),
       alt_questions: serializeAltQuestions(state.altQuestions)
     };
   }
