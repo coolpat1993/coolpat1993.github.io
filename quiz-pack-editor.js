@@ -1,6 +1,10 @@
 (function quizPackEditor() {
   const DAILY_QUIZ_API_BASE_URL =
     "https://www.speedquizzing.com/utils/dailyquiz/daily_quiz_get_questions";
+  const DAILY_QUIZ_SINGLE_QUESTION_URL =
+    "https://www.speedquizzing.com/utils/dailyquiz/daily_quiz_get_single_question";
+  const DAILY_QUIZ_REPLACE_QUESTION_URL =
+    "https://www.speedquizzing.com/utils/dailyquiz/daily_quiz_replace_question";
   const DAILY_QUIZ_UPLOAD_BASE_URL =
     "https://www.speedquizzing.com/utils/dailyquiz/daily_quiz_upload_question_pack";
   const DAILY_QUIZ_PATH_SUFFIX = "d/o";
@@ -41,6 +45,9 @@
     questionModal: document.getElementById("questionModal"),
     modalQIndex: document.getElementById("modalQIndex"),
     modalBody: document.getElementById("modalBody"),
+    alternativeSearchModal: document.getElementById("alternativeSearchModal"),
+    alternativeSearchModalBody: document.getElementById("alternativeSearchModalBody"),
+    closeAlternativeSearchButton: document.getElementById("closeAlternativeSearchButton"),
     closeModalButton: document.getElementById("closeModalButton"),
     closeModalFooterButton: document.getElementById("closeModalFooterButton"),
     prevQuestionButton: document.getElementById("prevQuestionButton"),
@@ -60,7 +67,14 @@
     dragIndex: -1,
     lastDragEndedAt: 0,
     dropIndicator: null,
-    openAiApiKey: ""
+    openAiApiKey: "",
+    alternativeSearch: {
+      result: null,
+      resultIndex: -1,
+      filters: null,
+      isSearching: false,
+      isSwapping: false
+    }
   };
 
   function setUploadApiKey(nextApiKey) {
@@ -1126,17 +1140,14 @@
     const canGenerateUsAlt = baseQuestion?.uk_only === true;
     const aiButtonMarkup = canGenerateUsAlt
       ? `
-        <div class="card-field modal-ai-actions">
-          <button
-            type="button"
-            class="secondary"
-            data-action="generate_us_alt_ai"
-            data-index="${index}"
-          >
-            Generate US Alt (AI)
-          </button>
-        </div>
+        <button type="button" class="secondary" data-action="generate_us_alt_ai" data-index="${index}">
+          Generate US Alt (AI)
+        </button>
       `
+      : "";
+    const alternativeButtonMarkup = buildAlternativeSearchButtonMarkup(index, currentModalRegion);
+    const modalTopActionsMarkup = aiButtonMarkup || alternativeButtonMarkup
+      ? `<div class="modal-top-actions">${aiButtonMarkup}${alternativeButtonMarkup}</div>`
       : "";
 
     elements.modalQIndex.textContent = `Q${index + 1} - ${getRegionDisplayLabel(currentModalRegion)}`;
@@ -1146,7 +1157,7 @@
         index,
         className: "modal-region-tabs"
       })}
-      ${aiButtonMarkup}
+      ${modalTopActionsMarkup}
       <div class="card-field">
         <label>ID</label>
         <input
@@ -1204,6 +1215,227 @@
 
     if (elements.nextQuestionButton) {
       elements.nextQuestionButton.disabled = !canGoNext;
+    }
+  }
+
+  function getAlternativeSearchFilters(index, region) {
+    const question = getQuestionForRegion(index, region);
+    if (!question) {
+      return { category: "", difficulty: "", question_type: "" };
+    }
+
+    return {
+      category: String(question.category || "").trim(),
+      difficulty: String(question.difficulty || "").trim().toLowerCase(),
+      question_type: normalizeTypeCode(question.type_code)
+    };
+  }
+
+  function buildAlternativeSearchButtonMarkup(index, region) {
+    if (region !== DEFAULT_REGION) {
+      return "";
+    }
+
+    return `
+      <button type="button" class="secondary" data-action="open_alternative_search" data-index="${index}">
+        Find alternative question
+      </button>
+    `;
+  }
+
+  function renderAlternativeSearchModal(index) {
+    const search = state.alternativeSearch;
+    const filters = search.filters || getAlternativeSearchFilters(index, DEFAULT_REGION);
+    const result = search.resultIndex === index ? search.result : null;
+    const optionsMarkup = Array.isArray(result?.options) && result.options.length > 0
+      ? `<div><strong>Options:</strong> ${result.options.map((option) => escapeHtml(option)).join(" | ")}</div>`
+      : "";
+    const resultMarkup = result
+      ? `
+        <div class="alternative-result">
+          <div class="alternative-result-meta">Candidate ID: ${escapeHtml(result.id || "-")}</div>
+          <p>${escapeHtml(result.q || "No question text")}</p>
+          <div class="alternative-result-facts">
+            <div><strong>Category ID:</strong> ${escapeHtml(result.category || "-")}</div>
+            <div><strong>Difficulty:</strong> ${escapeHtml(result.difficulty || "-")}</div>
+            <div><strong>Question type:</strong> ${escapeHtml(result.type_code || "-")}</div>
+          </div>
+          <div><strong>Short answer:</strong> ${escapeHtml(result.short_answer || "-")}</div>
+          <div><strong>Long answer:</strong> ${escapeHtml(result.long_answer || "-")}</div>
+          ${optionsMarkup}
+          <button type="button" data-action="confirm_question_swap" data-index="${index}" ${search.isSwapping ? "disabled" : ""}>
+            ${search.isSwapping ? "Confirming..." : "Confirm replacement"}
+          </button>
+        </div>
+      `
+      : "";
+
+    elements.alternativeSearchModalBody.innerHTML = `
+      <p class="muted">Search with any combination of filters. The current question stays unchanged until you confirm.</p>
+      <div class="alternative-filter-row">
+        <div class="card-field">
+          <label for="alternativeCategory">Category ID</label>
+          <input data-search-field="category" id="alternativeCategory" type="number" min="1" value="${escapeAttr(filters.category)}" placeholder="Any category" />
+        </div>
+        <div class="card-field">
+          <label for="alternativeDifficulty">Difficulty</label>
+          <select data-search-field="difficulty" id="alternativeDifficulty">
+            <option value="" ${filters.difficulty === "" ? "selected" : ""}>Any difficulty</option>
+            <option value="easy" ${filters.difficulty === "easy" || filters.difficulty === "-1" ? "selected" : ""}>Easy</option>
+            <option value="normal" ${filters.difficulty === "normal" || filters.difficulty === "0" ? "selected" : ""}>Normal</option>
+          </select>
+        </div>
+        <div class="card-field">
+          <label for="alternativeType">Question type</label>
+          <select data-search-field="question_type" id="alternativeType">
+            <option value="">Any type</option>
+            ${TYPE_CODES.map((code) => `<option value="${code}" ${filters.question_type === code ? "selected" : ""}>${code}</option>`).join("")}
+          </select>
+        </div>
+      </div>
+      <button type="button" class="secondary" data-action="search_alternative" data-index="${index}" ${search.isSearching ? "disabled" : ""}>
+        ${search.isSearching ? "Searching..." : "Search for alternative"}
+      </button>
+      ${resultMarkup}
+    `;
+    elements.alternativeSearchModal.hidden = false;
+  }
+
+  function closeAlternativeSearchModal() {
+    elements.alternativeSearchModal.hidden = true;
+  }
+
+  function getAlternativeSearchUrl() {
+    const filters = {
+      category: "",
+      difficulty: "",
+      question_type: ""
+    };
+    const fields = elements.alternativeSearchModalBody.querySelectorAll("[data-search-field]");
+    fields.forEach((field) => {
+      const key = field.dataset.searchField;
+      const value = String(field.value || "").trim();
+      if (key && value) {
+        filters[key] = value;
+      }
+    });
+
+    state.alternativeSearch.filters = filters;
+
+    const category = filters.category || "null";
+    const difficulty = filters.difficulty || "null";
+    const questionType = (filters.question_type || "null").toLowerCase();
+    return `${DAILY_QUIZ_SINGLE_QUESTION_URL}/${encodeURIComponent(category)}/${encodeURIComponent(difficulty)}/${encodeURIComponent(questionType)}`;
+  }
+
+  async function searchForAlternativeQuestion(index) {
+    if (currentModalRegion !== DEFAULT_REGION || !state.questions[index]) {
+      return;
+    }
+
+    const endpoint = getAlternativeSearchUrl();
+    state.alternativeSearch.result = null;
+    state.alternativeSearch.resultIndex = index;
+    state.alternativeSearch.isSearching = true;
+    renderAlternativeSearchModal(index);
+
+    try {
+      const apiKey = String(state.uploadApiKey || elements.uploadApiKeyInput?.value || "").trim();
+      const requestUrl = new URL(endpoint);
+      if (apiKey) {
+        requestUrl.searchParams.set("api_key", apiKey);
+      }
+
+      const response = await fetch(requestUrl.toString());
+      let payload = {};
+      try {
+        payload = await response.json();
+      } catch {
+        payload = {};
+      }
+
+      if (!response.ok) {
+        throw new Error(payload?.error || `HTTP ${response.status}`);
+      }
+
+      const candidate = payload?.question && typeof payload.question === "object" ? payload.question : null;
+      if (!candidate) {
+        throw new Error("The search returned no question.");
+      }
+
+      state.alternativeSearch.result = normalizeQuestion(candidate, 0);
+      setStatus("Alternative found. Review it, then confirm the replacement if it is suitable.", false);
+    } catch (error) {
+      setStatus(`Alternative search failed: ${error?.message || "Unknown error"}`, true);
+    } finally {
+      state.alternativeSearch.isSearching = false;
+      if (!elements.alternativeSearchModal.hidden && currentModalIndex === index) {
+        renderAlternativeSearchModal(index);
+      }
+    }
+  }
+
+  async function confirmQuestionSwap(index) {
+    const oldId = getQuestionIdByIndex(index);
+    const replacement = state.alternativeSearch.resultIndex === index
+      ? state.alternativeSearch.result
+      : null;
+    const newId = String(replacement?.id || "").trim();
+    if (!oldId || !newId || oldId === newId || state.alternativeSearch.isSwapping) {
+      return;
+    }
+
+    const shouldSwap = confirm(`Replace question ${oldId} with ${newId} in the database? This cannot be undone.`);
+    if (!shouldSwap) {
+      return;
+    }
+
+    state.alternativeSearch.isSwapping = true;
+    renderAlternativeSearchModal(index);
+
+    try {
+      const apiKey = String(state.uploadApiKey || elements.uploadApiKeyInput?.value || "").trim();
+      const requestUrl = new URL(DAILY_QUIZ_REPLACE_QUESTION_URL);
+      if (apiKey) {
+        requestUrl.searchParams.set("api_key", apiKey);
+      }
+
+      const response = await fetch(requestUrl.toString(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain"
+        },
+        body: JSON.stringify({
+          old_id: oldId,
+          new_id: newId,
+        })
+      });
+
+      let payload = {};
+      try {
+        payload = await response.json();
+      } catch {
+        payload = {};
+      }
+
+      if (!response.ok || payload?.success === false) {
+        throw new Error(payload?.error || `HTTP ${response.status}`);
+      }
+
+      state.questions[index] = normalizeQuestion(replacement, index);
+      state.alternativeSearch.result = null;
+      state.alternativeSearch.resultIndex = -1;
+      setStatus(`Question ${oldId} replaced with ${newId}.`, false);
+      renderQuestions();
+      closeAlternativeSearchModal();
+      openQuestionModal(index, DEFAULT_REGION);
+    } catch (error) {
+      setStatus(`Question replacement failed: ${error?.message || "Unknown error"}`, true);
+    } finally {
+      state.alternativeSearch.isSwapping = false;
+      if (!elements.alternativeSearchModal.hidden && currentModalIndex === index) {
+        renderAlternativeSearchModal(index);
+      }
     }
   }
 
@@ -2200,6 +2432,11 @@
     elements.deleteModalButton.addEventListener("click", deleteCurrentQuestion);
 
     document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !elements.alternativeSearchModal.hidden) {
+        closeAlternativeSearchModal();
+        return;
+      }
+
       if (event.key === "Escape" && !elements.questionModal.hidden) {
         closeQuestionModal();
       }
@@ -2224,6 +2461,35 @@
       }
 
       const action = actionElement.dataset.action;
+      if (action === "open_alternative_search") {
+        const index = Number(actionElement.dataset.index);
+        if (Number.isInteger(index)) {
+          if (state.alternativeSearch.resultIndex !== index) {
+            state.alternativeSearch.result = null;
+            state.alternativeSearch.resultIndex = index;
+            state.alternativeSearch.filters = getAlternativeSearchFilters(index, DEFAULT_REGION);
+          }
+          renderAlternativeSearchModal(index);
+        }
+        return;
+      }
+
+      if (action === "search_alternative") {
+        const index = Number(actionElement.dataset.index);
+        if (Number.isInteger(index)) {
+          searchForAlternativeQuestion(index);
+        }
+        return;
+      }
+
+      if (action === "confirm_question_swap") {
+        const index = Number(actionElement.dataset.index);
+        if (Number.isInteger(index)) {
+          confirmQuestionSwap(index);
+        }
+        return;
+      }
+
       if (action === "generate_us_alt_ai") {
         const index = Number(actionElement.dataset.index);
         if (Number.isNaN(index)) {
@@ -2255,6 +2521,30 @@
 
       syncQuestionFromInput(regionTab);
     });
+
+    elements.alternativeSearchModalBody.addEventListener("click", (event) => {
+      if (!(event.target instanceof HTMLElement)) {
+        return;
+      }
+
+      const actionElement = event.target.closest("[data-action]");
+      if (!(actionElement instanceof HTMLElement)) {
+        return;
+      }
+
+      const index = Number(actionElement.dataset.index);
+      if (!Number.isInteger(index)) {
+        return;
+      }
+
+      if (actionElement.dataset.action === "search_alternative") {
+        searchForAlternativeQuestion(index);
+      } else if (actionElement.dataset.action === "confirm_question_swap") {
+        confirmQuestionSwap(index);
+      }
+    });
+
+    elements.closeAlternativeSearchButton.addEventListener("click", closeAlternativeSearchModal);
 
     renderQuestions();
     updateTopRegionTabs(state.region);
