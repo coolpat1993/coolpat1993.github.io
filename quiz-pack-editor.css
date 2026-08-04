@@ -344,6 +344,7 @@ button.secondary {
   max-width: 640px;
   width: 100%;
   max-height: 90vh;
+  min-height: 500px;
   overflow-y: auto;
 }
 
@@ -584,6 +585,6 @@ button.danger:hover {
   }
 
   .modal-dialog {
-    max-height: 95vh;
+    height: 95vh;
   }
 }
