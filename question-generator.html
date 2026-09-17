@@ -152,8 +152,6 @@
             `Return exactly ${count} questions.`,
             "Use a balanced mix of type_code L, M, N, and S when appropriate. L is a normal answer whose short_answer is its first letter; M is multiple choice with options and a correct option letter; N is numeric; S asks the player to put options in the correct order and short_answer is the option-letter sequence.",
             "Vary the question formats and openings across the pack. Do not produce several questions asking 'In what year...?' or otherwise repeat the same wording pattern; use at most one year-based question, and prefer questions about people, places, causes, meanings, comparisons, sequences, identifying clues, and specific facts.",
-            "Each question must test a different fact. Mix easy and normal difficulty, with only a small number of hard questions when justified. Avoid clues that reveal the answer, ambiguous wording, negative questions where possible, duplicate answers, and questions whose answer depends on a changing or disputed fact.",
-            "For M questions, make every option plausible, use the same kind of thing in every option, and do not make the correct option noticeably longer or more specific. For S questions, provide an unambiguous ordering rule and options that can be ordered. Keep N questions genuinely numeric and make short_answer match the required answer format.",
             "Every question must have q, short_answer, long_answer, type_code, and difficulty. Use category as a numeric-looking string and uk_only as a boolean. Do not invent facts, repeat questions, or include markdown.",
             `Style examples: ${JSON.stringify(styleExamples)}`
           ].join("\n");
