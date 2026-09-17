@@ -84,7 +84,6 @@
     <script>
       (() => {
         const API_URL = "https://api.openai.com/v1/chat/completions";
-        const MODEL = "gpt-5.5";
         const API_KEY_STORAGE_KEY = "question-generator.openai-api-key";
         const form = document.getElementById("generatorForm");
         const topicInput = document.getElementById("topicInput");
@@ -163,7 +162,7 @@
           const response = await fetch(API_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-            body: JSON.stringify({ model: MODEL, response_format: { type: "json_object" }, messages: [
+            body: JSON.stringify({ model: "gpt-5.6-luna", response_format: { type: "json_object" }, messages: [
               { role: "system", content: "You are an expert quiz question writer. Accuracy and unambiguous answers matter more than novelty." },
               { role: "user", content: buildPrompt(topic, count) }
             ] })
