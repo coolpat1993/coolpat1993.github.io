@@ -152,6 +152,7 @@
             `Return exactly ${count} questions.`,
             "Use a balanced mix of type_code L, M, N, and S when appropriate. L is a normal answer whose short_answer is its first letter; M is multiple choice with options and a correct option letter; N is numeric; S asks the player to put options in the correct order and short_answer is the option-letter sequence.",
             "Vary the question formats and openings across the pack. Do not produce several questions asking 'In what year...?' or otherwise repeat the same wording pattern; use at most one year-based question, and prefer questions about people, places, causes, meanings, comparisons, sequences, identifying clues, and specific facts.",
+            "Do not ask basic, surface-level textbook trivia or obvious fact-recall questions, such as 'Which planet is known as the Red Planet?' or 'Which planet is the biggest in the solar system?'. Prefer questions that require a more specific detail, connection, comparison, context, clue, or multiple step of reasoning while remaining fair and answerable.",
             "Every question must have q, short_answer, long_answer, type_code, and difficulty. Use category as a numeric-looking string and uk_only as a boolean. Do not invent facts, repeat questions, or include markdown.",
             `Style examples: ${JSON.stringify(styleExamples)}`
           ].join("\n");
