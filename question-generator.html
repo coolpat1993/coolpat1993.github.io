@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Question Generator</title>
+    <style>
+      :root { --ink: #17221d; --muted: #66736b; --paper: #fffdf8; --line: #d9d3c5; --green: #176b4d; --green-dark: #0d4936; }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; color: var(--ink); font-family: "Avenir Next", "Segoe UI", sans-serif; background: #eee9dc; }
+      main { width: min(720px, calc(100% - 28px)); margin: 0 auto; padding: 28px 0 56px; }
+      header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+      h1 { margin: 0; font-size: 1.55rem; letter-spacing: -0.02em; }
+      a { color: var(--green-dark); font-size: 0.9rem; font-weight: 700; }
+      .panel { padding: 22px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); box-shadow: 0 12px 28px rgba(37, 46, 39, 0.08); }
+      form { display: grid; gap: 16px; }
+      label { display: block; margin-bottom: 7px; font-size: 0.84rem; font-weight: 800; }
+      textarea, input, select, button { width: 100%; font: inherit; }
+      textarea, input, select { border: 1px solid #bdb6a7; border-radius: 8px; background: #fff; color: var(--ink); }
+      textarea { min-height: 92px; padding: 12px; resize: vertical; }
+      input { height: 44px; padding: 0 10px; }
+      select { height: 44px; padding: 0 10px; }
+      textarea:focus, input:focus, select:focus { outline: 3px solid rgba(23, 107, 77, 0.17); border-color: var(--green); }
+      .controls { display: grid; grid-template-columns: 1fr 170px; gap: 12px; align-items: end; }
+      button { height: 44px; border: 1px solid var(--green); border-radius: 8px; color: #fff; background: var(--green); font-weight: 800; cursor: pointer; }
+      button:hover { background: var(--green-dark); }
+      button:disabled { cursor: wait; opacity: 0.65; }
+      #status { min-height: 20px; margin: 14px 0 0; color: var(--muted); font-size: 0.9rem; }
+      #status.error { color: #9b3d2d; }
+      #results { margin-top: 18px; }
+      .result-header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+      h2 { margin: 0; font-size: 1.15rem; }
+      .result-count { color: var(--muted); font-size: 0.85rem; }
+      .question-list { display: grid; gap: 8px; padding: 0; margin: 0; list-style: none; }
+      .question { padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+      .question-text { margin: 0 0 7px; line-height: 1.4; }
+      .answer { margin: 0; color: var(--muted); font-size: 0.86rem; }
+      .answer strong { color: var(--ink); }
+      .options { margin: 7px 0 0; padding-left: 20px; color: var(--muted); font-size: 0.86rem; }
+      .json-button { width: auto; height: 34px; padding: 0 10px; color: var(--green-dark); background: transparent; font-size: 0.8rem; }
+      .json-button:hover { color: #fff; }
+      [hidden] { display: none; }
+      @media (max-width: 520px) { .controls { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>AI Question Generator</h1>
+        <a href="./index.html">Back</a>
+      </header>
+      <section class="panel">
+        <form id="generatorForm">
+          <div>
+            <label for="topicInput">Topic</label>
+            <textarea id="topicInput" placeholder="video games of the 90's" required></textarea>
+          </div>
+          <div>
+            <label for="apiKeyInput">OpenAI API key</label>
+            <input id="apiKeyInput" type="password" autocomplete="current-password" placeholder="sk-..." required />
+          </div>
+          <div class="controls">
+            <div>
+              <label for="questionCount">Questions</label>
+              <select id="questionCount">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="30">30</option>
+              </select>
+            </div>
+            <button id="generateButton" type="submit">Generate</button>
+          </div>
+        </form>
+        <p id="status" role="status" aria-live="polite"></p>
+      </section>
+      <section id="results" aria-live="polite" hidden>
+        <div class="result-header">
+          <h2>Questions</h2>
+          <span id="resultCount" class="result-count"></span>
+          <button id="downloadButton" class="json-button" type="button">Download JSON</button>
+        </div>
+        <ol id="questionList" class="question-list"></ol>
+      </section>
+    </main>
+    <script>
+      (() => {
+        const API_URL = "https://api.openai.com/v1/chat/completions";
+        const MODEL = "gpt-5.5";
+        const API_KEY_STORAGE_KEY = "question-generator.openai-api-key";
+        const form = document.getElementById("generatorForm");
+        const topicInput = document.getElementById("topicInput");
+        const apiKeyInput = document.getElementById("apiKeyInput");
+        const questionCount = document.getElementById("questionCount");
+        const generateButton = document.getElementById("generateButton");
+        const status = document.getElementById("status");
+        const results = document.getElementById("results");
+        const resultCount = document.getElementById("resultCount");
+        const questionList = document.getElementById("questionList");
+        const downloadButton = document.getElementById("downloadButton");
+        let generatedQuestions = [];
+
+        const styleExamples = [
+          { q: "In UK supermarkets, before milk bottle tops started becoming clear or white for recycling purposes, traditionally what colour were the bottle tops of 1% fat milk?", short_answer: "O", long_answer: "Orange", type_code: "L", difficulty: "normal", category: "56", uk_only: true },
+          { q: "If the time was 13:00 as written on a 24-hour digital clock, what number would the big hand be pointing to on a standard clock?", short_answer: "12", long_answer: "12 (the small hand would be pointing to 1)", type_code: "N", difficulty: "easy", category: "28", uk_only: false },
+          { q: "Roald Dahl's 'Esio Trot' is based around what type of animal?", short_answer: "T", long_answer: "Tortoise", type_code: "L", difficulty: "normal", category: "57", uk_only: false },
+          { q: "Royston Vasey, the setting for the comedy 'The League of Gentlemen', was originally based on a real town in what part of the UK?", short_answer: "D", long_answer: "Originally based on Bacup, Lancashire", type_code: "M", difficulty: "easy", category: "13", uk_only: true, options: ["Wales", "Scottish Highlands", "East Anglia", "Northern England"] },
+          { q: "Which season of the year links songs by ABBA, Kid Rock, Bryan Adams and Don Henley?", short_answer: "S", long_answer: "Summer (Our Last Summer, All Summer Long, Summer of '69, The Boys of Summer)", type_code: "L", difficulty: "easy", category: "55", uk_only: false },
+          { q: "Which of these countries does NOT border Belarus?", short_answer: "A", long_answer: "Finland", type_code: "M", difficulty: "normal", category: "41", uk_only: false, options: ["Finland", "Poland", "Ukraine", "Russia"] },
+          { q: "Put the answers to these sums in order, starting with smallest.", short_answer: "ACDB", long_answer: "0, 99, 100, 101", type_code: "S", difficulty: "normal", category: "58", uk_only: false, options: ["100 - 100", "100 + 1", "100 - 1", "100 x 1"] },
+          { q: "What is the pH number of a substance that is neither acid nor alkali?", short_answer: "7", long_answer: "7", type_code: "N", difficulty: "normal", category: "17", uk_only: false },
+          { q: "What is Eminem's real name?", short_answer: "M", long_answer: "Marshall Mathers III", type_code: "L", difficulty: "normal", category: "55", uk_only: false },
+          { q: "Who plays the title character in the hit 2023 film 'Oppenheimer'?", short_answer: "C", long_answer: "Cillian Murphy", type_code: "L", difficulty: "easy", category: "1", uk_only: false },
+          { q: "By what first name did the famous escapologist Houdini commonly go by?", short_answer: "H", long_answer: "Harry (born Erik Weisz)", type_code: "L", difficulty: "easy", category: "24", uk_only: false },
+          { q: "In which of these countries is German NOT an official language?", short_answer: "D", long_answer: "Croatia", type_code: "M", difficulty: "normal", category: "41", uk_only: false, options: ["Germany", "Belgium", "Switzerland", "Croatia", "Austria"] },
+          { q: "What was the name of the bear in 'The Muppet Show'?", short_answer: "F", long_answer: "Fozzie", type_code: "L", difficulty: "easy", category: "42", uk_only: false },
+          { q: "Which Oasis song was pipped at the post by Blur's 'Country House' in the legendary battle for the number one spot in the UK singles chart in the '90s?", short_answer: "C", long_answer: "Roll With It", type_code: "M", difficulty: "normal", category: "55", uk_only: true, options: ["Wonderwall", "Live Forever", "Roll With It"] },
+          { q: "As used by the military, 'zero hundred hours' is an alternative term for what eight-letter word?", short_answer: "M", long_answer: "Midnight", type_code: "L", difficulty: "easy", category: "53", uk_only: false },
+          { q: "Rearrange these groups of letters to spell out the name of an English football club.", short_answer: "ECBDA", long_answer: "Blackburn Rovers", type_code: "S", difficulty: "normal", category: "51", uk_only: true, options: ["ERS", "URN", "CKB", "ROV", "BLA"] },
+          { q: "In biology, with which part of the body do we associate the term 'gastro'?", short_answer: "S", long_answer: "Stomach", type_code: "L", difficulty: "easy", category: "45", uk_only: false },
+          { q: "In what year were atomic bombs dropped on Hiroshima and Nagasaki?", short_answer: "1945", long_answer: "1945", type_code: "N", difficulty: "normal", category: "46", uk_only: false },
+          { q: "What type of blood vessel lends its name to the seams of mould running through certain blue cheeses?", short_answer: "V", long_answer: "Veins", type_code: "L", difficulty: "normal", category: "43", uk_only: false },
+          { q: "Complete the title of the 1981 British sports drama film: 'Chariots of...' what?", short_answer: "F", long_answer: "Fire", type_code: "L", difficulty: "easy", category: "36", uk_only: true }
+        ];
+
+        function hydrateApiKey() {
+          let saved = "";
+          try { saved = localStorage.getItem(API_KEY_STORAGE_KEY) || ""; } catch {}
+          apiKeyInput.value = saved;
+        }
+
+        function getApiKey() {
+          const key = apiKeyInput.value.trim();
+          if (!/^sk-[A-Za-z0-9._-]{20,}$/.test(key)) throw new Error("Please enter a valid OpenAI API key.");
+          try { localStorage.setItem(API_KEY_STORAGE_KEY, key); } catch {}
+          return key;
+        }
+
+        function setStatus(message, isError = false) {
+          status.textContent = message;
+          status.classList.toggle("error", isError);
+        }
+
+        function allowPaste(event) {
+          event.stopPropagation();
+        }
+
+        topicInput.addEventListener("paste", allowPaste);
+        apiKeyInput.addEventListener("paste", allowPaste);
+
+        function buildPrompt(topic, count) {
+          return [
+            "Create a quiz pack in the style of the examples below.",
+            "Use general-knowledge quiz writing: concise, precise, lightly conversational, and often with a useful clue or wordplay.",
+            "Return ONLY valid JSON with this shape: {\"questions\":[question objects]}.",
+            `The topic is: ${topic}`,
+            `Return exactly ${count} questions.`,
+            "Use a balanced mix of type_code L, M, N, and S when appropriate. L is a normal answer whose short_answer is its first letter; M is multiple choice with options and a correct option letter; N is numeric; S asks the player to put options in the correct order and short_answer is the option-letter sequence.",
+            "Every question must have q, short_answer, long_answer, type_code, and difficulty. Use category as a numeric-looking string and uk_only as a boolean. Do not invent facts, repeat questions, or include markdown.",
+            `Style examples: ${JSON.stringify(styleExamples)}`
+          ].join("\n");
+        }
+
+        async function generateQuestions(topic, count, apiKey) {
+          const response = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+            body: JSON.stringify({ model: MODEL, response_format: { type: "json_object" }, messages: [
+              { role: "system", content: "You are an expert quiz question writer. Accuracy and unambiguous answers matter more than novelty." },
+              { role: "user", content: buildPrompt(topic, count) }
+            ] })
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(payload?.error?.message || `OpenAI request failed (${response.status}).`);
+          const parsed = JSON.parse(payload?.choices?.[0]?.message?.content || "{}");
+          const questions = Array.isArray(parsed) ? parsed : parsed.questions;
+          if (!Array.isArray(questions) || questions.length !== count) throw new Error(`The AI returned ${questions?.length || 0} questions instead of ${count}.`);
+          return questions;
+        }
+
+        function escapeHtml(value) {
+          return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+        }
+
+        function renderQuestions(questions) {
+          questionList.innerHTML = questions.map((question) => {
+            const options = Array.isArray(question.options) ? `<ol class="options">${question.options.map((option) => `<li>${escapeHtml(option)}</li>`).join("")}</ol>` : "";
+            return `<li class="question"><p class="question-text">${escapeHtml(question.q)}</p><p class="answer"><strong>${escapeHtml(question.short_answer)}</strong> ${escapeHtml(question.long_answer)}</p>${options}</li>`;
+          }).join("");
+          resultCount.textContent = `${questions.length} generated`;
+          results.hidden = false;
+        }
+
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const topic = topicInput.value.trim();
+          const count = Number(questionCount.value);
+          if (!topic) return;
+          generateButton.disabled = true;
+          generateButton.textContent = "Generating...";
+          setStatus("Asking the AI for accurate questions...");
+          try {
+            const apiKey = getApiKey();
+            if (!apiKey) throw new Error("Generation cancelled.");
+            generatedQuestions = await generateQuestions(topic, count, apiKey);
+            renderQuestions(generatedQuestions);
+            setStatus("Done.");
+          } catch (error) {
+            setStatus(error.message || "Generation failed.", true);
+          } finally {
+            generateButton.disabled = false;
+            generateButton.textContent = "Generate";
+          }
+        });
+
+        downloadButton.addEventListener("click", () => {
+          const blob = new Blob([JSON.stringify(generatedQuestions, null, 2)], { type: "application/json" });
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = "generated-questions.json";
+          link.click();
+          URL.revokeObjectURL(link.href);
+        });
+
+        hydrateApiKey();
+      })();
+    </script>
+  </body>
+</html>
