@@ -1852,42 +1852,45 @@
     "For each input question, FIRST decide whether it can simply be localized.",
 
     "If localization is sufficient:",
-    "- Preserve the original question.",
+    "- Preserve the original question's subject, structure, clue pattern, level of specificity, tone, and answer style.",
     "- Make only the minimum changes needed for American English.",
     "- Convert UK spelling and wording (colour→color, centre→center, petrol→gas, lift→elevator, motorway→highway/interstate, etc.).",
     "- Preserve the original answer whenever possible.",
+    "- For input questions with uk_only false, do not invent a new topic: return the same question or a minimally localized version.",
 
     "If localization is NOT sufficient because the question depends on UK-specific culture, TV, politics, geography, brands, sport, celebrities, products, advertising or institutions:",
-    "- Generate a completely new US question instead.",
-    "- The new question does NOT need to resemble the original beyond category and approximate difficulty.",
-    "- Preserve the intent of the original question whenever practical.",
-    "- When replacing a question entirely, avoid reusing the same topic if it is likely to be unfamiliar to Americans.",
+    "- Create an American alternative, but preserve the original question's format, sentence shape, clue pattern, specificity, tone, and answer style.",
+    "- Replace the UK-specific subject or entity with the closest relevant American subject or entity, while preserving the original intent whenever practical.",
+    "- Keep the same subject whenever possible. Only change the subject when no natural American equivalent exists; if that happens, choose the closest American topic in the same category and at a similar difficulty.",
+    "- Preserve the question mechanism: a linked-song clue stays a linked-song clue, a title-completion clue stays a title-completion clue, a comparison stays a comparison, and a multiple-choice or ordering task keeps the same form.",
 
     "Priority order:",
     "1. Every question and answer must be factually correct.",
     "2. The question must make sense to an average American.",
     "3. The answer must be unambiguous.",
-    "4. Preserve category.",
-    "5. Preserve approximate difficulty.",
-    "6. Preserve type_code whenever practical.",
-    "7. Only rewrite completely when localization cannot produce a natural US question.",
-    "8. Attempt to preserve the original question's writing style for question, short_answer and the long answer, including punctuation, capitalization, and formatting.",
+    "4. Preserve the original subject and question structure.",
+    "5. Preserve category.",
+    "6. Preserve approximate difficulty.",
+    "7. Preserve type_code whenever practical.",
+    "8. Only rewrite when localization cannot produce a natural US question, and keep the original subject whenever possible.",
+    "9. Preserve the original question's writing style for question, short_answer and long_answer, including punctuation, capitalization, formatting, clue density, and level of detail.",
 
     "Requirements:",
     "- Every question must have exactly one correct answer.",
     "- Every clue must be true.",
     "- Never guess.",
-    "- If you are uncertain about ANY fact, replace the question with a simpler fact you know is correct.",
+    "- If you are uncertain about ANY fact, replace only the uncertain reference with an equally specific fact from the same subject; never fall back to generic trivia.",
     "- Prefer objective, stable facts over recent events or opinions.",
     "- Avoid questions whose answer depends on popularity, reputation, trends or public opinion.",
     "- Avoid vague wording such as 'popular', 'famous for', 'well-known', or 'known for' unless the clue uniquely identifies one answer.",
-    "- Avoid niche trivia.",
+    "- Avoid inaccessible niche trivia, but do not remove distinctive subject-specific detail from the original question.",
     "- Avoid advertising campaigns, slogans, mascots or jingles unless they are extremely well-known across the United States and identify only one answer.",
-    "- Prefer broad American knowledge.",
-    "- Keep wording concise.",
+    "- Prefer recognizable American references within the original subject.",
+    "- Keep wording concise while retaining the original question's distinctive detail and style.",
     "- Ensure short_answer exactly matches the correct answer.",
     "- Never invent facts in the long_answer. Every statement must be true.",
     "- For multiple choice (M) questions, use the long_answer for extra information about the question. (example - 'How many U.S. states begin with the letter 'M'?' short_answer: '8', long_answer: 'Maine, Maryland, Massachusetts, Michigan, Minnesota, Mississippi, Missouri, Montana'), do not use this to repeat the question exactly, it should be adding extra info.",
+    "- Use the supplied style examples as a reference for concise wording, answer encoding, metadata, and question variety. Do not copy their facts or topics.",
 
     "Type rules:",
     "- M: options must be plausible; short_answer must be the correct option letter.",
@@ -1901,6 +1904,8 @@
     "- only one answer fits",
     "- short_answer is correct",
     "- the question would be understandable to an average American",
+    "- the question is recognizably an alternative version of the input, not a generic question from the same category",
+    "- the subject, structure, clue pattern, and specificity were preserved unless a US substitution required changing them",
     "- if any check fails, replace the entire question",
 
     "Return ONLY valid JSON in this exact format:",
@@ -1913,8 +1918,10 @@
     workflow: [
       "Step 1: Determine whether the original question already works in the United States.",
       "Step 2: If yes, localize only spelling or wording.",
-      "Step 3: If no, generate a completely new US question.",
-      "Step 4: Verify factual accuracy before returning."
+      "Step 3: If no, make the smallest American substitution that preserves the subject and question format.",
+      "Step 4: Compare the draft with the input and restore any lost structure, detail, tone, or specificity.",
+      "Step 5: Match the style of the examples without copying their content.",
+      "Step 6: Verify factual accuracy before returning."
     ],
 
     constraints: {
@@ -1927,11 +1934,17 @@
 
       prioritize_localization_over_rewrite: true,
       rewrite_only_if_necessary: true,
+      preserve_question_structure: true,
+      preserve_clue_pattern: true,
+      preserve_specificity: true,
+      reject_generic_rewrites: true,
 
       prioritize_wide_american_appeal: true,
       avoid_uk_specific_entities: true,
+      preserve_original_subject: true,
+      prefer_closest_american_topic: true,
 
-      allow_non_1_to_1_rewrites: true,
+      allow_non_1_to_1_rewrites: false,
 
       require_unambiguous_answers: true,
       require_specific_unique_clues: true,
@@ -1950,6 +1963,27 @@
       output_json_only: true
     },
 
+    style_examples: [
+      { q: "In UK supermarkets, before milk bottle tops started becoming clear or white for recycling purposes, traditionally what colour were the bottle tops of 1% fat milk?", short_answer: "O", long_answer: "Orange", type_code: "L", difficulty: "normal", category: "56", uk_only: true },
+      { q: "If the time was 13:00 as written on a 24-hour digital clock, what number would the big hand be pointing to on a standard clock?", short_answer: "12", long_answer: "12 (the small hand would be pointing to 1)", type_code: "N", difficulty: "easy", category: "28", uk_only: false },
+      { q: "Roald Dahl's 'Esio Trot' is based around what type of animal?", short_answer: "T", long_answer: "Tortoise", type_code: "L", difficulty: "normal", category: "57", uk_only: false },
+      { q: "Royston Vasey, the setting for the comedy 'The League of Gentlemen', was originally based on a real town in what part of the UK?", short_answer: "D", long_answer: "Originally based on Bacup, Lancashire", type_code: "M", difficulty: "easy", category: "13", uk_only: true, options: ["Wales", "Scottish Highlands", "East Anglia", "Northern England"] },
+      { q: "Which season of the year links songs by ABBA, Kid Rock, Bryan Adams and Don Henley?", short_answer: "S", long_answer: "Summer (Our Last Summer, All Summer Long, Summer of '69, The Boys of Summer)", type_code: "L", difficulty: "easy", category: "55", uk_only: false },
+      { q: "Which of these countries does NOT border Belarus?", short_answer: "A", long_answer: "Finland", type_code: "M", difficulty: "normal", category: "41", uk_only: false, options: ["Finland", "Poland", "Ukraine", "Russia"] },
+      { q: "Put the answers to these sums in order, starting with smallest.", short_answer: "ACDB", long_answer: "0, 99, 100, 101", type_code: "S", difficulty: "normal", category: "58", uk_only: false, options: ["100 - 100", "100 + 1", "100 - 1", "100 x 1"] },
+      { q: "What is the pH number of a substance that is neither acid nor alkali?", short_answer: "7", long_answer: "7", type_code: "N", difficulty: "normal", category: "17", uk_only: false },
+      { q: "What is Eminem's real name?", short_answer: "M", long_answer: "Marshall Mathers III", type_code: "L", difficulty: "normal", category: "55", uk_only: false },
+      { q: "Who plays the title character in the hit 2023 film 'Oppenheimer'?", short_answer: "C", long_answer: "Cillian Murphy", type_code: "L", difficulty: "easy", category: "1", uk_only: false },
+      { q: "By what first name did the famous escapologist Houdini commonly go by?", short_answer: "H", long_answer: "Harry (born Erik Weisz)", type_code: "L", difficulty: "easy", category: "24", uk_only: false },
+      { q: "In which of these countries is German NOT an official language?", short_answer: "D", long_answer: "Croatia", type_code: "M", difficulty: "normal", category: "41", uk_only: false, options: ["Germany", "Belgium", "Switzerland", "Croatia", "Austria"] },
+      { q: "What was the name of the bear in 'The Muppet Show'?", short_answer: "F", long_answer: "Fozzie", type_code: "L", difficulty: "easy", category: "42", uk_only: false },
+      { q: "Which Oasis song was pipped at the post by Blur's 'Country House' in the legendary battle for the number one spot in the UK singles chart in the '90s?", short_answer: "C", long_answer: "Roll With It", type_code: "M", difficulty: "normal", category: "55", uk_only: true, options: ["Wonderwall", "Live Forever", "Roll With It"] },
+      { q: "As used by the military, 'zero hundred hours' is an alternative term for what eight-letter word?", short_answer: "M", long_answer: "Midnight", type_code: "L", difficulty: "easy", category: "53", uk_only: false },
+      { q: "Rearrange these groups of letters to spell out the name of an English football club.", short_answer: "ECBDA", long_answer: "Blackburn Rovers", type_code: "S", difficulty: "normal", category: "51", uk_only: true, options: ["ERS", "URN", "CKB", "ROV", "BLA"] },
+      { q: "In biology, with which part of the body do we associate the term 'gastro'?", short_answer: "S", long_answer: "Stomach", type_code: "L", difficulty: "easy", category: "45", uk_only: false },
+      { q: "What type of blood vessel lends its name to the seams of mould running through certain blue cheeses?", short_answer: "V", long_answer: "Veins", type_code: "L", difficulty: "normal", category: "43", uk_only: false },
+      { q: "Complete the title of the 1981 British sports drama film: 'Chariots of...' what?", short_answer: "F", long_answer: "Fire", type_code: "L", difficulty: "easy", category: "36", uk_only: true }
+    ],
     questions: items
   };
 
