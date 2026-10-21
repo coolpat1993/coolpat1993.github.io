@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Outreach</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#1c2230; --muted:#6b7280; --line:#e5e7eb; --accent:#2d5bff; --wa:#1faa59; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#12151c; --card:#1b2029; --text:#e8ebf2; --muted:#9aa3b2; --line:#2a303c; --accent:#6b8cff; --wa:#2ecc71; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+  .wrap { max-width:1100px; margin:0 auto; padding:20px 16px 60px; }
+  h1 { font-size:20px; margin:0 0 14px; }
+  .tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .tab { border:1px solid var(--line); background:var(--card); color:var(--text); padding:9px 14px; border-radius:8px; cursor:pointer; font-size:14px; }
+  .tab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .tab .n { opacity:.75; margin-left:6px; }
+  .sort-tools { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .sort-tools label { color:var(--muted); font-size:13px; }
+  .sort-tools select, .sort-tools button { border:1px solid var(--line); border-radius:7px; padding:8px 10px; background:var(--card); color:var(--text); font:inherit; font-size:13px; }
+  .sort-tools button { cursor:pointer; }
+  .desc { color:var(--muted); font-size:13px; margin:0 0 10px; }
+  .status { padding:14px; color:var(--muted); }
+  .error { color:#d93025; }
+  .row { display:grid; grid-template-columns:1.4fr 1.6fr 1.2fr auto; gap:12px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:8px; }
+  .name { font-weight:600; }
+  .sub { color:var(--muted); font-size:13px; }
+  .actions { display:flex; gap:6px; }
+  .btn { border:0; border-radius:7px; padding:8px 12px; font:inherit; font-size:13px; cursor:pointer; color:#fff; background:var(--accent); text-decoration:none; }
+  .btn.wa { background:var(--wa); }
+  .btn.off { opacity:.35; pointer-events:none; }
+  @media (max-width:760px) { .row { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Outreach</h1>
+  <div class="tabs" id="tabs"></div>
+  <p class="desc" id="desc"></p>
+  <div class="sort-tools">
+    <label for="sort-field">Sort by</label>
+    <select id="sort-field"></select>
+    <button id="sort-direction" type="button"></button>
+  </div>
+  <div id="list"></div>
+</div>
+
+<script>
+// ---- config ----
+const BASE_URL = "https://www.speedquizzing.com/utils/outreach/";
+const API_KEY_STORAGE_KEY = "outreach_api_key";
+let API_KEY = localStorage.getItem(API_KEY_STORAGE_KEY) || window.prompt("Enter the outreach API key:")?.trim();
+const DEFAULT_CC = "44"; // used when a number starts with a single 0 and country is unknown
+const CC = { GB:"44", UK:"44", IE:"353", US:"1", CA:"1", AU:"61", NZ:"64", DE:"49", FR:"33", ES:"34", IT:"39", NL:"31", PT:"351", IN:"91", AE:"971" };
+
+const TABS = [
+  { id:"upcoming_first_bookers", label:"Upcoming first bookers", desc:"First-time bookers whose booking is still to come.", sortFields:[["date", "Booking date"], ["name", "Name"], ["event_name", "Event"], ["user_country", "Country"]], sort:"date", direction:"asc" },
+  { id:"recent_first_bookers", label:"Recent first bookers", desc:"First-time bookers whose booking has just passed.", sortFields:[["date", "Booking date"], ["name", "Name"], ["event_name", "Event"], ["user_country", "Country"]], sort:"date", direction:"desc" },
+  { id:"overdue_bookers", label:"Overdue regulars", desc:"Regular bookers who are later than usual for their next booking.", sortFields:[["days_overdue", "Days overdue"], ["last_booking", "Last booking"], ["name", "Name"], ["companyname", "Company"], ["booking_count", "Booking count"], ["avg_days_between", "Average days between bookings"]], sort:"days_overdue", direction:"desc" },
+];
+
+const cache = {};
+const sortState = Object.fromEntries(TABS.map(tab => [tab.id, { field:tab.sort, direction:tab.direction }]));
+let current = TABS[0].id;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+function toWaNumber(phone, country) {
+  let d = String(phone || "").replace(/[^\d+]/g, "");
+  if (!d) return "";
+  if (d.startsWith("+")) return d.slice(1).replace(/\D/g, "");
+  d = d.replace(/\D/g, "");
+  if (d.startsWith("00")) return d.slice(2);
+  if (d.startsWith("0")) return (CC[String(country || "").toUpperCase()] || DEFAULT_CC) + d.slice(1);
+  return d;
+}
+
+function fmtDate(v) {
+  if (!v) return "";
+  const d = new Date(String(v).replace(" ", "T"));
+  return isNaN(d) ? v : d.toLocaleString(undefined, { dateStyle:"medium", timeStyle: String(v).length > 10 ? "short" : undefined });
+}
+
+function details(tab, p) {
+  if (tab === "overdue_bookers") {
+    return `<div>${esc(p.companyname) || "<span class='sub'>No company</span>"}</div>
+            <div class="sub">${esc(p.booking_count)} bookings · every ~${esc(p.avg_days_between)} days</div>
+            <div class="sub">Last: ${esc(fmtDate(p.last_booking))} (${esc(p.days_since_last_booking)}d ago, ${esc(p.days_overdue)}d overdue)</div>`;
+  }
+  return `<div>${esc(p.event_name) || "<span class='sub'>No event</span>"}</div>
+          <div class="sub">${esc(fmtDate(p.date))}</div>
+          <div class="sub">${esc(p.user_country)}</div>`;
+}
+
+function getSortValue(row, field) {
+  if (field === "name") return `${row.firstname || ""} ${row.lastname || ""}`.trim().toLocaleLowerCase();
+  const value = row[field];
+  if (value == null || value === "") return null;
+  if (["date", "last_booking"].includes(field)) {
+    const timestamp = new Date(String(value).replace(" ", "T")).getTime();
+    return Number.isNaN(timestamp) ? null : timestamp;
+  }
+  if (["days_overdue", "booking_count", "avg_days_between"].includes(field)) {
+    const number = Number(value);
+    return Number.isNaN(number) ? null : number;
+  }
+  return String(value).toLocaleLowerCase();
+}
+
+function sortedRows(rows) {
+  const { field, direction } = sortState[current];
+  const multiplier = direction === "asc" ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    const left = getSortValue(a, field);
+    const right = getSortValue(b, field);
+    if (left == null) return right == null ? 0 : 1;
+    if (right == null) return -1;
+    const comparison = typeof left === "string" ? left.localeCompare(right, undefined, { numeric:true }) : left - right;
+    return comparison * multiplier;
+  });
+}
+
+function updateSortTools() {
+  const tab = TABS.find(item => item.id === current);
+  const state = sortState[current];
+  $("sort-field").innerHTML = tab.sortFields.map(([value, label]) =>
+    `<option value="${value}" ${value === state.field ? "selected" : ""}>${label}</option>`
+  ).join("");
+  $("sort-direction").textContent = state.direction === "asc" ? "Ascending ↑" : "Descending ↓";
+  $("sort-direction").setAttribute("aria-label", `Sort ${state.direction === "asc" ? "ascending" : "descending"}; click to reverse`);
+}
+
+function render() {
+  const rows = cache[current];
+  const list = $("list");
+  if (!rows) return;
+  if (!rows.length) { list.innerHTML = `<div class="status">No results.</div>`; return; }
+
+  list.innerHTML = sortedRows(rows).map(p => {
+    const name = `${p.firstname || ""} ${p.lastname || ""}`.trim() || `User ${p.user_id}`;
+    const wa = toWaNumber(p.phone, p.user_country);
+    const mail = p.email ? `mailto:${p.email}` : "";
+    const waUrl = wa ? `https://wa.me/${wa}` : "";
+    return `<div class="row">
+      <div><div class="name">${esc(name)}</div><div class="sub">ID ${esc(p.user_id)}</div></div>
+      <div><div>${esc(p.email) || "<span class='sub'>No email</span>"}</div><div class="sub">${esc(p.phone) || "No phone"}</div></div>
+      <div>${details(current, p)}</div>
+      <div class="actions">
+        <a class="btn ${mail ? "" : "off"}" href="${mail}">Email</a>
+        <a class="btn wa ${waUrl ? "" : "off"}" href="${waUrl}" target="_blank" rel="noopener">WhatsApp</a>
+      </div></div>`;
+  }).join("");
+}
+
+async function load(id) {
+  const list = $("list");
+  if (!API_KEY) {
+    if (id === current) list.innerHTML = `<div class="status">An API key is required to load outreach data.</div>`;
+    return;
+  }
+  if (cache[id]) { render(); return; }
+  list.innerHTML = `<div class="status">Loading…</div>`;
+  try {
+    // api_key goes in the query string so the browser doesn't need a CORS preflight
+    const res = await fetch(`${BASE_URL}${id}?api_key=${encodeURIComponent(API_KEY)}`);
+    const data = await res.json();
+    if (!res.ok || !Array.isArray(data)) throw new Error(data.error || `HTTP ${res.status}`);
+    localStorage.setItem(API_KEY_STORAGE_KEY, API_KEY);
+    cache[id] = data;
+    updateTabs();
+    if (id === current) render();
+  } catch (e) {
+    if (id === current) list.innerHTML = `<div class="status error">Failed to load: ${esc(e.message)}. If this is a .test domain, open ${esc(BASE_URL)}${esc(id)} once in this browser and accept the certificate.</div>`;
+  }
+}
+
+function updateTabs() {
+  $("tabs").innerHTML = TABS.map(t =>
+    `<button class="tab ${t.id === current ? "active" : ""}" data-id="${t.id}">${t.label}<span class="n">${cache[t.id] ? cache[t.id].length : ""}</span></button>`
+  ).join("");
+}
+
+function select(id) {
+  current = id;
+  const t = TABS.find(x => x.id === id);
+  $("desc").textContent = t.desc;
+  updateTabs();
+  updateSortTools();
+  load(id);
+}
+
+$("tabs").addEventListener("click", e => { const b = e.target.closest(".tab"); if (b) select(b.dataset.id); });
+$("sort-field").addEventListener("change", e => {
+  sortState[current].field = e.target.value;
+  render();
+});
+$("sort-direction").addEventListener("click", () => {
+  sortState[current].direction = sortState[current].direction === "asc" ? "desc" : "asc";
+  updateSortTools();
+  render();
+});
+
+select(TABS[0].id);
+TABS.slice(1).forEach(t => load(t.id)); // preload counts for the other tabs
+</script>
+</body>
+</html>
