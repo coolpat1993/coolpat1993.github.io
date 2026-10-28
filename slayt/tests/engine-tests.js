@@ -85,7 +85,8 @@ window.SC = window.SC || {};
   test('new run starts with the correct 10-card deck, 5 card hand and 3 energy', () => {
     const s = setup();
     eq(s.deck.length, 11);
-    eq(s.deck.filter(c => c.defId === 'strike').length, 4);
+    eq(s.deck.filter(c => c.defId === 'strike').length, 3);
+    eq(s.deck.filter(c => c.defId === 'rallying_strike').length, 1);
     eq(s.deck.filter(c => c.defId === 'defend').length, 3);
     eq(s.deck.filter(c => c.defId === 'quick_slash').length, 1);
     eq(s.deck.filter(c => c.defId === 'brace').length, 1);
@@ -95,6 +96,18 @@ window.SC = window.SC || {};
     eq(s.combat.draw.length, 6);
     eq(s.combat.energy, 3);
     eq(s.player.hp, 80);
+  });
+
+  test('Rallying Strike deals damage and draws a card', () => {
+    const s = setup(['cave_raider'], 2, ['rallying_strike']);
+    const drawn = SC.State.makeCard(s, 'defend');
+    s.combat.draw = [drawn];
+    const enemy = s.combat.enemies[0];
+    const energyBefore = s.combat.energy;
+    ok(C.playCard(s, hasCard(s, 'rallying_strike').uid).ok);
+    eq(enemy.hp, 42 - 7, '5 damage plus Momentum');
+    eq(s.combat.energy, energyBefore - 1);
+    ok(s.combat.hand.some(card => card.uid === drawn.uid), 'draws one card');
   });
 
   test('block absorbs damage correctly (8 block vs 12 damage leaves 4 damage)', () => {

@@ -31,7 +31,7 @@ window.SC = window.SC || {};
       passiveName: 'Momentum',
       passiveText: 'The first Attack card played each combat deals 2 additional damage.',
       art: 'barbarian.png',
-      starterDeck: { strike: 4, defend: 3, heavy_blow: 1, flex: 1, quick_slash: 1, brace: 1 }
+      starterDeck: { strike: 3, rallying_strike: 1, defend: 3, heavy_blow: 1, flex: 1, quick_slash: 1, brace: 1 }
     }
   };
 
@@ -72,6 +72,8 @@ window.SC = window.SC || {};
   // ---------- Basic ----------
   def({ id: 'strike', name: 'Strike', type: 'attack', rarity: 'basic', cost: 1, image: 'iron_sword.png', tags: ['strike'],
     effects: [dmg(6)], upgrade: { effects: [dmg(9)] } });
+  def({ id: 'rallying_strike', name: 'Rallying Strike', type: 'attack', rarity: 'basic', cost: 1, image: 'hookshot.png',
+    effects: [dmg(5), draw(1)] });
   def({ id: 'defend', name: 'Defend', type: 'skill', rarity: 'basic', cost: 1, image: 'chainmail.png',
     effects: [blk(5)], upgrade: { effects: [blk(8)] } });
   def({ id: 'heavy_blow', name: 'Heavy Blow', type: 'attack', rarity: 'basic', cost: 2, image: 'brutal_axe.png',
