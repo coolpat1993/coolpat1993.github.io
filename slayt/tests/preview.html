@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Preview</title>
+  <base href="../">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/cards.css">
+  <link rel="stylesheet" href="css/combat.css">
+  <link rel="stylesheet" href="css/map.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div id="overlay"></div>
+  <div id="rotate">Rotate</div>
+  <div id="log" style="display:none"></div>
+  <script>
+    window.SC = {};
+    window.__errors = [];
+    window.onerror = (m, s, l) => { __errors.push(m + ' @' + (s || '').split('/').pop() + ':' + l); };
+    window.addEventListener('unhandledrejection', e => __errors.push('promise: ' + (e.reason && e.reason.stack || e.reason)));
+  </script>
+  <script src="js/config.js"></script>
+  <script src="js/rng.js"></script>
+  <script src="js/cards.js"></script>
+  <script src="js/enemies.js"></script>
+  <script src="js/relics.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/combat.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/rewards.js"></script>
+  <script src="js/shop.js"></script>
+  <script src="js/events.js"></script>
+  <script src="js/flow.js"></script>
+  <script src="js/save.js"></script>
+  <script src="js/ui/icons.js"></script>
+  <script src="js/ui/card.js"></script>
+  <script src="js/ui/ui.js"></script>
+  <script src="js/ui/combat-view.js"></script>
+  <script src="js/ui/screens.js"></script>
+  <script>
+    // Dev-only harness: ?s=<screen> renders a prepared state; ?s=autoplay clicks through whole runs via the real UI.
+    const q = new URLSearchParams(location.search);
+    const mode = q.get('s') || 'combat';
+    const UI = SC.UI;
+    const click = el => { if (!el) throw new Error('missing element'); el.dispatchEvent(new MouseEvent('click', { bubbles: true })); };
+    const $ = s => document.querySelector(s);
+    document.addEventListener('click', e => {
+      const el = e.target.closest('[data-act]');
+      if (el && UI.actions[el.dataset.act]) UI.actions[el.dataset.act](el, e);
+    });
+
+    function prepare() {
+      const g = SC.game = SC.Flow.newRun('vanguard', +(q.get('seed') || 7));
+      if (mode !== 'relicpick') SC.Flow.chooseStartRelic(g, g.pending.startRelics[0]);
+      UI.s.view = null;
+      SC.State.addRelic(g, 'iron_heart'); SC.State.addRelic(g, 'echo_stone');
+      g.potions[0] = 'healing_potion';
+      if (mode === 'map') {
+        SC.Flow.chooseNode(g, SC.Map.available(g)[0]); SC.Flow.combatWinInstant = 1;
+        g.combat.enemies.forEach(e => { e.hp = 0; e.dead = true; }); g.combat.phase = 'won'; SC.Flow.resolveCombat(g); SC.Flow.finishReward(g);
+      } else if (mode === 'menu') { UI.s.view = 'menu'; }
+      else if (mode === 'charselect') { UI.s.view = 'charselect'; }
+      else if (mode.startsWith('combat') || mode === 'elite' || mode === 'boss') {
+        const ids = mode === 'elite' ? ['wraith_blade', 'wraith_veil'] : mode === 'boss' ? ['hollow_king'] : mode === 'combat1' ? ['cave_raider'] : ['cave_raider', 'plague_moth'];
+        g.currentNode = SC.Map.available(g)[0];
+        SC.Combat.start(g, ids, { kind: 'combat' });
+        g.screen = 'combat';
+        g.player.hp = 61; g.player.block = 7; g.player.statuses = { strength: 2 };
+        g.combat.enemies[0].statuses.weak = 1;
+        const extra = ['cleave', 'war_cry', 'iron_will', 'crushing_force', 'second_wind'];
+        extra.forEach(id => g.combat.hand.length < 8 && g.combat.hand.push(SC.State.makeCard(g, id)));
+        if (mode === 'combatsel') UI.s.selected = g.combat.hand[2].uid;
+        if (mode === 'combathit') {
+          UI.render();
+          SC.Combat.playCard(g, g.combat.hand.find(c => c.defId === 'heavy_blow').uid, 'e1');
+          g.combat.energy = 3;
+          SC.Combat.playCard(g, g.combat.hand.find(c => c.defId === 'strike').uid, 'e2');
+        }
+      } else if (mode === 'reward' || mode === 'treasure') {
+        g.currentNode = SC.Map.available(g)[0]; g.screen = 'reward';
+        g.pending = { reward: SC.Rewards.generate(g, 'elite') };
+      } else if (mode === 'shop') {
+        g.currentNode = SC.Map.available(g)[0]; g.screen = 'shop'; g.pending = { shop: SC.Shop.generate(g) };
+      } else if (mode === 'rest') {
+        g.currentNode = SC.Map.available(g)[0]; g.screen = 'rest'; g.pending = { rest: { used: false } };
+      } else if (mode === 'event') {
+        g.currentNode = SC.Map.available(g)[0]; g.screen = 'event'; g.pending = { event: { id: 'forgotten_shrine', result: null } };
+      } else if (mode === 'defeat' || mode === 'victory') {
+        ['strike', 'cleave', 'execute', 'war_cry', 'bulwark', 'crown_breaker'].forEach(id => SC.State.addCard(g, id));
+        g.runStats.enemiesDefeated = 9; g.runStats.bossSeen = 'hollow_king'; g.runStats.killedBy = 'Ruin'; g.floor = 8;
+        g.runActive = false; g.screen = mode;
+      } else if (mode === 'deck') {
+        g.screen = 'map'; UI.render(); UI.actions.deck();
+      }
+      UI.render();
+    }
+
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    async function autoplay() {
+      SC.Save.setSetting('reduceMotion', true);
+      let runs = 0, wins = 0, deaths = 0, steps = 0;
+      const target = +(q.get('runs') || 3);
+      while (runs < target && steps < 40000) {
+        steps++;
+        let g = SC.game;
+        if (!g || !g.runActive) {
+          if (g) { if (g.screen === 'victory') wins++; else deaths++; runs++; }
+          if (runs >= target) break;
+          SC.game = SC.Flow.newRun('vanguard', 100 + runs);
+          SC.Flow.chooseStartRelic(SC.game, SC.game.pending.startRelics[0]);
+          if (q.get('god')) SC.game.player.hp = SC.game.player.maxHp = 3000;
+          UI.s.view = null; UI.render();
+          continue;
+        }
+        const scr = g.screen;
+        if (UI.s.overlays.length) { const y = $('[data-act=confirmyes]'); if (y) click(y); else UI.clearOverlays(); await sleep(0); continue; }
+        if (scr === 'map') click($('.node.available'));
+        else if (scr === 'combat') {
+          const c = g.combat;
+          if (c.phase === 'player' && !UI.s.busy) {
+            const card = $('.hand .card.playable');
+            if (card) {
+              click(card); click($('.hand .card[data-uid="' + card.dataset.uid + '"]'));
+              if (UI.s.targeting) click($('.enemy.targetable'));
+            } else click($('[data-act=endturn]'));
+          } else await sleep(20);
+        } else if (scr === 'reward') {
+          const r = g.pending.reward;
+          if (r.relic && !r.relicTaken) click($('[data-act=claimrelic]'));
+          else if (r.cards && !r.cardsDone) { click($('.reward-row .card')); click($('[data-act=takecard]')); }
+          else click($('[data-act=finishreward]'));
+        } else if (scr === 'shop') click($('[data-act=leave]'));
+        else if (scr === 'rest') { if (!g.pending.rest.used) click($('[data-act=rest]')); else click($('[data-act=leave]')); }
+        else if (scr === 'event') { if (!g.pending.event.result) click($('.opt-btn:not(.disabled)')); else click($('[data-act=leave]')); }
+        await sleep(0);
+      }
+      document.body.dataset.result = JSON.stringify({ runs, wins, deaths, steps, errors: __errors });
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (mode === 'autoplay') autoplay();
+      else if (mode === 'interact') {
+        const log = [];
+        try {
+          prepareInteractive();
+          const step = (name, fn) => { fn(); log.push(name + ':' + UI.s.overlays.length); };
+          step('potion', () => click($('.potion[data-act=potion]')));
+          step('use potion', () => { click($('[data-act=potionuse]')); });
+          step('relic', () => click($('.hud-relics .relic')));
+          step('close', () => click($('[data-act=closeov]')));
+          step('enemy', () => click($('.enemy')));
+          step('close', () => click($('[data-act=closeov]')));
+          step('player', () => click($('.player-side')));
+          step('close', () => click($('[data-act=closeov]')));
+          step('draw pile', () => click($('[data-pile=draw]')));
+          step('view card', () => click($('.card-grid .card')));
+          step('close', () => click($('[data-act=closeov]')));
+          step('close', () => click($('[data-act=closeov]')));
+          step('pause', () => click($('[data-act=pause]')));
+          step('close', () => click($('[data-act=closeov]')));
+          step('deck', () => click($('[data-act=deck]')));
+          step('close', () => click($('[data-act=closeov]')));
+          const strike = SC.game.combat.hand.find(c => c.defId === 'strike');
+          const hpBefore = SC.game.combat.enemies[1].hp;
+          const ptr = (type, x, y, target) => (target || document).dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0 }));
+          step('drag', () => {
+            const card = $('.hand .card[data-uid="' + strike.uid + '"]');
+            const r = card.getBoundingClientRect();
+            const t = $('.enemy[data-uid=e2]').getBoundingClientRect();
+            ptr('pointerdown', r.left + 20, r.top + 20, card);
+            ptr('pointermove', r.left + 60, r.top - 40, card);
+            ptr('pointermove', t.left + t.width / 2, t.top + t.height / 2, card);
+            ptr('pointerup', t.left + t.width / 2, t.top + t.height / 2, card);
+          });
+          log.push('dragged hp ' + hpBefore + '->' + SC.game.combat.enemies[1].hp);
+          const cleave = $('.hand .card[data-uid="' + SC.game.combat.hand.find(c => c.defId === 'cleave').uid + '"]');
+          await sleep(150);
+          step('select', () => click(cleave));
+          step('play', () => click($('.hand .card.selected')));
+          step('endturn', () => click($('[data-act=endturn]')));
+          await sleep(5000);
+          log.push('phase:' + SC.game.combat.phase + ' turn:' + SC.game.combat.turn + ' busy:' + UI.s.busy);
+        } catch (e) { log.push('ERR ' + e.message); }
+        document.body.dataset.result = JSON.stringify({ log, errors: __errors });
+      }
+      else { prepare(); document.body.dataset.result = JSON.stringify({ errors: __errors }); }
+    });
+    function prepareInteractive() {
+      const g = SC.game = SC.Flow.newRun('vanguard', 7);
+      SC.Flow.chooseStartRelic(g, g.pending.startRelics[0]);
+      UI.s.view = null;
+      g.potions[0] = 'healing_potion';
+      SC.State.addRelic(g, 'iron_heart');
+      g.currentNode = SC.Map.available(g)[0];
+      SC.Combat.start(g, ['cave_raider', 'plague_moth'], { kind: 'combat' });
+      g.screen = 'combat';
+      g.player.hp = 40;
+      g.combat.hand.push(SC.State.makeCard(g, 'cleave'));
+      UI.render();
+    }
+  </script>
+</body>
+</html>

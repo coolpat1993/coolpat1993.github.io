@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Shattered Crown - engine tests</title>
+  <style>
+    body { background: #151923; color: #f7f7f7; font: 13px/1.4 ui-monospace, Menlo, monospace; padding: 1em; }
+    .pass { color: #6bfd8f; } .fail { color: #ff6b66; } pre { margin: 0; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h3>Shattered Crown engine tests</h3>
+  <div id="out"></div>
+  <script src="js/config.js"></script>
+  <script src="js/rng.js"></script>
+  <script src="js/cards.js"></script>
+  <script src="js/enemies.js"></script>
+  <script src="js/relics.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/combat.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/rewards.js"></script>
+  <script src="js/shop.js"></script>
+  <script src="js/events.js"></script>
+  <script src="js/flow.js"></script>
+  <script src="js/save.js"></script>
+  <script src="tests/bot.js"></script>
+  <script src="tests/engine-tests.js"></script>
+  <script>
+    const out = document.getElementById('out');
+    SC.runTests(line => {
+      const p = document.createElement('pre');
+      p.className = line.startsWith('FAIL') ? 'fail' : line.startsWith('PASS') ? 'pass' : '';
+      p.textContent = line;
+      out.appendChild(p);
+    });
+  </script>
+</body>
+</html>

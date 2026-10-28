@@ -1,0 +1,14 @@
+{
+  "name": "Shattered Crown",
+  "short_name": "Shattered Crown",
+  "description": "A roguelike deckbuilder.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#151923",
+  "theme_color": "#151923",
+  "icons": [
+    { "src": "assets/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
