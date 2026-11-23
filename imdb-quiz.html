@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cast quiz image maker</title>
+<style>
+  :root{
+    --bg:#15171c; --panel:#1d2027; --line:#2e333d; --text:#eceef2; --muted:#9aa1ae;
+    --accent:#f2b705; --accent-ink:#1a1400; --danger:#ff7a6b; --ok:#6fd39a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 "Trebuchet MS","Segoe UI",system-ui,sans-serif}
+  .app{display:grid;grid-template-columns:420px 1fr;gap:24px;max-width:1500px;margin:0 auto;padding:24px}
+  @media (max-width:980px){.app{grid-template-columns:1fr}}
+  h1{font-size:22px;margin:0 0 4px;letter-spacing:.2px}
+  .sub{color:var(--muted);margin:0 0 18px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+  label{display:block;font-weight:600;margin:0 0 6px}
+  .row{display:flex;gap:8px;align-items:center}
+  .row>*{flex:1}
+  .row>.fit{flex:0 0 auto}
+  input[type=text],input[type=url],input[type=number],textarea{
+    width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:#12141a;color:var(--text);font:inherit}
+  textarea{min-height:90px;resize:vertical;font-size:12px}
+  input:focus,textarea:focus,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  button{padding:10px 14px;border-radius:8px;border:1px solid var(--line);background:#272b34;color:var(--text);font:inherit;font-weight:600;cursor:pointer}
+  button:hover{background:#30353f}
+  button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  button.primary:hover{background:#ffc82b}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .field{margin-bottom:14px}
+  .check{display:flex;gap:8px;align-items:center;margin:6px 0;font-weight:400}
+  .check input{width:18px;height:18px}
+  #status{min-height:22px;color:var(--muted);font-size:13px;margin-top:8px}
+  #status.err{color:var(--danger)} #status.ok{color:var(--ok)}
+  details summary{cursor:pointer;font-weight:600;color:var(--muted)}
+  details[open] summary{margin-bottom:10px}
+  .castlist{max-height:380px;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:8px}
+  .castitem{display:grid;grid-template-columns:22px 44px 1fr auto;gap:10px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--line)}
+  .castitem:last-child{border-bottom:0}
+  .castitem img,.castitem .ph{width:44px;height:58px;object-fit:cover;border-radius:4px;background:#0d0f13}
+  .castitem .nm{font-weight:600;font-size:14px;line-height:1.2}
+  .castitem .ch{font-size:12px;color:var(--muted)}
+  .castitem input.nm{min-width:0;padding:4px 8px;font-size:14px;font-weight:600;border-radius:6px;margin-bottom:2px}
+  .castitem label.up{margin:0;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border:1px solid var(--line);padding:4px 8px;border-radius:6px}
+  .castitem label.up:hover{color:var(--text);border-color:var(--muted)}
+  .castitem input[type=file]{display:none}
+  .castitem input[type=checkbox]{width:18px;height:18px}
+  .colors{display:flex;gap:12px}
+  .colors label{flex:1;font-weight:400;font-size:13px;color:var(--muted)}
+  .colors input{width:100%;height:36px;padding:2px;border-radius:6px;border:1px solid var(--line);background:#12141a}
+  .stage{position:sticky;top:16px;align-self:start}
+  .canvaswrap{background:#0d0f13;border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;justify-content:center}
+  canvas{max-width:100%;max-height:calc(100vh - 150px);height:auto;width:auto;border-radius:4px;box-shadow:0 8px 30px rgba(0,0,0,.45)}
+  .meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="controls">
+    <h1>Cast quiz image maker</h1>
+    <p class="sub">Paste an IMDb link, choose how many cast members to show, and download a 1280 × 1840 image. The film's title is never drawn on it.</p>
+
+    <div class="panel">
+      <div class="field">
+        <label for="url">IMDb page link</label>
+        <div class="row">
+          <input id="url" type="url" placeholder="https://www.imdb.com/title/tt0816692/">
+          <button id="loadBtn" class="primary fit">Load cast</button>
+        </div>
+      </div>
+      <div id="status" role="status"></div>
+      <details id="pasteBox" style="margin-top:10px">
+        <summary>Optional: paste IMDb page source instead</summary>
+        <p class="sub" style="font-size:13px;margin:0 0 8px">Open the IMDb page, press Ctrl+U (Cmd+Option+U on Mac), copy everything and paste it here. This reads IMDb's own cast list and order.</p>
+        <textarea id="paste" placeholder="Paste the page source (or the __NEXT_DATA__ JSON) here"></textarea>
+        <div style="margin-top:8px"><button id="pasteBtn">Use pasted source</button></div>
+      </details>
+    </div>
+
+    <div class="panel" id="castPanel" hidden>
+      <div class="field">
+        <label for="count">Number of cast members (minimum 3)</label>
+        <div class="row">
+          <input id="count" type="number" min="3" value="6">
+          <button id="shuffleBtn" class="fit" title="Randomise the order of the chosen cast">Shuffle order</button>
+        </div>
+      </div>
+      <div class="castlist" id="castList"></div>
+      <p class="sub" style="font-size:12px;margin:8px 0 10px">Tick or untick people to fine-tune. Use “Replace” to swap in your own photo.</p>
+      <label for="addName">Add someone by name</label>
+      <div class="row">
+        <input id="addName" type="text" placeholder="e.g. Jessica Chastain">
+        <button id="addBtn" class="fit">Add</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <label class="check"><input type="checkbox" id="showNames" checked> Show actor names</label>
+      <label class="check"><input type="checkbox" id="showChars"> Show character names (can give the film away)</label>
+      <div class="colors" style="margin-top:12px">
+        <label>Background top <input type="color" id="bg1" value="#1b1f2a"></label>
+        <label>Background bottom <input type="color" id="bg2" value="#0c0e13"></label>
+        <label>Accent <input type="color" id="accent" value="#00cfff"></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="canvaswrap"><canvas id="cv" width="1280" height="1840"></canvas></div>
+    <div class="meta">
+      <span id="sizeInfo">1280 × 1840 px</span>
+      <button id="dlBtn" class="primary">Download PNG</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const W = 1280, H = 1840;
+  const $ = id => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d');
+
+  let cast = [];       // {id,name,character,imgUrl,img,checked}
+  let loadToken = 0;
+
+  /* ---------- status ---------- */
+  function status(msg, kind = '') { const s = $('status'); s.textContent = msg; s.className = kind; }
+
+  /* ---------- helpers ---------- */
+  function parseTitleId(url) {
+    const m = String(url).match(/tt\d{6,9}/i);
+    return m ? m[0].toLowerCase() : null;
+  }
+  async function getJSON(url, ms = 20000) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), ms);
+    try {
+      const res = await fetch(url, { signal: ctrl.signal });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return await res.json();
+    } finally { clearTimeout(t); }
+  }
+
+  /* Commons "Special:FilePath" links redirect without CORS headers, which blocks
+     drawing them to a canvas. The API returns direct upload.wikimedia.org
+     thumbnail URLs, which do allow it. */
+  async function resolveThumbs(people) {
+    const norm = s => s.replace(/_/g, ' ').trim().toLowerCase();
+    const withFile = people.filter(p => p.file);
+    const chunks = [];
+    for (let i = 0; i < withFile.length; i += 25) chunks.push(withFile.slice(i, i + 25));
+    await Promise.all(chunks.map(async chunk => {
+      try {
+        const titles = chunk.map(p => 'File:' + p.file.replace(/_/g, ' ')).join('|');
+        const d = await getJSON('https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*' +
+          '&prop=imageinfo&iiprop=url&iiurlwidth=900&titles=' + encodeURIComponent(titles), 20000);
+        const pages = d.query && d.query.pages ? Object.values(d.query.pages) : [];
+        const byTitle = {};
+        pages.forEach(pg => {
+          const ii = pg.imageinfo && pg.imageinfo[0];
+          if (ii) byTitle[norm(pg.title.replace(/^File:/i, ''))] = ii.thumburl || ii.url;
+        });
+        chunk.forEach(p => {
+          const u = byTitle[norm(p.file)];
+          if (u) p.imgUrl = u;
+        });
+      } catch (e) { /* keep fallback URLs */ }
+    }));
+  }
+
+  /* Some people have no English label on Wikidata and show up as "Q12345".
+     Look up a label in any other language (English preferred) as a fallback. */
+  async function fixQNames(people) {
+    const bad = people.filter(p => /^Q\d+$/.test(p.name));
+    if (!bad.length) return;
+    for (let i = 0; i < bad.length; i += 40) {
+      const chunk = bad.slice(i, i + 40);
+      try {
+        const ids = chunk.map(p => p.name).join('|');
+        const d = await getJSON('https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&origin=*&props=labels|sitelinks' +
+          '&ids=' + ids, 15000);
+        chunk.forEach(p => {
+          const ent = d.entities && d.entities[p.name];
+          if (!ent) return;
+          const labels = ent.labels || {};
+          const l = labels.en || labels['en-gb'] || labels.mul || Object.values(labels)[0];
+          if (l && l.value) p.name = l.value;
+        });
+      } catch (e) { /* user can type the name instead */ }
+    }
+  }
+
+  /* ---------- Method 1: Wikidata (allows browser requests, no proxy) ---------- */
+  async function castFromWikidata(ttId) {
+    const q = `
+      SELECT ?actor ?actorLabel ?img ?links (GROUP_CONCAT(DISTINCT ?charLabel; separator=" / ") AS ?chars) WHERE {
+        ?film wdt:P345 "${ttId}".
+        ?film p:P161 ?st.
+        ?st ps:P161 ?actor.
+        ?actor wdt:P18 ?img.
+        ?actor wikibase:sitelinks ?links.
+        OPTIONAL { ?st pq:P453 ?char. ?char rdfs:label ?charLabel. FILTER(LANG(?charLabel) = "en") }
+        SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+      }
+      GROUP BY ?actor ?actorLabel ?img ?links
+      ORDER BY DESC(?links)
+      LIMIT 80`;
+    const data = await getJSON('https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(q), 30000);
+    const rows = (data.results && data.results.bindings) || [];
+    const seen = new Set(), people = [];
+    for (const r of rows) {
+      const id = r.actor.value;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      people.push({
+        id,
+        name: r.actorLabel.value,
+        character: r.chars ? r.chars.value : '',
+        imgUrl: r.img.value.replace(/^http:\/\//, 'https://') + (r.img.value.includes('?') ? '&' : '?') + 'width=900', // fallback only
+        file: (() => { try { return decodeURIComponent((r.img.value.split('/Special:FilePath/')[1] || '').split('?')[0]); } catch (e) { return ''; } })(),
+        links: +r.links.value
+      });
+    }
+    await Promise.all([resolveThumbs(people), fixQNames(people)]);
+    // Put the top-billed names first, using IMDb's own short top-cast list when available
+    try {
+      const s = await getJSON('https://v2.sg.media-imdb.com/suggestion/t/' + ttId + '.json', 6000);
+      const hit = (s.d || []).find(d => d.id === ttId);
+      const top = hit && hit.s ? hit.s.split(',').map(x => x.trim().toLowerCase()) : [];
+      if (top.length) {
+        const rank = p => { const i = top.indexOf(p.name.toLowerCase()); return i < 0 ? 999 : i; };
+        people.sort((a, b) => rank(a) - rank(b) || b.links - a.links);
+      }
+    } catch (e) { /* ordering by popularity is fine */ }
+    return people;
+  }
+
+  /* ---------- Method 2: pasted IMDb page source ---------- */
+  function nextData(html) {
+    html = html.trim();
+    if (html.startsWith('{')) { try { return JSON.parse(html); } catch (e) {} }
+    const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+    if (!m) return null;
+    try { return JSON.parse(m[1]); } catch (e) { return null; }
+  }
+  function personFromNode(n) {
+    const nm = n && n.name;
+    if (!nm || !nm.nameText || !nm.nameText.text) return null;
+    return {
+      id: nm.id || nm.nameText.text,
+      name: nm.nameText.text,
+      character: (n.characters || []).map(c => c.name).filter(Boolean).join(' / '),
+      imgUrl: (nm.primaryImage && nm.primaryImage.url) || null
+    };
+  }
+  function extractCast(data) {
+    const out = [], seen = new Set();
+    const push = p => { if (p && !seen.has(p.id)) { seen.add(p.id); out.push(p); } };
+    const pp = data && data.props && data.props.pageProps;
+    if (!pp) return out;
+    const edges = pp.mainColumnData && pp.mainColumnData.cast && pp.mainColumnData.cast.edges;
+    if (Array.isArray(edges)) edges.forEach(e => push(personFromNode(e.node)));
+    const cats = pp.contentData && pp.contentData.categories;
+    if (Array.isArray(cats)) {
+      cats.forEach(c => {
+        if (c && /^cast$/i.test(c.name || '') && c.section && Array.isArray(c.section.items)) {
+          c.section.items.forEach(it => push({
+            id: it.id || it.rowTitle,
+            name: it.rowTitle,
+            character: (it.characters || []).join(' / '),
+            imgUrl: it.imageProps && it.imageProps.imageModel && it.imageProps.imageModel.url || null
+          }));
+        }
+      });
+    }
+    if (!out.length) {
+      const walk = (o, inCast) => {
+        if (!o || typeof o !== 'object') return;
+        if (Array.isArray(o)) { o.forEach(x => walk(x, inCast)); return; }
+        if (inCast) { push(personFromNode(o.node || o) || personFromNode(o)); }
+        for (const k of Object.keys(o)) walk(o[k], inCast || /cast/i.test(k));
+      };
+      walk(pp, false);
+    }
+    return out.filter(p => p.name);
+  }
+
+  /* ---------- Method 3: add by name (Wikipedia page photo) ---------- */
+  async function photoByName(name) {
+    const u = 'https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search' +
+      '&gsrsearch=' + encodeURIComponent(name + ' actor') + '&gsrlimit=1&prop=pageimages&piprop=thumbnail&pithumbsize=900';
+    const d = await getJSON(u, 12000);
+    const pages = d.query && d.query.pages ? Object.values(d.query.pages) : [];
+    const p = pages[0];
+    if (!p || !p.thumbnail) return null;
+    return { name: p.title.replace(/\s*\(.*\)$/, ''), imgUrl: p.thumbnail.source };
+  }
+
+  /* ---------- images ---------- */
+  function sized(url) { return url.replace(/\._V1_.*(\.\w+)$/, '._V1_UY1000_$1'); }
+  function tryLoad(src, cors) {
+    return new Promise((res, rej) => {
+      const i = new Image();
+      if (cors) i.crossOrigin = 'anonymous';
+      i.onload = () => res(i);
+      i.onerror = () => rej(new Error('img'));
+      i.src = src;
+    });
+  }
+  async function loadImage(url) {
+    for (const u of [sized(url), url]) { try { return await tryLoad(u, true); } catch (e) {} }
+    return null;
+  }
+
+  /* ---------- loading flow ---------- */
+  async function setCast(people, sourceNote) {
+    people = people.filter(p => p.imgUrl);
+    if (!people.length) throw new Error('No cast with photos found.');
+    const token = ++loadToken;
+    cast = people.map(p => ({ ...p, img: null, checked: false }));
+    $('castPanel').hidden = false;
+    const n = Math.max(3, Math.min(+$('count').value || 6, cast.length));
+    $('count').max = cast.length;
+    $('count').value = n;
+    cast.forEach((c, i) => c.checked = i < n);
+    renderList();
+    status('Found ' + cast.length + ' cast members with photos' + (sourceNote || '') + '. Loading photos…');
+    let done = 0;
+    await Promise.all(cast.map(async c => {
+      c.img = await loadImage(c.imgUrl);
+      done++;
+      if (token === loadToken) { status('Loading photos… ' + done + '/' + cast.length); renderList(); draw(); }
+    }));
+    if (token !== loadToken) return;
+    const missing = cast.filter(c => !c.img).length;
+    status(missing ? 'Done, but ' + missing + ' photo(s) could not be loaded. Untick them or use Replace.' :
+                     'Ready. ' + cast.length + ' cast members loaded' + (sourceNote || '') + '.', missing ? 'err' : 'ok');
+    draw();
+  }
+
+  async function loadFromUrl() {
+    const id = parseTitleId($('url').value);
+    if (!id) { status('That doesn’t look like an IMDb title link (it should contain something like tt0816692).', 'err'); return; }
+    $('loadBtn').disabled = true;
+    try {
+      status('Looking up the cast…');
+      const people = await castFromWikidata(id);
+      if (!people.length) {
+        status('That film has no cast photos in Wikidata yet. Paste the IMDb page source (below) or use “Add someone by name”.', 'err');
+        $('pasteBox').open = true;
+        return;
+      }
+      await setCast(people, '');
+    } catch (e) {
+      status('Couldn’t reach the cast database (' + e.message + '). Check your connection and try again, or paste the IMDb page source below.', 'err');
+      $('pasteBox').open = true;
+    } finally { $('loadBtn').disabled = false; }
+  }
+
+  async function loadFromPaste() {
+    const txt = $('paste').value;
+    if (!txt.trim()) { status('Paste the page source first.', 'err'); return; }
+    const data = nextData(txt);
+    if (!data) { status('Couldn’t find the page data in what you pasted. Make sure you copied the whole page source.', 'err'); return; }
+    try { await setCast(extractCast(data), ' from IMDb'); } catch (e) { status(e.message, 'err'); }
+  }
+
+  async function addByName() {
+    const name = $('addName').value.trim();
+    if (!name) return;
+    $('addBtn').disabled = true;
+    try {
+      const r = await photoByName(name);
+      if (!r) { status('No photo found for “' + name + '”. Try the full name, or add a photo with Replace.', 'err'); return; }
+      const img = await loadImage(r.imgUrl);
+      cast.push({ id: 'manual-' + Date.now(), name: r.name, character: '', imgUrl: r.imgUrl, img, checked: true });
+      $('addName').value = '';
+      $('castPanel').hidden = false;
+      syncCount(); renderList(); draw();
+      status('Added ' + r.name + '. Check the photo is the right person.', 'ok');
+    } catch (e) { status('Couldn’t look that name up (' + e.message + ').', 'err'); }
+    finally { $('addBtn').disabled = false; }
+  }
+
+  /* ---------- cast list UI ---------- */
+  function renderList() {
+    const box = $('castList'); box.innerHTML = '';
+    cast.forEach(c => {
+      const row = document.createElement('div'); row.className = 'castitem';
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = c.checked;
+      cb.setAttribute('aria-label', 'Include ' + c.name);
+      cb.onchange = () => { c.checked = cb.checked; syncCount(); draw(); };
+      let thumb;
+      if (c.img) { thumb = document.createElement('img'); thumb.src = c.img.src; thumb.alt = ''; }
+      else { thumb = document.createElement('div'); thumb.className = 'ph'; }
+      const info = document.createElement('div');
+      const nm = document.createElement('input'); nm.type = 'text'; nm.className = 'nm'; nm.value = c.name;
+      nm.setAttribute('aria-label', 'Name for this cast member');
+      nm.addEventListener('input', () => { c.name = nm.value; draw(); });
+      const ch = document.createElement('div'); ch.className = 'ch'; ch.textContent = c.character;
+      info.append(nm, ch);
+      const up = document.createElement('label'); up.className = 'up'; up.textContent = 'Replace';
+      const f = document.createElement('input'); f.type = 'file'; f.accept = 'image/*';
+      f.onchange = () => {
+        if (!f.files[0]) return;
+        tryLoad(URL.createObjectURL(f.files[0]), false).then(img => { c.img = img; renderList(); draw(); });
+      };
+      up.appendChild(f);
+      row.append(cb, thumb, info, up);
+      box.appendChild(row);
+    });
+  }
+  function syncCount() { $('count').value = Math.max(3, cast.filter(c => c.checked).length); }
+  function applyCount() {
+    const n = Math.max(3, Math.min(+$('count').value || 3, cast.length || 3));
+    $('count').value = n;
+    cast.forEach((c, i) => c.checked = i < n);
+    renderList(); draw();
+  }
+  function shuffleChosen() {
+    const chosen = cast.filter(c => c.checked);
+    for (let i = chosen.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [chosen[i], chosen[j]] = [chosen[j], chosen[i]];
+    }
+    cast = chosen.concat(cast.filter(c => !c.checked));
+    renderList(); draw();
+  }
+
+  /* ---------- drawing ---------- */
+  function rr(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function fitText(text, maxW, start, min, weight) {
+    let s = start;
+    ctx.font = weight + ' ' + s + 'px "Trebuchet MS","Segoe UI",sans-serif';
+    while (ctx.measureText(text).width > maxW && s > min) {
+      s -= 2; ctx.font = weight + ' ' + s + 'px "Trebuchet MS","Segoe UI",sans-serif';
+    }
+    return s;
+  }
+  function pickLayout(n, gw, gh, gap) {
+    let best = null;
+    for (let c = 1; c <= 5; c++) {
+      const rows = Math.ceil(n / c);
+      const cw = (gw - (c - 1) * gap) / c;
+      const ch = (gh - (rows - 1) * gap) / rows;
+      const score = Math.abs(Math.log((cw / ch) / 0.78)) + 0.05 * (rows * c - n);
+      if (!best || score < best.score) best = { c, rows, cw, ch, score };
+    }
+    return best;
+  }
+  function drawCover(img, x, y, w, h) {
+    const ir = img.width / img.height, br = w / h;
+    let sw, sh, sx, sy;
+    if (ir > br) { sh = img.height; sw = sh * br; sx = (img.width - sw) / 2; sy = 0; }
+    else { sw = img.width; sh = sw / br; sx = 0; sy = (img.height - sh) * 0.18; }
+    ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+  }
+
+  function draw() {
+    const accent = $('accent').value;
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, $('bg1').value); g.addColorStop(1, $('bg2').value);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+    const pad = 40, gap = 26;
+    const top = pad, bottom = H - pad;
+
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+
+    const chosen = cast.filter(c => c.checked);
+    if (!chosen.length) {
+      ctx.fillStyle = 'rgba(255,255,255,.35)';
+      ctx.font = '600 38px "Trebuchet MS","Segoe UI",sans-serif';
+      ctx.fillText('Load an IMDb link to see the cast here', W / 2, (top + bottom) / 2);
+      return;
+    }
+
+    const gw = W - pad * 2, gh = bottom - top;
+    const L = pickLayout(chosen.length, gw, gh, gap);
+    const showNames = $('showNames').checked, showChars = $('showChars').checked;
+
+    chosen.forEach((c, i) => {
+      const row = Math.floor(i / L.c), col = i % L.c;
+      const inRow = row === L.rows - 1 ? chosen.length - (L.rows - 1) * L.c : L.c;
+      const rowW = inRow * L.cw + (inRow - 1) * gap;
+      const x = pad + (gw - rowW) / 2 + col * (L.cw + gap);
+      const y = top + row * (L.ch + gap);
+
+      ctx.save();
+      rr(x, y, L.cw, L.ch, 22); ctx.clip();
+      ctx.fillStyle = '#0b0d11'; ctx.fillRect(x, y, L.cw, L.ch);
+      if (c.img) drawCover(c.img, x, y, L.cw, L.ch);
+      else {
+        ctx.fillStyle = 'rgba(255,255,255,.12)';
+        ctx.font = '700 64px "Trebuchet MS",sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(c.name.split(' ').map(w => w[0]).join('').slice(0, 3), x + L.cw / 2, y + L.ch / 2);
+      }
+      if (showNames) {
+        const hasChar = showChars && c.character;
+        const barH = hasChar ? 130 : 96;
+        const gr = ctx.createLinearGradient(0, y + L.ch - barH - 50, 0, y + L.ch);
+        gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(0.55, 'rgba(0,0,0,.78)'); gr.addColorStop(1, 'rgba(0,0,0,.92)');
+        ctx.fillStyle = gr; ctx.fillRect(x, y + L.ch - barH - 50, L.cw, barH + 50);
+        ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+        fitText(c.name, L.cw - 36, 44, 20, '800');
+        ctx.fillText(c.name, x + L.cw / 2, hasChar ? y + L.ch - 58 : y + L.ch - 30);
+        if (hasChar) {
+          ctx.fillStyle = accent;
+          fitText(c.character, L.cw - 36, 30, 16, '600');
+          ctx.fillText(c.character, x + L.cw / 2, y + L.ch - 22);
+        }
+      }
+      ctx.restore();
+      ctx.lineWidth = 4; ctx.strokeStyle = accent; rr(x, y, L.cw, L.ch, 22); ctx.stroke();
+    });
+  }
+
+  /* ---------- download ---------- */
+  function download() {
+    try {
+      cv.toBlob(b => {
+        if (!b) { status('Couldn’t export the image.', 'err'); return; }
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(b);
+        a.download = 'cast-quiz-' + cast.filter(c => c.checked).length + '-actors.png';
+        document.body.appendChild(a); a.click(); a.remove();
+      }, 'image/png');
+    } catch (e) {
+      status('The browser blocked the export because a photo came from another site. Untick that person or use Replace to upload the photo.', 'err');
+    }
+  }
+
+  /* ---------- wire up ---------- */
+  $('loadBtn').onclick = loadFromUrl;
+  $('url').addEventListener('keydown', e => { if (e.key === 'Enter') loadFromUrl(); });
+  $('pasteBtn').onclick = loadFromPaste;
+  $('addBtn').onclick = addByName;
+  $('addName').addEventListener('keydown', e => { if (e.key === 'Enter') addByName(); });
+  $('count').addEventListener('change', applyCount);
+  $('shuffleBtn').onclick = shuffleChosen;
+  $('dlBtn').onclick = download;
+  ['showNames', 'showChars', 'bg1', 'bg2', 'accent'].forEach(id =>
+    $(id).addEventListener('input', draw));
+  draw();
+})();
+</script>
+</body>
+</html>
