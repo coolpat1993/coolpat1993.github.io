@@ -11,9 +11,8 @@
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 "Trebuchet MS","Segoe UI",system-ui,sans-serif}
-  .app{display:grid;grid-template-columns:420px 1fr;gap:24px;max-width:1500px;margin:0 auto;padding:24px}
+  .app{display:grid;grid-template-columns:420px 1fr;gap:20px;max-width:1500px;margin:0 auto;padding:16px}
   @media (max-width:980px){.app{grid-template-columns:1fr}}
-  h1{font-size:22px;margin:0 0 4px;letter-spacing:.2px}
   .sub{color:var(--muted);margin:0 0 18px}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
   label{display:block;font-weight:600;margin:0 0 6px}
@@ -32,68 +31,65 @@
   .field{margin-bottom:14px}
   .check{display:flex;gap:8px;align-items:center;margin:6px 0;font-weight:400}
   .check input{width:18px;height:18px}
-  #status{min-height:22px;color:var(--muted);font-size:13px;margin-top:8px}
-  #status.err{color:var(--danger)} #status.ok{color:var(--ok)}
-  details summary{cursor:pointer;font-weight:600;color:var(--muted)}
-  details[open] summary{margin-bottom:10px}
+  #status{color:var(--danger);font-size:13px;margin-top:8px}
+  #status:empty{display:none}
   .castlist{max-height:380px;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:8px}
-  .castitem{display:grid;grid-template-columns:22px 44px 1fr auto;gap:10px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--line)}
+  .castitem{display:grid;grid-template-columns:20px 22px 44px 1fr;gap:10px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .castitem.dragging{background:#2a2f3a;box-shadow:0 4px 14px rgba(0,0,0,.5);position:relative;z-index:2}
+  .handle{cursor:grab;touch-action:none;user-select:none;color:var(--muted);font-size:20px;line-height:1;text-align:center;padding:6px 0}
+  .handle:hover{color:var(--text)}
+  .castitem.dragging .handle{cursor:grabbing;color:var(--accent)}
   .castitem:last-child{border-bottom:0}
   .castitem img,.castitem .ph{width:44px;height:58px;object-fit:cover;border-radius:4px;background:#0d0f13}
   .castitem .nm{font-weight:600;font-size:14px;line-height:1.2}
   .castitem .ch{font-size:12px;color:var(--muted)}
   .castitem input.nm{min-width:0;padding:4px 8px;font-size:14px;font-weight:600;border-radius:6px;margin-bottom:2px}
-  .castitem label.up{margin:0;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border:1px solid var(--line);padding:4px 8px;border-radius:6px}
-  .castitem label.up:hover{color:var(--text);border-color:var(--muted)}
-  .castitem input[type=file]{display:none}
   .castitem input[type=checkbox]{width:18px;height:18px}
   .colors{display:flex;gap:12px}
   .colors label{flex:1;font-weight:400;font-size:13px;color:var(--muted)}
   .colors input{width:100%;height:36px;padding:2px;border-radius:6px;border:1px solid var(--line);background:#12141a}
   .stage{position:sticky;top:16px;align-self:start}
   .canvaswrap{background:#0d0f13;border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;justify-content:center}
-  canvas{max-width:100%;max-height:calc(100vh - 150px);height:auto;width:auto;border-radius:4px;box-shadow:0 8px 30px rgba(0,0,0,.45)}
+  canvas{max-width:100%;max-height:calc(100vh - 110px);height:auto;width:auto;border-radius:4px;box-shadow:0 8px 30px rgba(0,0,0,.45)}
   .meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px;color:var(--muted);font-size:13px}
+
+  /* Side by side: never taller than the window.
+     Left column (3 boxes) = same height as the image; Download button sits under the image. */
+  @media (min-width:981px){
+    html,body{height:100%;overflow:hidden}
+    .app{height:100vh;max-width:none;grid-template-columns:420px 1fr;grid-template-rows:minmax(0,1fr) auto;gap:12px 20px}
+    .stage{display:contents}
+    .controls{grid-column:1;grid-row:1;display:flex;flex-direction:column;gap:12px;min-height:0}
+    .controls .panel{margin-bottom:0}
+    #castPanel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+    #castPanel .castlist{flex:1 1 auto;min-height:0;max-height:none}
+    .canvaswrap{grid-column:2;grid-row:1;min-width:0;min-height:0;padding:0;border:0;background:none;align-items:center}
+    canvas{height:100%;width:auto;max-width:100%;max-height:none;object-fit:contain;flex:none}
+    .meta{grid-column:2;grid-row:2;margin-top:0}
+  }
 </style>
 </head>
 <body>
 <div class="app">
   <div class="controls">
-    <h1>Cast quiz image maker</h1>
-    <p class="sub">Paste an IMDb link, choose how many cast members to show, and download a 1280 × 1840 image. The film's title is never drawn on it.</p>
-
     <div class="panel">
       <div class="field">
-        <label for="url">IMDb page link</label>
         <div class="row">
-          <input id="url" type="url" placeholder="https://www.imdb.com/title/tt0816692/">
+          <input id="url" type="url" aria-label="IMDb page link" placeholder="https://www.imdb.com/title/tt0816692/">
           <button id="loadBtn" class="primary fit">Load cast</button>
         </div>
       </div>
       <div id="status" role="status"></div>
-      <details id="pasteBox" style="margin-top:10px">
-        <summary>Optional: paste IMDb page source instead</summary>
-        <p class="sub" style="font-size:13px;margin:0 0 8px">Open the IMDb page, press Ctrl+U (Cmd+Option+U on Mac), copy everything and paste it here. This reads IMDb's own cast list and order.</p>
-        <textarea id="paste" placeholder="Paste the page source (or the __NEXT_DATA__ JSON) here"></textarea>
-        <div style="margin-top:8px"><button id="pasteBtn">Use pasted source</button></div>
-      </details>
     </div>
 
-    <div class="panel" id="castPanel" hidden>
+    <div class="panel" id="castPanel">
       <div class="field">
-        <label for="count">Number of cast members (minimum 3)</label>
         <div class="row">
-          <input id="count" type="number" min="3" value="6">
+          <input id="count" type="number" aria-label="Number of cast members (minimum 3)" title="Number of cast members (minimum 3)" min="3" value="6">
           <button id="shuffleBtn" class="fit" title="Randomise the order of the chosen cast">Shuffle order</button>
         </div>
       </div>
       <div class="castlist" id="castList"></div>
-      <p class="sub" style="font-size:12px;margin:8px 0 10px">Tick or untick people to fine-tune. Use “Replace” to swap in your own photo.</p>
-      <label for="addName">Add someone by name</label>
-      <div class="row">
-        <input id="addName" type="text" placeholder="e.g. Jessica Chastain">
-        <button id="addBtn" class="fit">Add</button>
-      </div>
     </div>
 
     <div class="panel">
@@ -124,9 +120,11 @@
 
   let cast = [];       // {id,name,character,imgUrl,img,checked}
   let loadToken = 0;
+  let filmTitle = '', filmId = '';   // used only for the download file name, never drawn on the image
+  function setTitle(t) { filmTitle = t || ''; }
 
   /* ---------- status ---------- */
-  function status(msg, kind = '') { const s = $('status'); s.textContent = msg; s.className = kind; }
+  function status(msg, kind = '') { $('status').textContent = kind === 'err' ? msg : ''; }  // errors only; empty = takes no space
 
   /* ---------- helpers ---------- */
   function parseTitleId(url) {
@@ -223,11 +221,19 @@
         links: +r.links.value
       });
     }
-    await Promise.all([resolveThumbs(people), fixQNames(people)]);
+    const titleQ = 'SELECT ?filmLabel WHERE { ?film wdt:P345 "' + ttId + '". SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } } LIMIT 1';
+    const titleP = getJSON('https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(titleQ), 15000)
+      .then(d => {
+        const b = d.results && d.results.bindings && d.results.bindings[0];
+        const l = b && b.filmLabel && b.filmLabel.value;
+        if (l && !/^Q\d+$/.test(l) && !filmTitle) setTitle(l);
+      }).catch(() => {});
+    await Promise.all([resolveThumbs(people), fixQNames(people), titleP]);
     // Put the top-billed names first, using IMDb's own short top-cast list when available
     try {
       const s = await getJSON('https://v2.sg.media-imdb.com/suggestion/t/' + ttId + '.json', 6000);
       const hit = (s.d || []).find(d => d.id === ttId);
+      if (hit && hit.l && !filmTitle) setTitle(hit.l);
       const top = hit && hit.s ? hit.s.split(',').map(x => x.trim().toLowerCase()) : [];
       if (top.length) {
         const rank = p => { const i = top.indexOf(p.name.toLowerCase()); return i < 0 ? 999 : i; };
@@ -235,67 +241,6 @@
       }
     } catch (e) { /* ordering by popularity is fine */ }
     return people;
-  }
-
-  /* ---------- Method 2: pasted IMDb page source ---------- */
-  function nextData(html) {
-    html = html.trim();
-    if (html.startsWith('{')) { try { return JSON.parse(html); } catch (e) {} }
-    const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-    if (!m) return null;
-    try { return JSON.parse(m[1]); } catch (e) { return null; }
-  }
-  function personFromNode(n) {
-    const nm = n && n.name;
-    if (!nm || !nm.nameText || !nm.nameText.text) return null;
-    return {
-      id: nm.id || nm.nameText.text,
-      name: nm.nameText.text,
-      character: (n.characters || []).map(c => c.name).filter(Boolean).join(' / '),
-      imgUrl: (nm.primaryImage && nm.primaryImage.url) || null
-    };
-  }
-  function extractCast(data) {
-    const out = [], seen = new Set();
-    const push = p => { if (p && !seen.has(p.id)) { seen.add(p.id); out.push(p); } };
-    const pp = data && data.props && data.props.pageProps;
-    if (!pp) return out;
-    const edges = pp.mainColumnData && pp.mainColumnData.cast && pp.mainColumnData.cast.edges;
-    if (Array.isArray(edges)) edges.forEach(e => push(personFromNode(e.node)));
-    const cats = pp.contentData && pp.contentData.categories;
-    if (Array.isArray(cats)) {
-      cats.forEach(c => {
-        if (c && /^cast$/i.test(c.name || '') && c.section && Array.isArray(c.section.items)) {
-          c.section.items.forEach(it => push({
-            id: it.id || it.rowTitle,
-            name: it.rowTitle,
-            character: (it.characters || []).join(' / '),
-            imgUrl: it.imageProps && it.imageProps.imageModel && it.imageProps.imageModel.url || null
-          }));
-        }
-      });
-    }
-    if (!out.length) {
-      const walk = (o, inCast) => {
-        if (!o || typeof o !== 'object') return;
-        if (Array.isArray(o)) { o.forEach(x => walk(x, inCast)); return; }
-        if (inCast) { push(personFromNode(o.node || o) || personFromNode(o)); }
-        for (const k of Object.keys(o)) walk(o[k], inCast || /cast/i.test(k));
-      };
-      walk(pp, false);
-    }
-    return out.filter(p => p.name);
-  }
-
-  /* ---------- Method 3: add by name (Wikipedia page photo) ---------- */
-  async function photoByName(name) {
-    const u = 'https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search' +
-      '&gsrsearch=' + encodeURIComponent(name + ' actor') + '&gsrlimit=1&prop=pageimages&piprop=thumbnail&pithumbsize=900';
-    const d = await getJSON(u, 12000);
-    const pages = d.query && d.query.pages ? Object.values(d.query.pages) : [];
-    const p = pages[0];
-    if (!p || !p.thumbnail) return null;
-    return { name: p.title.replace(/\s*\(.*\)$/, ''), imgUrl: p.thumbnail.source };
   }
 
   /* ---------- images ---------- */
@@ -335,60 +280,64 @@
     }));
     if (token !== loadToken) return;
     const missing = cast.filter(c => !c.img).length;
-    status(missing ? 'Done, but ' + missing + ' photo(s) could not be loaded. Untick them or use Replace.' :
-                     'Ready. ' + cast.length + ' cast members loaded' + (sourceNote || '') + '.', missing ? 'err' : 'ok');
+    if (missing) status('Done, but ' + missing + ' photo(s) could not be loaded. Untick them to leave them out.', 'err');
+    else status('');
     draw();
   }
 
   async function loadFromUrl() {
     const id = parseTitleId($('url').value);
     if (!id) { status('That doesn’t look like an IMDb title link (it should contain something like tt0816692).', 'err'); return; }
-    $('loadBtn').disabled = true;
+    $('loadBtn').disabled = true; $('loadBtn').textContent = 'Loading…';
     try {
+      setTitle(''); filmId = id;
       status('Looking up the cast…');
       const people = await castFromWikidata(id);
       if (!people.length) {
-        status('That film has no cast photos in Wikidata yet. Paste the IMDb page source (below) or use “Add someone by name”.', 'err');
-        $('pasteBox').open = true;
+        status('No cast photos were found for that film.', 'err');
         return;
       }
       await setCast(people, '');
     } catch (e) {
-      status('Couldn’t reach the cast database (' + e.message + '). Check your connection and try again, or paste the IMDb page source below.', 'err');
-      $('pasteBox').open = true;
-    } finally { $('loadBtn').disabled = false; }
-  }
-
-  async function loadFromPaste() {
-    const txt = $('paste').value;
-    if (!txt.trim()) { status('Paste the page source first.', 'err'); return; }
-    const data = nextData(txt);
-    if (!data) { status('Couldn’t find the page data in what you pasted. Make sure you copied the whole page source.', 'err'); return; }
-    try { await setCast(extractCast(data), ' from IMDb'); } catch (e) { status(e.message, 'err'); }
-  }
-
-  async function addByName() {
-    const name = $('addName').value.trim();
-    if (!name) return;
-    $('addBtn').disabled = true;
-    try {
-      const r = await photoByName(name);
-      if (!r) { status('No photo found for “' + name + '”. Try the full name, or add a photo with Replace.', 'err'); return; }
-      const img = await loadImage(r.imgUrl);
-      cast.push({ id: 'manual-' + Date.now(), name: r.name, character: '', imgUrl: r.imgUrl, img, checked: true });
-      $('addName').value = '';
-      $('castPanel').hidden = false;
-      syncCount(); renderList(); draw();
-      status('Added ' + r.name + '. Check the photo is the right person.', 'ok');
-    } catch (e) { status('Couldn’t look that name up (' + e.message + ').', 'err'); }
-    finally { $('addBtn').disabled = false; }
+      status('Couldn’t reach the cast database (' + e.message + '). Check your connection and try again.', 'err');
+    } finally { $('loadBtn').disabled = false; $('loadBtn').textContent = 'Load cast'; }
   }
 
   /* ---------- cast list UI ---------- */
   function renderList() {
     const box = $('castList'); box.innerHTML = '';
     cast.forEach(c => {
-      const row = document.createElement('div'); row.className = 'castitem';
+      const row = document.createElement('div'); row.className = 'castitem'; row._c = c;
+
+      const handle = document.createElement('div'); handle.className = 'handle'; handle.textContent = '⠿';
+      handle.title = 'Drag to reorder'; handle.setAttribute('aria-label', 'Drag to reorder ' + c.name);
+      const onMove = e => {
+        const rows = [...box.children].filter(r => r !== row);
+        const next = rows.find(r => { const bb = r.getBoundingClientRect(); return e.clientY < bb.top + bb.height / 2; });
+        if (next) { if (row.nextSibling !== next) box.insertBefore(row, next); }
+        else if (box.lastChild !== row) box.appendChild(row);
+        const lb = box.getBoundingClientRect();
+        if (e.clientY < lb.top + 24) box.scrollTop -= 12;
+        else if (e.clientY > lb.bottom - 24) box.scrollTop += 12;
+        cast = [...box.children].map(r => r._c);   // update order and image while dragging
+        draw();
+      };
+      const onEnd = () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onEnd);
+        window.removeEventListener('pointercancel', onEnd);
+        row.classList.remove('dragging');
+        cast = [...box.children].map(r => r._c);
+        renderList(); draw();
+      };
+      handle.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        row.classList.add('dragging');
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onEnd);
+        window.addEventListener('pointercancel', onEnd);
+      });
+
       const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = c.checked;
       cb.setAttribute('aria-label', 'Include ' + c.name);
       cb.onchange = () => { c.checked = cb.checked; syncCount(); draw(); };
@@ -401,14 +350,7 @@
       nm.addEventListener('input', () => { c.name = nm.value; draw(); });
       const ch = document.createElement('div'); ch.className = 'ch'; ch.textContent = c.character;
       info.append(nm, ch);
-      const up = document.createElement('label'); up.className = 'up'; up.textContent = 'Replace';
-      const f = document.createElement('input'); f.type = 'file'; f.accept = 'image/*';
-      f.onchange = () => {
-        if (!f.files[0]) return;
-        tryLoad(URL.createObjectURL(f.files[0]), false).then(img => { c.img = img; renderList(); draw(); });
-      };
-      up.appendChild(f);
-      row.append(cb, thumb, info, up);
+      row.append(handle, cb, thumb, info);
       box.appendChild(row);
     });
   }
@@ -523,26 +465,27 @@
   }
 
   /* ---------- download ---------- */
+  function slug(t) {
+    return String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      .replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'film';
+  }
   function download() {
     try {
       cv.toBlob(b => {
         if (!b) { status('Couldn’t export the image.', 'err'); return; }
         const a = document.createElement('a');
         a.href = URL.createObjectURL(b);
-        a.download = 'cast-quiz-' + cast.filter(c => c.checked).length + '-actors.png';
+        a.download = 'imdb-quiz-' + slug(filmTitle || filmId || 'film') + '.png';
         document.body.appendChild(a); a.click(); a.remove();
       }, 'image/png');
     } catch (e) {
-      status('The browser blocked the export because a photo came from another site. Untick that person or use Replace to upload the photo.', 'err');
+      status('The browser blocked the export because a photo came from another site. Untick that person and try again.', 'err');
     }
   }
 
   /* ---------- wire up ---------- */
   $('loadBtn').onclick = loadFromUrl;
   $('url').addEventListener('keydown', e => { if (e.key === 'Enter') loadFromUrl(); });
-  $('pasteBtn').onclick = loadFromPaste;
-  $('addBtn').onclick = addByName;
-  $('addName').addEventListener('keydown', e => { if (e.key === 'Enter') addByName(); });
   $('count').addEventListener('change', applyCount);
   $('shuffleBtn').onclick = shuffleChosen;
   $('dlBtn').onclick = download;
