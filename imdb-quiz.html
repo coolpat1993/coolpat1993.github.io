@@ -229,17 +229,6 @@
         if (l && !/^Q\d+$/.test(l) && !filmTitle) setTitle(l);
       }).catch(() => {});
     await Promise.all([resolveThumbs(people), fixQNames(people), titleP]);
-    // Put the top-billed names first, using IMDb's own short top-cast list when available
-    try {
-      const s = await getJSON('https://v2.sg.media-imdb.com/suggestion/t/' + ttId + '.json', 6000);
-      const hit = (s.d || []).find(d => d.id === ttId);
-      if (hit && hit.l && !filmTitle) setTitle(hit.l);
-      const top = hit && hit.s ? hit.s.split(',').map(x => x.trim().toLowerCase()) : [];
-      if (top.length) {
-        const rank = p => { const i = top.indexOf(p.name.toLowerCase()); return i < 0 ? 999 : i; };
-        people.sort((a, b) => rank(a) - rank(b) || b.links - a.links);
-      }
-    } catch (e) { /* ordering by popularity is fine */ }
     return people;
   }
 
@@ -306,7 +295,7 @@
   /* ---------- cast list UI ---------- */
   function renderList() {
     const box = $('castList'); box.innerHTML = '';
-    cast.forEach(c => {
+    cast.forEach((c, i) => {
       const row = document.createElement('div'); row.className = 'castitem'; row._c = c;
 
       const handle = document.createElement('div'); handle.className = 'handle'; handle.textContent = '⠿';
@@ -338,14 +327,14 @@
         window.addEventListener('pointercancel', onEnd);
       });
 
-      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = c.checked;
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = 'cast-include-' + i; cb.checked = c.checked;
       cb.setAttribute('aria-label', 'Include ' + c.name);
       cb.onchange = () => { c.checked = cb.checked; syncCount(); draw(); };
       let thumb;
       if (c.img) { thumb = document.createElement('img'); thumb.src = c.img.src; thumb.alt = ''; }
       else { thumb = document.createElement('div'); thumb.className = 'ph'; }
       const info = document.createElement('div');
-      const nm = document.createElement('input'); nm.type = 'text'; nm.className = 'nm'; nm.value = c.name;
+      const nm = document.createElement('input'); nm.type = 'text'; nm.id = 'cast-name-' + i; nm.className = 'nm'; nm.value = c.name;
       nm.setAttribute('aria-label', 'Name for this cast member');
       nm.addEventListener('input', () => { c.name = nm.value; draw(); });
       const ch = document.createElement('div'); ch.className = 'ch'; ch.textContent = c.character;
