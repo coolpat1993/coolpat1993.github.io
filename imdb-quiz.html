@@ -72,8 +72,8 @@
     <div class="panel">
       <div class="field">
         <div class="row">
-          <input id="url" type="url" aria-label="IMDb page link" placeholder="https://www.imdb.com/title/tt0816692/">
-          <button id="loadBtn" class="primary fit">Load cast</button>
+          <input id="url" type="url" aria-label="IMDb page link" placeholder="IMDb title or person link">
+          <button id="loadBtn" class="primary fit">Load IMDb page</button>
         </div>
       </div>
     </div>
@@ -89,7 +89,7 @@
     </div>
 
     <div class="panel">
-      <label class="check"><input type="checkbox" id="showNames" checked> Show actor names</label>
+      <label class="check"><input type="checkbox" id="showNames" checked> <span id="showNamesText">Show actor names</span></label>
       <label class="check"><input type="checkbox" id="showChars"> Show character names (can give the film away)</label>
       <div class="colors" style="margin-top:12px">
         <label>Background top <input type="color" id="bg1" value="#1b1f2a"></label>
@@ -121,8 +121,8 @@
   function setTitle(t) { filmTitle = t || ''; }
 
   /* ---------- helpers ---------- */
-  function parseTitleId(url) {
-    const m = String(url).match(/tt\d{6,9}/i);
+  function parseImdbId(url) {
+    const m = String(url).match(/(?:tt|nm)\d{6,9}/i);
     return m ? m[0].toLowerCase() : null;
   }
   async function getJSON(url, ms = 20000) {
@@ -163,6 +163,34 @@
         order: person.order
       }))
       .sort((a, b) => a.order - b.order);
+  }
+
+  async function filmsFromTMDB(nmId, apiKey) {
+    const findUrl = 'https://api.themoviedb.org/3/find/' + encodeURIComponent(nmId) +
+      '?external_source=imdb_id&api_key=' + encodeURIComponent(apiKey);
+    const found = await getJSON(findUrl);
+    const person = found.person_results && found.person_results[0];
+    if (!person) return [];
+
+    setTitle(person.name || '');
+    const credits = await getJSON('https://api.themoviedb.org/3/person/' +
+      encodeURIComponent(person.id) + '/movie_credits?api_key=' + encodeURIComponent(apiKey));
+    const seen = new Set();
+    return (credits.cast || [])
+      .filter(film => {
+        if (!film.poster_path || seen.has(film.id)) return false;
+        seen.add(film.id);
+        return true;
+      })
+      .map(film => ({
+        id: film.id,
+        source: 'tmdb-film',
+        name: film.title,
+        character: '',
+        imgUrl: 'https://image.tmdb.org/t/p/w500' + film.poster_path,
+        order: film.release_date || ''
+      }))
+      .sort((a, b) => b.order.localeCompare(a.order));
   }
 
   async function resolveWikimediaFiles(imageFiles) {
@@ -326,8 +354,8 @@
   }
 
   /* ---------- loading flow ---------- */
-  async function setCast(people, apiKey) {
-    if (!people.length) throw new Error('No cast members found.');
+  async function setCast(people, apiKey, isFilmography) {
+    if (!people.length) throw new Error(isFilmography ? 'No film posters found.' : 'No cast members found.');
     const token = ++loadToken;
     const loadingCast = people.map(p => ({ ...p, img: null, checked: false }));
     cast = [];
@@ -337,7 +365,7 @@
       c.img = c.imgUrl ? await loadImage(c.imgUrl) : null;
     }));
     if (token !== loadToken) return;
-    const needsFallback = loadingCast.filter(c => !c.img);
+    const needsFallback = isFilmography ? [] : loadingCast.filter(c => !c.img);
     await Promise.all(needsFallback.map(async c => {
       for (const url of c.wikimediaImgUrls || []) {
         c.img = await loadImage(url);
@@ -357,7 +385,7 @@
     if (fallbackFailures) {
       window.alert('Wikimedia photo lookup failed for ' + fallbackFailures + ' request(s). Available cast photos were kept.');
     }
-    if (!cast.length) throw new Error('No TMDB or Wikimedia cast photos could be loaded.');
+    if (!cast.length) throw new Error(isFilmography ? 'No film posters could be loaded.' : 'No TMDB or Wikimedia cast photos could be loaded.');
     const n = Math.max(3, Math.min(+$('count').value || 6, cast.length));
     $('castPanel').hidden = false;
     $('count').max = cast.length;
@@ -365,6 +393,14 @@
     cast.forEach((c, i) => c.checked = i < n);
     renderList();
     draw();
+  }
+
+  function setDisplayMode(isFilmography) {
+    $('showNamesText').textContent = isFilmography ? 'Show film titles' : 'Show actor names';
+    $('showChars').parentElement.hidden = isFilmography;
+    $('count').setAttribute('aria-label', isFilmography ? 'Number of films (minimum 3)' : 'Number of cast members (minimum 3)');
+    $('count').title = isFilmography ? 'Number of films (minimum 3)' : 'Number of cast members (minimum 3)';
+    $('shuffleBtn').title = isFilmography ? 'Randomise the order of the chosen films' : 'Randomise the order of the chosen cast';
   }
 
   function savedTMDBKey() {
@@ -381,8 +417,9 @@
   }
 
   async function loadFromUrl() {
-    const id = parseTitleId($('url').value);
+    const id = parseImdbId($('url').value);
     if (!id) return;
+    const isFilmography = id.startsWith('nm');
     let apiKey = savedTMDBKey();
     if (!apiKey) apiKey = promptForTMDBKey('Enter your TMDB API key:');
     if (!apiKey) return;
@@ -390,32 +427,37 @@
     try {
       setTitle(''); filmId = id;
       let people;
-      try { people = await castFromTMDB(id, apiKey); }
+      try { people = isFilmography ? await filmsFromTMDB(id, apiKey) : await castFromTMDB(id, apiKey); }
       catch (e) {
         if (e.status !== 401) throw e;
         apiKey = promptForTMDBKey('TMDB rejected the saved API key. Enter a valid TMDB API key:');
         if (!apiKey) return;
-        people = await castFromTMDB(id, apiKey);
+        people = isFilmography ? await filmsFromTMDB(id, apiKey) : await castFromTMDB(id, apiKey);
       }
-      let supplemental;
-      try { supplemental = await castFromWikidata(id); }
-      catch (e) {
-        supplemental = { people: [], failures: 0 };
-        window.alert('Could not load additional cast from Wikidata (' + e.message + '). TMDB cast will still be used.');
+      let supplemental = { people: [], failures: 0 };
+      if (!isFilmography) {
+        try { supplemental = await castFromWikidata(id); }
+        catch (e) {
+          window.alert('Could not load additional cast from Wikidata (' + e.message + '). TMDB cast will still be used.');
+        }
       }
       people = mergeCastLists(people, supplemental.people);
       if (supplemental.failures) {
         window.alert('Wikimedia images could not be resolved for ' + supplemental.failures + ' request(s).');
       }
       if (!people.length) {
-        window.alert('TMDB and Wikidata did not find any cast members for that IMDb title.');
+        window.alert(isFilmography
+          ? 'TMDB did not find any films for that IMDb person.'
+          : 'TMDB and Wikidata did not find any cast members for that IMDb title.');
         return;
       }
-      await setCast(people, apiKey);
+      await setCast(people, apiKey, isFilmography);
+      setDisplayMode(isFilmography);
     } catch (e) {
       if (e.status === 401) window.alert('TMDB rejected the API key. Check it and try again.');
+      else if (isFilmography) window.alert('Couldn’t load film posters from TMDB (' + e.message + '). Check the API key and your connection, then try again.');
       else window.alert('Couldn’t load the cast from TMDB (' + e.message + '). Check the API key and your connection, then try again.');
-    } finally { $('loadBtn').disabled = false; $('loadBtn').textContent = 'Load cast'; }
+    } finally { $('loadBtn').disabled = false; $('loadBtn').textContent = 'Load IMDb page'; }
   }
 
   /* ---------- cast list UI ---------- */
@@ -535,7 +577,7 @@
     if (!chosen.length) {
       ctx.fillStyle = 'rgba(255,255,255,.35)';
       ctx.font = '600 38px "Trebuchet MS","Segoe UI",sans-serif';
-      ctx.fillText('Load an IMDb link to see the cast here', W / 2, (top + bottom) / 2);
+      ctx.fillText('Load an IMDb link to see the images here', W / 2, (top + bottom) / 2);
       return;
     }
 
