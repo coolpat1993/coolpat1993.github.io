@@ -7,7 +7,7 @@
 <style>
   :root{
     --bg:#15171c; --panel:#1d2027; --line:#2e333d; --text:#eceef2; --muted:#9aa1ae;
-    --accent:#f2b705; --accent-ink:#1a1400; --danger:#ff7a6b; --ok:#6fd39a;
+    --accent:#f2b705; --accent-ink:#1a1400; --ok:#6fd39a;
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 "Trebuchet MS","Segoe UI",system-ui,sans-serif}
@@ -28,11 +28,8 @@
   button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
   button.primary:hover{background:#ffc82b}
   button:disabled{opacity:.5;cursor:not-allowed}
-  .field{margin-bottom:14px}
   .check{display:flex;gap:8px;align-items:center;margin:6px 0;font-weight:400}
   .check input{width:18px;height:18px}
-  #status{color:var(--danger);font-size:13px;margin-top:8px}
-  #status:empty{display:none}
   .castlist{max-height:380px;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:8px}
   .castitem{display:grid;grid-template-columns:20px 22px 44px 1fr;gap:10px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--line);background:var(--panel)}
   .castitem.dragging{background:#2a2f3a;box-shadow:0 4px 14px rgba(0,0,0,.5);position:relative;z-index:2}
@@ -79,7 +76,6 @@
           <button id="loadBtn" class="primary fit">Load cast</button>
         </div>
       </div>
-      <div id="status" role="status"></div>
     </div>
 
     <div class="panel" id="castPanel">
@@ -117,14 +113,12 @@
   const W = 1280, H = 1840;
   const $ = id => document.getElementById(id);
   const cv = $('cv'), ctx = cv.getContext('2d');
+  const TMDB_KEY_STORAGE = 'imdb-quiz.tmdb-api-key';
 
   let cast = [];       // {id,name,character,imgUrl,img,checked}
   let loadToken = 0;
   let filmTitle = '', filmId = '';   // used only for the download file name, never drawn on the image
   function setTitle(t) { filmTitle = t || ''; }
-
-  /* ---------- status ---------- */
-  function status(msg, kind = '') { $('status').textContent = kind === 'err' ? msg : ''; }  // errors only; empty = takes no space
 
   /* ---------- helpers ---------- */
   function parseTitleId(url) {
@@ -136,100 +130,183 @@
     const t = setTimeout(() => ctrl.abort(), ms);
     try {
       const res = await fetch(url, { signal: ctrl.signal });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
+      if (!res.ok) {
+        const error = new Error('HTTP ' + res.status);
+        error.status = res.status;
+        throw error;
+      }
       return await res.json();
     } finally { clearTimeout(t); }
   }
 
-  /* Commons "Special:FilePath" links redirect without CORS headers, which blocks
-     drawing them to a canvas. The API returns direct upload.wikimedia.org
-     thumbnail URLs, which do allow it. */
-  async function resolveThumbs(people) {
-    const norm = s => s.replace(/_/g, ' ').trim().toLowerCase();
-    const withFile = people.filter(p => p.file);
-    const chunks = [];
-    for (let i = 0; i < withFile.length; i += 25) chunks.push(withFile.slice(i, i + 25));
-    await Promise.all(chunks.map(async chunk => {
-      try {
-        const titles = chunk.map(p => 'File:' + p.file.replace(/_/g, ' ')).join('|');
-        const d = await getJSON('https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*' +
-          '&prop=imageinfo&iiprop=url&iiurlwidth=900&titles=' + encodeURIComponent(titles), 20000);
-        const pages = d.query && d.query.pages ? Object.values(d.query.pages) : [];
-        const byTitle = {};
-        pages.forEach(pg => {
-          const ii = pg.imageinfo && pg.imageinfo[0];
-          if (ii) byTitle[norm(pg.title.replace(/^File:/i, ''))] = ii.thumburl || ii.url;
-        });
-        chunk.forEach(p => {
-          const u = byTitle[norm(p.file)];
-          if (u) p.imgUrl = u;
-        });
-      } catch (e) { /* keep fallback URLs */ }
-    }));
+  /* ---------- TMDB lookup ---------- */
+  async function castFromTMDB(ttId, apiKey) {
+    const findUrl = 'https://api.themoviedb.org/3/find/' + encodeURIComponent(ttId) +
+      '?external_source=imdb_id&api_key=' + encodeURIComponent(apiKey);
+    const found = await getJSON(findUrl);
+    const title = found.movie_results && found.movie_results[0];
+    const series = found.tv_results && found.tv_results[0];
+    const result = title || series;
+    if (!result) return [];
+
+    setTitle(result.title || result.name || '');
+    const type = title ? 'movie' : 'tv';
+    const credits = await getJSON('https://api.themoviedb.org/3/' + type + '/' +
+      encodeURIComponent(result.id) + '/credits?api_key=' + encodeURIComponent(apiKey));
+    return (credits.cast || [])
+      .map(person => ({
+        id: person.id,
+        source: 'tmdb',
+        name: person.name,
+        character: person.character || '',
+        imgUrl: person.profile_path ? 'https://image.tmdb.org/t/p/w500' + person.profile_path : '',
+        order: person.order
+      }))
+      .sort((a, b) => a.order - b.order);
   }
 
-  /* Some people have no English label on Wikidata and show up as "Q12345".
-     Look up a label in any other language (English preferred) as a fallback. */
-  async function fixQNames(people) {
-    const bad = people.filter(p => /^Q\d+$/.test(p.name));
-    if (!bad.length) return;
-    for (let i = 0; i < bad.length; i += 40) {
-      const chunk = bad.slice(i, i + 40);
+  async function resolveWikimediaFiles(imageFiles) {
+    let failures = 0;
+    const norm = value => value.replace(/_/g, ' ').trim().toLowerCase();
+    for (let i = 0; i < imageFiles.length; i += 25) {
+      const chunk = imageFiles.slice(i, i + 25);
+      const titles = chunk.map(item => 'File:' + item.file).join('|');
       try {
-        const ids = chunk.map(p => p.name).join('|');
-        const d = await getJSON('https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&origin=*&props=labels|sitelinks' +
-          '&ids=' + ids, 15000);
-        chunk.forEach(p => {
-          const ent = d.entities && d.entities[p.name];
-          if (!ent) return;
-          const labels = ent.labels || {};
-          const l = labels.en || labels['en-gb'] || labels.mul || Object.values(labels)[0];
-          if (l && l.value) p.name = l.value;
+        const data = await getJSON('https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*' +
+          '&prop=imageinfo&iiprop=url&iiurlwidth=900&titles=' + encodeURIComponent(titles));
+        const pages = data.query && data.query.pages ? Object.values(data.query.pages) : [];
+        const thumbnails = new Map();
+        pages.forEach(page => {
+          const image = page.imageinfo && page.imageinfo[0];
+          if (image) thumbnails.set(norm(page.title.replace(/^File:/i, '')), image.thumburl || image.url);
         });
-      } catch (e) { /* user can type the name instead */ }
+        chunk.forEach(item => {
+          const url = thumbnails.get(norm(item.file));
+          if (url) {
+            item.person.wikimediaImgUrls = item.person.wikimediaImgUrls || [];
+            item.person.wikimediaImgUrls.push(url);
+          }
+        });
+      } catch (e) {
+        failures++;
+      }
     }
+    return failures;
   }
 
-  /* ---------- Method 1: Wikidata (allows browser requests, no proxy) ---------- */
+  function wikimediaFileFromUrl(url) {
+    const match = url.match(/Special:FilePath\/([^?]+)/);
+    if (!match) return '';
+    try { return decodeURIComponent(match[1]).replace(/_/g, ' '); }
+    catch (e) { return match[1].replace(/_/g, ' '); }
+  }
+
+  async function addWikimediaPhotoFallback(people, apiKey) {
+    let failures = 0;
+    const byImdbId = new Map();
+    for (let i = 0; i < people.length; i += 8) {
+      const results = await Promise.allSettled(people.slice(i, i + 8).map(async person => {
+        const externalIds = await getJSON('https://api.themoviedb.org/3/person/' +
+          encodeURIComponent(person.id) + '/external_ids?api_key=' + encodeURIComponent(apiKey));
+        return { person, imdbId: externalIds.imdb_id };
+      }));
+      results.forEach(result => {
+        if (result.status === 'rejected') { failures++; return; }
+        const { person, imdbId } = result.value;
+        if (imdbId && /^nm\d{6,9}$/i.test(imdbId)) {
+          person.imdbId = imdbId.toLowerCase();
+          byImdbId.set(person.imdbId, person);
+        }
+      });
+    }
+    if (!byImdbId.size) return failures;
+
+    const ids = [...byImdbId.keys()];
+    const query = `SELECT ?imdbId ?image WHERE {
+      VALUES ?imdbId { ${ids.map(id => '"' + id + '"').join(' ')} }
+      ?person wdt:P345 ?imdbId; wdt:P18 ?image.
+    }`;
+    let rows;
+    try {
+      const data = await getJSON('https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(query), 30000);
+      rows = data.results && data.results.bindings || [];
+    } catch (e) {
+      return failures + 1;
+    }
+    const imageFiles = [];
+    rows.forEach(row => {
+      const person = byImdbId.get(row.imdbId.value.toLowerCase());
+      const file = wikimediaFileFromUrl(row.image.value);
+      if (person && file) imageFiles.push({ person, file });
+    });
+    return failures + await resolveWikimediaFiles(imageFiles);
+  }
+
   async function castFromWikidata(ttId) {
-    const q = `
-      SELECT ?actor ?actorLabel ?img ?links (GROUP_CONCAT(DISTINCT ?charLabel; separator=" / ") AS ?chars) WHERE {
+    const query = `
+      SELECT ?actor ?actorLabel ?imdbId ?img ?links (GROUP_CONCAT(DISTINCT ?charLabel; separator=" / ") AS ?chars) WHERE {
         ?film wdt:P345 "${ttId}".
         ?film p:P161 ?st.
         ?st ps:P161 ?actor.
         ?actor wdt:P18 ?img.
         ?actor wikibase:sitelinks ?links.
+        OPTIONAL { ?actor wdt:P345 ?imdbId. }
         OPTIONAL { ?st pq:P453 ?char. ?char rdfs:label ?charLabel. FILTER(LANG(?charLabel) = "en") }
         SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
       }
-      GROUP BY ?actor ?actorLabel ?img ?links
+      GROUP BY ?actor ?actorLabel ?imdbId ?img ?links
       ORDER BY DESC(?links)
       LIMIT 80`;
-    const data = await getJSON('https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(q), 30000);
-    const rows = (data.results && data.results.bindings) || [];
-    const seen = new Set(), people = [];
-    for (const r of rows) {
-      const id = r.actor.value;
-      if (seen.has(id)) continue;
-      seen.add(id);
-      people.push({
-        id,
-        name: r.actorLabel.value,
-        character: r.chars ? r.chars.value : '',
-        imgUrl: r.img.value.replace(/^http:\/\//, 'https://') + (r.img.value.includes('?') ? '&' : '?') + 'width=900', // fallback only
-        file: (() => { try { return decodeURIComponent((r.img.value.split('/Special:FilePath/')[1] || '').split('?')[0]); } catch (e) { return ''; } })(),
-        links: +r.links.value
-      });
-    }
-    const titleQ = 'SELECT ?filmLabel WHERE { ?film wdt:P345 "' + ttId + '". SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } } LIMIT 1';
-    const titleP = getJSON('https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(titleQ), 15000)
-      .then(d => {
-        const b = d.results && d.results.bindings && d.results.bindings[0];
-        const l = b && b.filmLabel && b.filmLabel.value;
-        if (l && !/^Q\d+$/.test(l) && !filmTitle) setTitle(l);
-      }).catch(() => {});
-    await Promise.all([resolveThumbs(people), fixQNames(people), titleP]);
-    return people;
+    const data = await getJSON('https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(query), 30000);
+    const rows = data.results && data.results.bindings || [];
+    const peopleById = new Map();
+    const imageFiles = [];
+    rows.forEach(row => {
+      const id = row.actor.value;
+      let person = peopleById.get(id);
+      if (!person) {
+        const imdbId = row.imdbId && row.imdbId.value;
+        person = {
+          id,
+          source: 'wikidata',
+          imdbId: imdbId && /^nm\d{6,9}$/i.test(imdbId) ? imdbId.toLowerCase() : '',
+          name: row.actorLabel.value,
+          character: row.chars ? row.chars.value : '',
+          imgUrl: '',
+          wikimediaImgUrls: []
+        };
+        peopleById.set(id, person);
+      }
+      const file = wikimediaFileFromUrl(row.img.value);
+      if (file) imageFiles.push({ person, file });
+    });
+    const failures = await resolveWikimediaFiles(imageFiles);
+    return { people: [...peopleById.values()], failures };
+  }
+
+  function mergeCastLists(primary, supplemental) {
+    const normalizeName = name => String(name).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+    const byId = new Map(primary.filter(person => person.imdbId).map(person => [person.imdbId, person]));
+    const byName = new Map(primary.map(person => [normalizeName(person.name), person]).filter(([name]) => name));
+    const additions = [];
+    supplemental.forEach(person => {
+      const imdbId = person.imdbId || '';
+      const name = normalizeName(person.name);
+      const duplicate = (imdbId && byId.get(imdbId)) || (name && byName.get(name));
+      if (duplicate) {
+        if (!duplicate.imdbId && imdbId) duplicate.imdbId = imdbId;
+        if (!duplicate.character && person.character) duplicate.character = person.character;
+        if (person.wikimediaImgUrls && person.wikimediaImgUrls.length) {
+          duplicate.wikimediaImgUrls = [...new Set([...(duplicate.wikimediaImgUrls || []), ...person.wikimediaImgUrls])];
+        }
+        return;
+      }
+      additions.push(person);
+      if (imdbId) byId.set(imdbId, person);
+      if (name) byName.set(name, person);
+    });
+    return primary.concat(additions);
   }
 
   /* ---------- images ---------- */
@@ -249,46 +326,95 @@
   }
 
   /* ---------- loading flow ---------- */
-  async function setCast(people, sourceNote) {
-    people = people.filter(p => p.imgUrl);
-    if (!people.length) throw new Error('No cast with photos found.');
+  async function setCast(people, apiKey) {
+    if (!people.length) throw new Error('No cast members found.');
     const token = ++loadToken;
-    cast = people.map(p => ({ ...p, img: null, checked: false }));
-    $('castPanel').hidden = false;
+    const loadingCast = people.map(p => ({ ...p, img: null, checked: false }));
+    cast = [];
+    renderList();
+    draw();
+    await Promise.all(loadingCast.map(async c => {
+      c.img = c.imgUrl ? await loadImage(c.imgUrl) : null;
+    }));
+    if (token !== loadToken) return;
+    const needsFallback = loadingCast.filter(c => !c.img);
+    await Promise.all(needsFallback.map(async c => {
+      for (const url of c.wikimediaImgUrls || []) {
+        c.img = await loadImage(url);
+        if (c.img) break;
+      }
+    }));
+    const needsPersonLookup = needsFallback.filter(c => !c.img && c.source === 'tmdb');
+    const fallbackFailures = await addWikimediaPhotoFallback(needsPersonLookup, apiKey);
+    await Promise.all(needsPersonLookup.map(async c => {
+      for (const url of c.wikimediaImgUrls || []) {
+        c.img = await loadImage(url);
+        if (c.img) break;
+      }
+    }));
+    if (token !== loadToken) return;
+    cast = loadingCast.filter(c => c.img);
+    if (fallbackFailures) {
+      window.alert('Wikimedia photo lookup failed for ' + fallbackFailures + ' request(s). Available cast photos were kept.');
+    }
+    if (!cast.length) throw new Error('No TMDB or Wikimedia cast photos could be loaded.');
     const n = Math.max(3, Math.min(+$('count').value || 6, cast.length));
+    $('castPanel').hidden = false;
     $('count').max = cast.length;
     $('count').value = n;
     cast.forEach((c, i) => c.checked = i < n);
     renderList();
-    status('Found ' + cast.length + ' cast members with photos' + (sourceNote || '') + '. Loading photos…');
-    let done = 0;
-    await Promise.all(cast.map(async c => {
-      c.img = await loadImage(c.imgUrl);
-      done++;
-      if (token === loadToken) { status('Loading photos… ' + done + '/' + cast.length); renderList(); draw(); }
-    }));
-    if (token !== loadToken) return;
-    const missing = cast.filter(c => !c.img).length;
-    if (missing) status('Done, but ' + missing + ' photo(s) could not be loaded. Untick them to leave them out.', 'err');
-    else status('');
     draw();
+  }
+
+  function savedTMDBKey() {
+    try { return localStorage.getItem(TMDB_KEY_STORAGE) || ''; }
+    catch (e) { return ''; }
+  }
+  function promptForTMDBKey(message) {
+    const value = window.prompt(message);
+    if (value === null || !value.trim()) return '';
+    const key = value.trim();
+    try { localStorage.setItem(TMDB_KEY_STORAGE, key); }
+    catch (e) { window.alert('The TMDB API key could not be saved in this browser. You will be asked for it again next time.'); }
+    return key;
   }
 
   async function loadFromUrl() {
     const id = parseTitleId($('url').value);
-    if (!id) { status('That doesn’t look like an IMDb title link (it should contain something like tt0816692).', 'err'); return; }
+    if (!id) return;
+    let apiKey = savedTMDBKey();
+    if (!apiKey) apiKey = promptForTMDBKey('Enter your TMDB API key:');
+    if (!apiKey) return;
     $('loadBtn').disabled = true; $('loadBtn').textContent = 'Loading…';
     try {
       setTitle(''); filmId = id;
-      status('Looking up the cast…');
-      const people = await castFromWikidata(id);
+      let people;
+      try { people = await castFromTMDB(id, apiKey); }
+      catch (e) {
+        if (e.status !== 401) throw e;
+        apiKey = promptForTMDBKey('TMDB rejected the saved API key. Enter a valid TMDB API key:');
+        if (!apiKey) return;
+        people = await castFromTMDB(id, apiKey);
+      }
+      let supplemental;
+      try { supplemental = await castFromWikidata(id); }
+      catch (e) {
+        supplemental = { people: [], failures: 0 };
+        window.alert('Could not load additional cast from Wikidata (' + e.message + '). TMDB cast will still be used.');
+      }
+      people = mergeCastLists(people, supplemental.people);
+      if (supplemental.failures) {
+        window.alert('Wikimedia images could not be resolved for ' + supplemental.failures + ' request(s).');
+      }
       if (!people.length) {
-        status('No cast photos were found for that film.', 'err');
+        window.alert('TMDB and Wikidata did not find any cast members for that IMDb title.');
         return;
       }
-      await setCast(people, '');
+      await setCast(people, apiKey);
     } catch (e) {
-      status('Couldn’t reach the cast database (' + e.message + '). Check your connection and try again.', 'err');
+      if (e.status === 401) window.alert('TMDB rejected the API key. Check it and try again.');
+      else window.alert('Couldn’t load the cast from TMDB (' + e.message + '). Check the API key and your connection, then try again.');
     } finally { $('loadBtn').disabled = false; $('loadBtn').textContent = 'Load cast'; }
   }
 
@@ -461,14 +587,14 @@
   function download() {
     try {
       cv.toBlob(b => {
-        if (!b) { status('Couldn’t export the image.', 'err'); return; }
+        if (!b) { window.alert('Couldn’t export the image.'); return; }
         const a = document.createElement('a');
         a.href = URL.createObjectURL(b);
         a.download = 'imdb-quiz-' + slug(filmTitle || filmId || 'film') + '.png';
         document.body.appendChild(a); a.click(); a.remove();
       }, 'image/png');
     } catch (e) {
-      status('The browser blocked the export because a photo came from another site. Untick that person and try again.', 'err');
+      window.alert('The browser blocked the export because a photo came from another site. Untick that person and try again.');
     }
   }
 
